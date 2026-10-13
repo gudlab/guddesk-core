@@ -10,8 +10,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -22,6 +20,6 @@ jobs:
           node-version-file: ".nvmrc"
           cache: pnpm
       - name: Install
-        run: pnpm install
+        run: pnpm install --ignore-scripts
       - name: Test
         run: pnpm test
