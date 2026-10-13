@@ -1,11 +1,10 @@
-import { createHmac } from "crypto";
-
 import { NextRequest, NextResponse } from "next/server";
 
-import { prisma } from "@/lib/db";
-import { createVisitorToken, verifyVisitorToken } from "@/lib/visitor-auth";
 import { autoAssignCompany } from "@/lib/company-matching";
 import { trackCustomerEvent } from "@/lib/customer-events";
+import { prisma } from "@/lib/db";
+import { createVisitorToken, verifyVisitorToken } from "@/lib/visitor-auth";
+import { verifyIdentityHash } from "@/lib/widget-identity";
 
 // POST /api/widget/visitors
 // Identify a visitor (set name, email, externalId, metadata)
@@ -13,7 +12,15 @@ import { trackCustomerEvent } from "@/lib/customer-events";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { appId: rawAppId, visitorToken, externalId, name, email, metadata, userHash } = body;
+    const {
+      appId: rawAppId,
+      visitorToken,
+      externalId,
+      name,
+      email,
+      metadata,
+      userHash,
+    } = body;
 
     if (!rawAppId) {
       return NextResponse.json(
@@ -45,18 +52,23 @@ export async function POST(req: NextRequest) {
       });
 
       if (widgetSettings?.identitySecret) {
-        if (!userHash || typeof userHash !== "string") {
+        const identity = verifyIdentityHash(
+          userHash,
+          widgetSettings.identitySecret,
+          externalId,
+        );
+
+        if (identity === "missing") {
           return NextResponse.json(
-            { error: "Identity verification is enabled. Provide a userHash generated server-side with HMAC-SHA256(secret, userId)." },
+            {
+              error:
+                "Identity verification is enabled. Provide a userHash generated server-side with HMAC-SHA256(secret, userId).",
+            },
             { status: 403 },
           );
         }
 
-        const expected = createHmac("sha256", widgetSettings.identitySecret)
-          .update(externalId)
-          .digest("hex");
-
-        if (userHash !== expected) {
+        if (identity === "invalid") {
           return NextResponse.json(
             { error: "Invalid identity hash" },
             { status: 403 },
