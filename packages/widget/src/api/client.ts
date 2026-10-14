@@ -14,6 +14,7 @@ import {
   buildIdentifyPayload,
   type IdentifyVisitorInfo,
 } from "./identify-payload";
+import { widgetRequestHeaders } from "./request-headers";
 
 let appId = "";
 let baseUrl = "";
@@ -24,13 +25,11 @@ export function initClient(key: string, url: string) {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
-  if (visitorToken.value) {
-    headers["x-visitor-token"] = visitorToken.value;
-  }
+  const headers = widgetRequestHeaders({
+    hasBody: Boolean(options.body),
+    visitorToken: visitorToken.value,
+    extra: options.headers as Record<string, string> | undefined,
+  });
 
   const res = await fetch(`${baseUrl}${path}`, { ...options, headers });
   if (!res.ok) {
