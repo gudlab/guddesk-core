@@ -1,85 +1,36 @@
 ---
-title: Built-In Agents
-description: Configure GudBot, TriageBot, and OnboardBot — the three AI agents that ship with GudDesk.
+title: Built-in AI
+description: What ships today: your own agent via the API, the REST API, and Claude assist if you add an Anthropic key.
 ---
 
-GudDesk includes three built-in agents that handle the most common support patterns. Each can be enabled, disabled, and configured independently.
+GudDesk does not ship a built-in autonomous agent. GudBot, TriageBot and OnboardBot are on the roadmap. There is no Settings > AI Agents > GudBot screen.
 
-## GudBot — The First Responder
+What you can use today:
 
-GudBot is the default agent that handles all incoming conversations. It reads the customer's message, searches your knowledge base, and responds with relevant information.
+## Your own agent (BOT replies)
 
-### What GudBot Does
+Install an agent in your workspace. GudDesk gives it a webhook and an API key. It hears about new conversations and messages, then replies as BOT. Visitors see those replies in the widget like any other message.
 
-- Analyzes the customer's message for intent
-- Searches your knowledge base for matching articles
-- Responds with a summary and a link to the full article
-- Asks if the answer was helpful
-- Resolves the conversation if the customer confirms
-- Escalates to a human if the customer says it didn't help
+See [Custom agents](/docs/agents/custom-agents) for the install steps.
 
-### Configuration
+## REST API and MCP
 
-Navigate to **Settings > AI Agents > GudBot**:
+The REST API covers conversations, customers, articles, companies, segments and workspaces. The MCP server exposes the same workspace to tools that speak MCP.
 
-| Setting | Description | Default |
-|---|---|---|
-| **Enabled** | Activate GudBot for new conversations | On |
-| **Response style** | Concise, Detailed, or Friendly | Friendly |
-| **Auto-resolve** | Close conversations after confirmed resolution | On |
-| **Escalation delay** | Seconds before offering human handoff | 30s |
-| **Fallback message** | Message when no KB articles match | "Let me connect you with a team member." |
+## Claude assist
 
-## TriageBot — The Router
+If you set `ANTHROPIC_API_KEY`, Claude can:
 
-TriageBot analyzes conversations and routes them to the right team or agent. It works alongside GudBot — if GudBot can't resolve the issue, TriageBot decides where it goes next.
+- Suggest replies
+- Summarise conversations
+- Categorise conversations
+- Read sentiment
+- Suggest help articles
 
-### Routing Rules
+On GudDesk Cloud these come with Pro. Self-hosters add their own key.
 
-Configure routing rules in **Settings > AI Agents > TriageBot**:
+## Next steps
 
-- **Keyword-based:** Messages containing "billing" → Billing team
-- **Customer-based:** Enterprise customers → Account management
-- **Sentiment-based:** Negative sentiment → Priority escalation
-- **Intent-based:** Bug reports → Engineering queue
-
-### Example Rules
-
-| Condition | Action |
-|---|---|
-| Message contains "refund" or "cancel" | Assign to Billing team |
-| Customer plan = Enterprise | Tag as "High Priority" |
-| Sentiment = Negative | Assign to Senior Support |
-| Message contains "bug" or "error" | Tag as "Bug Report", route to Engineering |
-
-## OnboardBot — The Guide
-
-OnboardBot activates for new users and proactively helps them get set up.
-
-### What OnboardBot Does
-
-- Sends a welcome message when a new user signs up
-- Checks in at key milestones (e.g., first widget install, first conversation)
-- Suggests helpful resources based on where the user is in their journey
-- Flags users who might be struggling to your customer success team
-
-### Configuration
-
-Navigate to **Settings > AI Agents > OnboardBot**:
-
-| Setting | Description | Default |
-|---|---|---|
-| **Enabled** | Activate for new users | On |
-| **Welcome delay** | How long after sign-up to send the first message | 5 minutes |
-| **Check-in milestones** | Trigger messages at specific events | Widget install, First conversation |
-| **Inactivity alert** | Flag users inactive for N days | 7 days |
-
-## Agent Priority
-
-When multiple agents are active, they process conversations in order:
-
-1. **GudBot** (first response, KB search)
-2. **TriageBot** (routing if GudBot escalates)
-3. **OnboardBot** (independent, only for new users)
-
-You can change the priority order in **Settings > AI Agents > Priority**.
+- [Build a custom agent](/docs/agents/custom-agents)
+- [API overview](/docs/api/overview)
+- [Webhooks](/docs/api/webhooks)

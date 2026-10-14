@@ -20,7 +20,7 @@ import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 export const metadata: Metadata = {
   title: "Pricing – GudDesk",
   description:
-    "Simple, transparent pricing. Generous free tier for small workspaces. Upgrade when you need more.",
+    "GudDesk Pro is $29 a month flat for any team size. No per-seat or per-resolution fees. Free plan for 2 members.",
 };
 
 /* ─── Data ───────────────────────────────────────────── */
@@ -38,8 +38,8 @@ const freeHighlights = [
   },
   {
     icon: Icons.sparkles,
-    title: "AI Agent Plugins",
-    desc: "Plug in AI agents like GudBot. Agents read conversations, reply as BOT, triage, resolve, and escalate autonomously.",
+    title: "AI agent API",
+    desc: "Connect your own AI agent. It receives conversation webhooks and replies as BOT through the API.",
   },
   {
     icon: Icons.bookOpen,
@@ -49,7 +49,7 @@ const freeHighlights = [
   {
     icon: Icons.code,
     title: "SDK & REST API",
-    desc: "Full API for conversations, visitors, and articles. Build custom agents and integrations in any language.",
+    desc: "REST API and an MCP server for conversations, customers, articles and more. Build agents and integrations in any language.",
   },
   {
     icon: Icons.automations,
@@ -75,7 +75,7 @@ const proFeatures = [
   "Everything in Free",
   "Unlimited workspace members",
   "Unlimited conversations",
-  "Built-in AI agent (Claude-powered)",
+  "Claude article suggestions",
   "AI reply suggestions & summaries",
   "Auto-categorization & sentiment",
   "Advanced agent analytics",
@@ -86,7 +86,7 @@ const proFeatures = [
 
 const businessFeatures = [
   "Everything in Pro",
-  "~$99/mo flat — no per-seat pricing",
+  "About $99/mo flat, no per-seat pricing",
   "Priority email support",
   "Higher-volume hosted workspaces",
   "Business hours & SLA tooling",
@@ -108,7 +108,7 @@ const comparisonRows = [
   {
     feature: "Starting price",
     intercomStarter: "$29/seat/mo",
-    intercom: "$99/seat/mo",
+    intercom: "$85/seat/mo",
     guddeskFree: "$0",
     guddeskPro: "$29/mo flat",
   },
@@ -135,21 +135,28 @@ const comparisonRows = [
   },
   {
     feature: "Knowledge base",
-    intercomStarter: "Add-on",
+    intercomStarter: "check",
     intercom: "check",
     guddeskFree: "check",
     guddeskPro: "check",
   },
   {
-    feature: "AI features",
-    intercomStarter: "$0.99/resolution",
-    intercom: "Included ($)",
-    guddeskFree: "cross",
-    guddeskPro: "check",
+    feature: "AI agent pricing",
+    intercomStarter: "$0.99 per Fin outcome",
+    intercom: "$0.99 per Fin outcome",
+    guddeskFree: "No AI included",
+    guddeskPro: "No per-resolution fee",
+  },
+  {
+    feature: "Built-in autonomous AI agent",
+    intercomStarter: "check",
+    intercom: "check",
+    guddeskFree: "Roadmap",
+    guddeskPro: "Roadmap",
   },
   {
     feature: "Automations",
-    intercomStarter: "Limited",
+    intercomStarter: "Advanced plan",
     intercom: "check",
     guddeskFree: "check",
     guddeskPro: "check",
@@ -162,9 +169,9 @@ const comparisonRows = [
     guddeskPro: "check",
   },
   {
-    feature: "Plugin AI agents",
-    intercomStarter: "cross",
-    intercom: "cross",
+    feature: "Agent API (reply as BOT)",
+    intercomStarter: "Not compared",
+    intercom: "Not compared",
     guddeskFree: "check",
     guddeskPro: "check",
   },
@@ -342,9 +349,9 @@ export default function PricingPage() {
               Upgrade when you&apos;re ready
             </h2>
             <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-              When your workspace grows or you need AI features, custom branding, and
-              unlimited everything — Pro is a flat $29/mo. Business is ~$99/mo.
-              No per-seat pricing on any plan.
+              Pro is $29 a month flat and adds Claude AI and lifts the member and
+              conversation limits. Business is about $99 a month. No plan
+              charges per seat.
             </p>
           </div>
 
@@ -369,6 +376,9 @@ export default function PricingPage() {
                     {f}
                   </li>
                 ))}
+                <li className="text-sm text-muted-foreground">
+                  AI agent: on the roadmap
+                </li>
               </ul>
               <Link
                 href="/register"
@@ -456,9 +466,9 @@ export default function PricingPage() {
                   <TableRow>
                     <TableHead className="w-[180px]">Feature</TableHead>
                     <TableHead className="text-center">
-                      Intercom Starter
+                      Intercom Essential
                     </TableHead>
-                    <TableHead className="text-center">Intercom</TableHead>
+                    <TableHead className="text-center">Intercom Advanced</TableHead>
                     <TableHead className="bg-primary/5 text-center font-semibold">
                       GudDesk Free
                     </TableHead>
@@ -490,6 +500,10 @@ export default function PricingPage() {
                 </TableBody>
               </Table>
             </div>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Intercom list prices billed annually, from intercom.com/pricing,
+              checked 13 Oct 2026.
+            </p>
           </div>
 
           {/* Open source note */}

@@ -61,12 +61,12 @@ export const useCases: UseCase[] = [
       {
         title: "New trial user asks a question",
         description:
-          "Widget pops up in-app. GudBot checks the knowledge base and answers instantly. If the question is complex, it creates a conversation and routes it to the right team member.",
+          "The widget opens in-app. Claude can suggest a help article. If you connected your own agent, it can reply as BOT. Otherwise a teammate picks it up in the inbox.",
       },
       {
         title: "Customer reports a bug",
         description:
-          "TriageBot detects the intent, tags it as a bug, assigns it to your engineering team, and sets an SLA timer. The customer gets an acknowledgment in seconds.",
+          "An automation can tag the conversation as a bug, assign it to engineering and start an SLA timer. Claude can categorise the thread if you have an Anthropic key.",
       },
       {
         title: "Renewal is approaching",
@@ -76,7 +76,7 @@ export const useCases: UseCase[] = [
     ],
     features: [
       "Live chat widget",
-      "AI agents (GudBot, TriageBot)",
+      "Agent API (reply as BOT)",
       "Shared inbox",
       "Knowledge base",
       "SLA policies",
@@ -141,7 +141,7 @@ export const useCases: UseCase[] = [
       {
         title: "Visitor asks about product availability",
         description:
-          "GudBot checks your knowledge base for product FAQs and answers instantly. If the item is out of stock, it offers to notify the customer when it's back.",
+          "Claude can suggest a product FAQ from your help center. Your own agent can reply as BOT if you have one connected.",
       },
       {
         title: "Customer needs to return an item",
@@ -190,7 +190,7 @@ export const useCases: UseCase[] = [
     tagline: "Support that grows with your startup",
     headline: "World-class support on a startup budget",
     description:
-      "Startups need powerful support tools without the enterprise price tag. GudDesk is free for small teams, open source, and includes AI agents out of the box — so you can deliver great support from day one without breaking the bank.",
+      "Startups need powerful support tools without the enterprise price tag. GudDesk Cloud Free covers 2 members. Connect your own agent, or use Claude assist on Pro. Self-host if you need no caps.",
     benefits: [
       {
         title: "Cloud Free: 2 members",
@@ -207,7 +207,7 @@ export const useCases: UseCase[] = [
       {
         title: "AI handles the first wave",
         description:
-          "GudBot, TriageBot, and OnboardBot are included free. They answer common questions, route conversations, and onboard new users — so your tiny team can sleep at night.",
+          "Connect your own agent to answer as BOT. Claude can suggest replies and articles on Cloud Pro, or when you self-host with an Anthropic key. A first-party GudDesk agent is on the roadmap.",
         icon: "bot",
       },
       {
@@ -221,7 +221,7 @@ export const useCases: UseCase[] = [
       {
         title: "Solo founder handling support",
         description:
-          "AI agents handle the majority of questions. You get notified in Slack only when a human is needed. Canned responses let you reply in seconds when you do step in.",
+          "Your own agent can take first replies as BOT. Slack can notify you when a human is needed. Canned responses let you answer quickly when you do step in.",
       },
       {
         title: "Scaling to your first support hire",
@@ -231,12 +231,12 @@ export const useCases: UseCase[] = [
       {
         title: "Investor demo or launch day",
         description:
-          "Widget handles the traffic spike. AI agents answer FAQs automatically. You focus on the conversations that matter — potential customers and partners.",
+          "The widget handles the traffic spike. Claude can suggest FAQ articles. You focus on the conversations that matter, such as potential customers and partners.",
       },
     ],
     features: [
       "Free for 2 members",
-      "AI agents included",
+      "Agent API (reply as BOT)",
       "5-minute setup",
       "Shared inbox",
       "Knowledge base",
@@ -367,7 +367,7 @@ export const useCases: UseCase[] = [
       {
         title: "Triage with AI",
         description:
-          "TriageBot detects whether a message is a bug report, feature request, or support question. It auto-tags and routes to the right maintainer or contributor.",
+          "Automation rules can tag a message as a bug, feature request or support question and route it to the right maintainer. Claude can categorise the thread if you turn it on.",
         icon: "bot",
       },
       {
@@ -381,23 +381,23 @@ export const useCases: UseCase[] = [
       {
         title: "User finds a bug in your library",
         description:
-          "They click the chat widget on your docs site. TriageBot identifies the bug report, collects reproduction steps, and creates a tagged conversation. You review it when you're ready.",
+          "They click the chat widget on your docs site. An automation can tag it as a bug and open a conversation. You review it when you are ready.",
       },
       {
         title: "New contributor needs guidance",
         description:
-          "GudBot answers common setup questions from your knowledge base. If the contributor needs human help, OnboardBot escalates with full context.",
+          "Claude can suggest setup articles from your knowledge base. If the contributor needs a person, a teammate replies in the same thread.",
       },
       {
         title: "Release day support spike",
         description:
-          "AI agents absorb the wave of upgrade questions. Your knowledge base article about the new release gets auto-suggested. You step in only for genuine issues.",
+          "Claude can suggest the new-release article. Your own agent can reply as BOT if you connected one. You step in only for issues that need a person.",
       },
     ],
     features: [
       "Free forever",
       "Self-hostable (AGPL-3.0)",
-      "AI agents included",
+      "Agent API (reply as BOT)",
       "Knowledge base",
       "Widget for docs sites",
       "REST API",

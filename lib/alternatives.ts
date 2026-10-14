@@ -38,7 +38,7 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "AI agents", competitor: "Paid add-on ($0.99/resolution)", guddesk: "Included free" },
+      { name: "AI agents", competitor: "Paid add-on ($0.99/resolution)", guddesk: "Agent API; Claude on Pro" },
       { name: "Knowledge base", competitor: true, guddesk: true },
       { name: "Workflow automations", competitor: true, guddesk: true },
       { name: "Self-hosting", competitor: false, guddesk: true },
@@ -56,9 +56,9 @@ export const alternatives: Alternative[] = [
           "Intercom charges $39-139 per agent per month. GudDesk Cloud Free covers 2 members; Pro is $29/mo flat and Business is ~$99/mo flat — no per-seat surprises.",
       },
       {
-        title: "AI agents included, not upsold",
+        title: "No per-resolution AI fee",
         description:
-          "Intercom charges $0.99 per AI resolution with Fin. GudDesk includes AI agents (GudBot, TriageBot, OnboardBot) in every plan, including the free tier.",
+          "Intercom charges $0.99 per Fin outcome. GudDesk has no per-resolution fee. Connect your own agent on any plan. Claude assist is on Cloud Pro. A first-party agent is on the roadmap.",
       },
       {
         title: "Own your data",
@@ -90,7 +90,7 @@ export const alternatives: Alternative[] = [
       {
         question: "What about Intercom's Fin AI?",
         answer:
-          "GudDesk includes three built-in AI agents (GudBot, TriageBot, OnboardBot) that are free to use. They search your knowledge base and resolve conversations automatically. For advanced AI reasoning, bring your own Anthropic API key.",
+          "Intercom has Fin, a built-in autonomous agent. GudDesk does not ship one yet. You can connect your own bot through the agent API, and Claude can suggest replies, summaries and articles on Cloud Pro (self-hosters add an Anthropic key).",
       },
     ],
   },
@@ -111,7 +111,7 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Shared inbox / ticketing", competitor: true, guddesk: true },
-      { name: "AI agents", competitor: "Suite Professional+ ($115/agent/mo)", guddesk: "Included free" },
+      { name: "AI agents", competitor: "Suite Professional+ ($115/agent/mo)", guddesk: "Agent API; Claude on Pro" },
       { name: "Knowledge base", competitor: true, guddesk: true },
       { name: "Workflow automations", competitor: true, guddesk: true },
       { name: "Self-hosting", competitor: false, guddesk: true },
@@ -184,7 +184,7 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: "Separate product (Freshchat)", guddesk: "Included" },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "AI agents", competitor: "Pro plan+ ($49/agent/mo)", guddesk: "Included free" },
+      { name: "AI agents", competitor: "Pro plan+ ($49/agent/mo)", guddesk: "Agent API; Claude on Pro" },
       { name: "Knowledge base", competitor: true, guddesk: true },
       { name: "Workflow automations", competitor: "Growth plan+ ($15/agent/mo)", guddesk: "Included free" },
       { name: "Self-hosting", competitor: false, guddesk: true },
