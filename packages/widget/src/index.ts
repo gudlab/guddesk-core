@@ -3,6 +3,10 @@ import { h, render } from "preact";
 import { identify as identifyVisitor } from "./api/client";
 import type { IdentifyVisitorInfo } from "./api/identify-payload";
 import { isOpen } from "./stores/state";
+import {
+  findWidgetScriptSrc,
+  resolveDefaultApiOrigin,
+} from "./utils/api-origin";
 import { WidgetApp } from "./widget";
 
 interface GudDeskSettings {
@@ -27,28 +31,15 @@ declare global {
 
 let shadowRoot: ShadowRoot | null = null;
 
-function getBaseUrl(): string {
-  // Detect the script's origin to derive the base URL
-  const scripts = document.querySelectorAll("script[src]");
-  for (let i = scripts.length - 1; i >= 0; i--) {
-    const src = (scripts[i] as HTMLScriptElement).src;
-    if (src.includes("guddesk") || src.includes("widget")) {
-      try {
-        const url = new URL(src);
-        // cdn.guddesk.com is the public install path; API lives on guddesk.com.
-        if (
-          url.hostname === "cdn.guddesk.com" ||
-          url.hostname === "www.guddesk.com"
-        ) {
-          return "https://guddesk.com";
-        }
-        return url.origin;
-      } catch {
-        // continue
-      }
-    }
-  }
-  return window.location.origin;
+function getBaseUrl(explicitBaseUrl?: string): string {
+  const scripts = Array.from(document.querySelectorAll("script[src]")).map(
+    (el) => ({ src: (el as HTMLScriptElement).src }),
+  );
+  return resolveDefaultApiOrigin(
+    findWidgetScriptSrc(scripts),
+    window.location.origin,
+    explicitBaseUrl,
+  );
 }
 
 function init(settings: GudDeskSettings) {
@@ -60,7 +51,7 @@ function init(settings: GudDeskSettings) {
     return;
   }
 
-  const baseUrl = settings.baseUrl || getBaseUrl();
+  const baseUrl = getBaseUrl(settings.baseUrl);
 
   // Create host element + shadow DOM for style isolation
   const host = document.createElement("div");
