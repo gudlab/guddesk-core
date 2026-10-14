@@ -3,9 +3,11 @@
  *
  *   PREVIEW_SEED=1 pnpm db:seed:preview
  *
- * Reads DATABASE_URL and credentials from the environment (and from .env /
- * .env.local if present). Never commit those files. Refuses live Stripe keys
- * and VERCEL_ENV=production.
+ * Reads PREVIEW_DATABASE_URL (preferred) or DATABASE_URL, plus credentials,
+ * from the environment (and from .env / .env.local if present). Never commit
+ * those files. Refuses live Stripe keys, VERCEL_ENV=production, and a URL
+ * that matches PRODUCTION_DATABASE_URL. Preview may receive XSS test
+ * payloads; never point this at production data.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -18,6 +20,7 @@ import {
   formatPreviewSeedReport,
   parsePreviewSeedEnv,
   PreviewSeedError,
+  resolvePreviewDatabaseUrl,
   seedPreviewAccounts,
   type PreviewSeedStore,
 } from "../lib/preview-seed";
@@ -48,7 +51,7 @@ loadEnvFile(resolve(process.cwd(), ".env.local"));
 function createStore(prisma: PrismaClient): PreviewSeedStore {
   return {
     async upsertUser({ email, name, passwordHash }) {
-      const user = await prisma.user.upsert({
+      return prisma.user.upsert({
         where: { email },
         create: {
           email,
@@ -63,16 +66,14 @@ function createStore(prisma: PrismaClient): PreviewSeedStore {
         },
         select: { id: true },
       });
-      return user;
     },
     async upsertWorkspace({ slug, name }) {
-      const workspace = await prisma.workspace.upsert({
+      return prisma.workspace.upsert({
         where: { slug },
         create: { slug, name },
         update: { name },
         select: { id: true },
       });
-      return workspace;
     },
     async upsertWidgetSettings({ workspaceId, workspaceName, identitySecret }) {
       await prisma.widgetSettings.upsert({
@@ -89,27 +90,138 @@ function createStore(prisma: PrismaClient): PreviewSeedStore {
       });
     },
     async upsertMember({ workspaceId, userId, role }) {
-      await prisma.workspaceMember.upsert({
+      return prisma.workspaceMember.upsert({
         where: { workspaceId_userId: { workspaceId, userId } },
         create: { workspaceId, userId, role },
         update: { role },
+        select: { id: true },
       });
+    },
+    async upsertCollection({ workspaceId, slug, name, description }) {
+      return prisma.collection.upsert({
+        where: { workspaceId_slug: { workspaceId, slug } },
+        create: {
+          workspaceId,
+          slug,
+          name,
+          description,
+          isPublished: true,
+          order: 0,
+        },
+        update: {
+          name,
+          description,
+          isPublished: true,
+        },
+        select: { id: true },
+      });
+    },
+    async upsertArticle({
+      workspaceId,
+      collectionId,
+      slug,
+      title,
+      body,
+      excerpt,
+      authorId,
+      order,
+    }) {
+      return prisma.article.upsert({
+        where: { workspaceId_slug: { workspaceId, slug } },
+        create: {
+          workspaceId,
+          collectionId,
+          slug,
+          title,
+          body,
+          excerpt,
+          authorId,
+          order,
+          isPublished: true,
+          publishedAt: new Date(),
+        },
+        update: {
+          collectionId,
+          title,
+          body,
+          excerpt,
+          authorId,
+          order,
+          isPublished: true,
+        },
+        select: { id: true },
+      });
+    },
+    async upsertVisitor({ workspaceId, externalId, name, email }) {
+      return prisma.visitor.upsert({
+        where: { workspaceId_externalId: { workspaceId, externalId } },
+        create: {
+          workspaceId,
+          externalId,
+          name,
+          email,
+          lastSeenAt: new Date(),
+        },
+        update: {
+          name,
+          email,
+          lastSeenAt: new Date(),
+        },
+        select: { id: true },
+      });
+    },
+    async upsertConversation({
+      workspaceId,
+      visitorId,
+      assigneeMemberId,
+      status,
+      subject,
+      lastMessagePreview,
+      messages,
+    }) {
+      const existing = await prisma.conversation.findFirst({
+        where: { workspaceId, visitorId },
+        select: { id: true },
+      });
+      if (existing) {
+        return { id: existing.id, created: false };
+      }
+
+      const now = new Date();
+      const conversation = await prisma.conversation.create({
+        data: {
+          workspaceId,
+          visitorId,
+          assigneeId: assigneeMemberId,
+          channel: "WIDGET",
+          status,
+          subject,
+          lastMessageAt: now,
+          lastMessagePreview,
+          firstResponseAt: now,
+          closedAt: status === "CLOSED" ? now : null,
+          messages: {
+            create: messages.map((message) => ({
+              type: message.type,
+              body: message.body,
+              senderId: message.senderId ?? null,
+              senderName: message.senderName ?? null,
+            })),
+          },
+        },
+        select: { id: true },
+      });
+      return { id: conversation.id, created: true };
     },
   };
 }
 
 async function main(): Promise<void> {
   const config = parsePreviewSeedEnv(process.env);
-
-  const databaseUrl = process.env.DATABASE_URL?.trim();
-  if (!databaseUrl) {
-    throw new PreviewSeedError(
-      "DATABASE_URL is required. Point it at a dedicated Preview Postgres database, not production.",
-    );
-  }
+  const database = resolvePreviewDatabaseUrl(process.env);
 
   const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: databaseUrl }),
+    adapter: new PrismaPg({ connectionString: database.url }),
   });
 
   try {
@@ -118,7 +230,7 @@ async function main(): Promise<void> {
       config,
       (password) => bcrypt.hash(password, 12),
     );
-    console.log(formatPreviewSeedReport(config, result));
+    console.log(formatPreviewSeedReport(config, result, database.source));
   } finally {
     await prisma.$disconnect();
   }
