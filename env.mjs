@@ -23,6 +23,12 @@ export const env = createEnv({
     // Slack integration
     SLACK_CLIENT_ID: z.string().optional(),
     SLACK_CLIENT_SECRET: z.string().optional(),
+    // Hosted guddesk.com: set to "true" to enforce Free/Pro plan limits.
+    // Unset for self-host (unlimited, matches the public AGPL default).
+    GUDDESK_HOSTED: z.preprocess(
+      (val) => (val === "" || val == null ? undefined : val),
+      z.enum(["true", "false"]).optional(),
+    ),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().min(1),
@@ -54,5 +60,6 @@ export const env = createEnv({
     SLACK_CLIENT_ID: process.env.SLACK_CLIENT_ID,
     SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET,
     NEXT_PUBLIC_CLARITY_PROJECT_ID: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID,
+    GUDDESK_HOSTED: process.env.GUDDESK_HOSTED,
   },
 })

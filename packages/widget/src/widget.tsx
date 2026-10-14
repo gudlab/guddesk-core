@@ -4,7 +4,7 @@ import { useSignal } from "@preact/signals";
 import { isOpen, config, configLoaded, conversationId, messages, showOfflineForm, restoreState } from "./stores/state";
 import { initClient, fetchConfig, authenticate, fetchMessages } from "./api/client";
 import { shouldShowWidget } from "./utils/page-match";
-import { initPusher, subscribeToConversation, disconnect, isConnected } from "./api/pusher";
+import { initPusher, subscribeToConversation, disconnect, isConnected, onReconnect } from "./api/pusher";
 import { getStyles } from "./utils/styles";
 import { ChatWindow } from "./components/chat-window";
 import { ChatBubble } from "./components/chat-bubble";
@@ -53,6 +53,12 @@ export function WidgetApp({ appId, baseUrl, pusherKey, pusherCluster }: WidgetAp
       if (conversationId.value) {
         subscribeToConversation();
       }
+      // Resync messages whenever we recover from a connection drop.
+      onReconnect(() => {
+        if (conversationId.value) {
+          fetchMessages().catch(() => {});
+        }
+      });
       // Pusher connected — stop polling if active
       stopPolling();
     } catch {

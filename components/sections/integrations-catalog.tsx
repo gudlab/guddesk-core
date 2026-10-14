@@ -526,7 +526,7 @@ export default function IntegrationsCatalog() {
               <h4 className="mb-1 font-heading text-sm">Open Source</h4>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 Fork the repo, contribute plugins, or self-host with your own
-                custom integrations. GPL-3.0 licensed.
+                custom integrations. AGPL-3.0 licensed.
               </p>
             </div>
           </div>

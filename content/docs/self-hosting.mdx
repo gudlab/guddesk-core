@@ -11,7 +11,7 @@ The easiest way to self-host GudDesk:
 
 ```bash
 git clone https://github.com/gudlab/guddesk-core.git
-cd guddesk
+cd guddesk-core
 
 cp .env.example .env
 # Edit .env with your production configuration
@@ -103,6 +103,7 @@ See the [Quickstart guide](/docs/quickstart) for the full list of environment va
 | `RESEND_API_KEY` | Email delivery API key |
 | `ANTHROPIC_API_KEY` | Required for AI agent features |
 | `PUSHER_APP_ID` / `PUSHER_SECRET` | Required for real-time chat |
+| `GUDDESK_HOSTED` | Leave unset. `true` is only for hosted guddesk.com plan limits |
 
 ## Backups
 

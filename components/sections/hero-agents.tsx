@@ -28,7 +28,7 @@ const capabilities = [
     icon: Icons.code,
     title: "Open source. Self-hostable. Free.",
     description:
-      "GPL-3.0 licensed and fully self-hostable. Audit every line, run it on your own servers, and never worry about vendor lock-in. Free for teams of 3 or fewer, with every feature included.",
+      "AGPL-3.0 licensed and fully self-hostable. Audit every line, run it on your own servers, and never worry about vendor lock-in. Self-host is uncapped. Hosted Free includes 2 members.",
   },
 ];
 

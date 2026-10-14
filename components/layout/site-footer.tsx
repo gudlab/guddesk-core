@@ -51,7 +51,7 @@ export function SiteFooter({ className }: React.HTMLAttributes<HTMLElement>) {
             >
               GudDesk
             </Link>{" "}
-            team. Open source under GPL-3.0 license.
+            team. Open source under AGPL-3.0 license.
           </p>
 
           <div className="flex items-center gap-3">

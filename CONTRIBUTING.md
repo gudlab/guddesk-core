@@ -29,8 +29,11 @@ Never commit `.env`, `.env.local`, or API keys.
 ```bash
 pnpm lint
 pnpm exec tsc --noEmit
+pnpm test
 pnpm run build:widget
 ```
+
+Self-host is uncapped. Hosted guddesk.com sets `GUDDESK_HOSTED=true` (see `.env.example` and `lib/feature-flags.ts`) to enforce Free / Pro limits.
 
 ## Publishing private → `gudlab/guddesk-core`
 
@@ -43,7 +46,7 @@ From a clean `main` on `cavewebs/flowchat`:
 ./scripts/sync-oss.sh --push
 ```
 
-The script copies the tree, drops secrets (`.env*`, `*.pem`), keeps self-host plan limits uncapped on the public copy, and opens a `sync/YYYYMMDD` branch.
+The script copies the tree, drops secrets (`.env*`, `*.pem`), and opens a `sync/YYYYMMDD` branch. Plan limits live in `lib/feature-flags.ts` and stay uncapped unless `GUDDESK_HOSTED=true`.
 
 After the public PR merges, set GitHub metadata if it drifted:
 

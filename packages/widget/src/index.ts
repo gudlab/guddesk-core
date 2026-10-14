@@ -113,7 +113,7 @@ const GudDesk = {
 window.GudDesk = GudDesk;
 
 // Auto-init if settings are present
- if (window.GudDeskSettings) {
+if (window.GudDeskSettings) {
   // Wait for DOM ready
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () =>

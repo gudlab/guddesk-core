@@ -68,7 +68,7 @@ export default function HeroLanding() {
 
         <p className="text-sm text-muted-foreground">
           Free forever for small teams &middot; No credit card required &middot;
-          GPL-3.0 licensed
+          AGPL-3.0 licensed
         </p>
       </div>
     </section>

@@ -101,7 +101,7 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Fill `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`, and Google OAuth. Leave Pusher / Stripe / Anthropic empty until you need them. **Do not commit `.env*` files.**
+Fill `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`, and Google OAuth. Leave Pusher / Stripe / Anthropic empty until you need them. Leave `GUDDESK_HOSTED` unset so self-host stays uncapped; hosted guddesk.com sets `GUDDESK_HOSTED=true`. **Do not commit `.env*` files.**
 
 ### 3. Database + widget + dev
 

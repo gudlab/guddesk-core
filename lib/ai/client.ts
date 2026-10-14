@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/db";
+import { getPlanLimits, isHostedPlanEnforcement } from "@/lib/feature-flags";
 
 let client: Anthropic | null = null;
 
@@ -21,6 +22,14 @@ export async function callClaude(opts: {
 }): Promise<string | null> {
   const anthropic = getAnthropicClient();
   if (!anthropic) return null;
+
+  if (isHostedPlanEnforcement()) {
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: opts.workspaceId },
+      select: { plan: true },
+    });
+    if (!getPlanLimits(workspace?.plan).aiEnabled) return null;
+  }
 
   try {
     const response = await anthropic.messages.create({

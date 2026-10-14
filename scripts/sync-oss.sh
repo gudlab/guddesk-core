@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Mirror cavewebs/flowchat (this tree) onto gudlab/guddesk-core without copying secrets.
+# Do not overwrite lib/feature-flags.ts: both editions share GUDDESK_HOSTED-gated limits.
 #
 # Usage:
 #   ./scripts/sync-oss.sh           # write a local clone and show git status
@@ -53,60 +54,6 @@ rm -f "$WORKDIR/guddesk-core/.env" \
   "$WORKDIR/guddesk-core/docs/gudbot-v1.md" \
   "$WORKDIR/guddesk-core/vercel.md"
 
-# Self-host / public edition: no hosted plan caps.
-cat > "$WORKDIR/guddesk-core/lib/feature-flags.ts" << 'EOF'
-/**
- * Feature flags for GudDesk Core (public AGPL edition).
- * Self-host is uncapped. Cloud Free / Pro $29 / Business ~$99 live on guddesk.com.
- */
-
-export type PlanLimits = {
-  maxSeats: number;
-  maxConversationsPerMonth: number;
-  maxWorkspaces: number;
-  aiEnabled: boolean;
-  removeBranding: boolean;
-};
-
-const UNLIMITED: PlanLimits = {
-  maxSeats: Infinity,
-  maxConversationsPerMonth: Infinity,
-  maxWorkspaces: Infinity,
-  aiEnabled: true,
-  removeBranding: true,
-};
-
-export function getPlanLimits(_plan?: string): PlanLimits {
-  return UNLIMITED;
-}
-
-export async function canUserCreateWorkspace(_userId: string): Promise<{
-  allowed: boolean;
-  currentCount: number;
-  maxAllowed: number;
-}> {
-  return { allowed: true, currentCount: 0, maxAllowed: Infinity };
-}
-
-export async function checkWorkspaceLimits(_workspaceId: string): Promise<{
-  plan: string;
-  limits: PlanLimits;
-  currentSeats: number;
-  currentMonthConversations: number;
-  canAddSeat: boolean;
-  canCreateConversation: boolean;
-}> {
-  return {
-    plan: "CORE",
-    limits: UNLIMITED,
-    currentSeats: 0,
-    currentMonthConversations: 0,
-    canAddSeat: true,
-    canCreateConversation: true,
-  };
-}
-EOF
-
 # Keep public funding file if this private tree has none.
 if [[ ! -f "$WORKDIR/guddesk-core/.github/FUNDING.yml" ]]; then
   mkdir -p "$WORKDIR/guddesk-core/.github"
@@ -140,7 +87,7 @@ fi
 git commit -m "sync: from cavewebs/flowchat ${SHA}
 
 Tree copy of the GudDesk SaaS repo. Secrets (.env*) are excluded.
-Self-host plan limits stay uncapped. See CONTRIBUTING.md."
+Plan limits stay uncapped unless GUDDESK_HOSTED=true. See CONTRIBUTING.md."
 
 echo
 git status

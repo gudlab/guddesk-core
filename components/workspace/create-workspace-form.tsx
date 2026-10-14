@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -23,7 +24,11 @@ import { Icons } from "@/components/shared/icons";
 
 type FormValues = z.infer<typeof createWorkspaceSchema>;
 
-export function CreateWorkspaceForm() {
+interface CreateWorkspaceFormProps {
+  canCreate?: boolean;
+}
+
+export function CreateWorkspaceForm({ canCreate = true }: CreateWorkspaceFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -59,6 +64,23 @@ export function CreateWorkspaceForm() {
       toast.success("Workspace created successfully!");
       router.push(`/workspace/${result.workspaceSlug}/inbox`);
     });
+  }
+
+  if (!canCreate) {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-800 dark:bg-amber-950/30">
+        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50">
+          <Icons.billing className="size-6 text-amber-600 dark:text-amber-400" />
+        </div>
+        <h3 className="font-semibold">Workspace limit reached</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          The free plan includes 1 workspace. Upgrade to Pro for unlimited workspaces.
+        </p>
+        <Link href="/pricing">
+          <Button className="mt-4">Upgrade to Pro</Button>
+        </Link>
+      </div>
+    );
   }
 
   return (
