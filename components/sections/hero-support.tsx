@@ -13,18 +13,18 @@ const capabilities = [
   },
   {
     icon: Icons.sparkles,
-    title: "AI agents that actually resolve",
-    desc: "Bots that read context, suggest articles, and close tickets — not just canned replies.",
+    title: "AI help for your team",
+    desc: "Claude drafts reply suggestions and summaries, and reads sentiment.",
   },
   {
     icon: Icons.inbox,
     title: "Unified inbox for every channel",
-    desc: "Email, chat, Slack, and bot conversations — one view for your whole team.",
+    desc: "Chat and email in one view, with Slack notifications and bot replies in the same thread.",
   },
   {
     icon: Icons.automations,
     title: "Automations that scale",
-    desc: "Route, tag, assign, and escalate automatically. Your support runs while you sleep.",
+    desc: "Rules run on new conversations, new messages and closed conversations, plus when a conversation goes unassigned. They can assign, tag, change status, send a message or notify Slack.",
   },
 ];
 
@@ -46,9 +46,9 @@ export default function HeroSupport() {
             </span>
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-            GudDesk combines live chat, AI agents, and a shared inbox into one
-            platform — so every conversation gets resolved faster, whether a
-            human or a bot handles it.
+            GudDesk puts live chat and a shared inbox in one app, with Claude
+            helping your team reply faster. Bring your own AI agent if you want
+            one answering first.
           </p>
         </div>
 
@@ -99,15 +99,14 @@ export default function HeroSupport() {
                 </div>
                 <div>
                   <div className="mb-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                    AI Agent
+                    Sent as BOT through the API
                   </div>
                   <div className="max-w-[75%] rounded-2xl rounded-tl-md bg-muted px-4 py-2.5 text-sm">
-                    I found a help article for that! Check out{" "}
+                    This article should help:{" "}
                     <span className="font-medium text-emerald-600 underline dark:text-emerald-400">
                       Password Reset Guide
                     </span>
-                    . If that doesn&apos;t work, I&apos;ll connect you with a
-                    human.
+                    . A teammate will follow up if it doesn&apos;t.
                   </div>
                 </div>
               </div>
@@ -116,7 +115,7 @@ export default function HeroSupport() {
               <div className="flex items-center justify-center gap-1.5 pt-2">
                 <Icons.check className="size-3.5 text-emerald-500" />
                 <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  Resolved in 8 seconds
+                  Sent as BOT through the API
                 </span>
               </div>
             </div>

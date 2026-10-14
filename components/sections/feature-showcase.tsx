@@ -11,7 +11,7 @@ const tabs = [
     id: "agents",
     label: "AI Agents",
     description:
-      "Plug in AI bots that handle L1 support, triage issues, suggest articles, and escalate to humans — all through the plugin API.",
+      "Connect your own bot through the agent API. Its replies appear as BOT messages next to your team's.",
     mock: AgentsMock,
   },
   {
@@ -32,7 +32,7 @@ const tabs = [
     id: "ai",
     label: "Built-in AI",
     description:
-      "One-click reply suggestions, conversation summaries, auto-categorization, and sentiment detection — powered by Claude. Just add your API key.",
+      "Claude suggests replies and summarises long threads. It can also read sentiment. Included on Cloud Pro. Self-hosters add their own ANTHROPIC_API_KEY.",
     mock: AIMock,
   },
 ];
@@ -63,7 +63,7 @@ function AgentsMock() {
         <div className="ml-auto max-w-[80%]">
           <div className="mb-1 flex items-center justify-end gap-1.5">
             <span className="text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
-              GudBot
+              Your bot
             </span>
             <div className="flex size-4 items-center justify-center rounded bg-emerald-500">
               <svg className="size-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
@@ -101,7 +101,7 @@ function AgentsMock() {
           </div>
           <div className="mt-1 flex justify-end">
             <div className="rounded bg-green-100 px-2 py-0.5 text-[8px] font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-300">
-              resolved
+              sent as BOT
             </div>
           </div>
         </div>
