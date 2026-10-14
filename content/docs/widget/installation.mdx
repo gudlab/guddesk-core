@@ -16,6 +16,20 @@ Add this snippet before the closing `</body>` tag of your website:
 
 Replace the `gd_pub_` value with your actual App ID, found in **Dashboard > Settings > Widget**.
 
+### One-tag install
+
+If you can only add a single script tag (some CMS fields), put the app ID on the script itself:
+
+```html
+<script
+  src="https://cdn.guddesk.com/widget.js"
+  data-app-id="gd_pub_xxxxxxxxxxxxxxxx"
+  async
+></script>
+```
+
+Optional attributes: `data-base-url`, `data-open-on-load`, `data-hide-on-mobile`, `data-name`, `data-email`. Do not put a `userHash` or server API keys (`gd_live_`, `gd_test_`) on the tag. `window.GudDeskSettings` still works and overrides data attributes when both are present.
+
 <Callout type="info">
   Widget keys use the `gd_pub_` prefix and are **safe to expose** in client-side code. They only identify your workspace and allow visitors to start conversations — the same thing they can already do by visiting your site. Server-side API keys (`gd_live_`, `gd_test_`) should never be used in the widget.
 </Callout>
