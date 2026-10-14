@@ -1,7 +1,9 @@
-import { render, h } from "preact";
-import { WidgetApp } from "./widget";
-import { isOpen } from "./stores/state";
+import { h, render } from "preact";
+
 import { identify as identifyVisitor } from "./api/client";
+import type { IdentifyVisitorInfo } from "./api/identify-payload";
+import { isOpen } from "./stores/state";
+import { WidgetApp } from "./widget";
 
 interface GudDeskSettings {
   appId: string;
@@ -15,13 +17,7 @@ declare global {
     GudDeskSettings?: GudDeskSettings;
     GudDesk?: {
       init: (settings: GudDeskSettings) => void;
-      identify: (info: {
-        userId?: string;
-        name?: string;
-        email?: string;
-        metadata?: Record<string, unknown>;
-        userHash?: string;
-      }) => Promise<void>;
+      identify: (info: IdentifyVisitorInfo) => Promise<void>;
       open: () => void;
       close: () => void;
       destroy: () => void;
@@ -40,7 +36,10 @@ function getBaseUrl(): string {
       try {
         const url = new URL(src);
         // cdn.guddesk.com is the public install path; API lives on guddesk.com.
-        if (url.hostname === "cdn.guddesk.com" || url.hostname === "www.guddesk.com") {
+        if (
+          url.hostname === "cdn.guddesk.com" ||
+          url.hostname === "www.guddesk.com"
+        ) {
           return "https://guddesk.com";
         }
         return url.origin;
@@ -93,13 +92,7 @@ function destroy() {
 // Public API
 const GudDesk = {
   init,
-  identify: (info: {
-    userId?: string;
-    name?: string;
-    email?: string;
-    metadata?: Record<string, unknown>;
-    userHash?: string;
-  }) => identifyVisitor(info),
+  identify: (info: IdentifyVisitorInfo) => identifyVisitor(info),
   open: () => {
     isOpen.value = true;
   },
@@ -113,7 +106,7 @@ const GudDesk = {
 window.GudDesk = GudDesk;
 
 // Auto-init if settings are present
- if (window.GudDeskSettings) {
+if (window.GudDeskSettings) {
   // Wait for DOM ready
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () =>
