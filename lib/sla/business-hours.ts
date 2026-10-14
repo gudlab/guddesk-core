@@ -42,10 +42,7 @@ function parseTimeToMinutes(time: string): number {
 /**
  * Get the day-of-week name for a Date in a given timezone.
  */
-function getDayName(
-  date: Date,
-  timezone: string,
-): (typeof DAY_NAMES)[number] {
+function getDayName(date: Date, timezone: string): (typeof DAY_NAMES)[number] {
   const dayIndex = new Date(
     date.toLocaleString("en-US", { timeZone: timezone }),
   ).getDay();
@@ -72,7 +69,8 @@ function getTimeInTimezone(
     if (part.type === "hour") hours = parseInt(part.value, 10);
     if (part.type === "minute") minutes = parseInt(part.value, 10);
   }
-  // Intl returns hour 24 as 0 at midnight
+  // Node 20 Intl uses hour 24 at midnight; treat that as 0.
+  if (hours === 24) hours = 0;
   return { hours, minutes };
 }
 
@@ -228,7 +226,7 @@ function advanceToNextDay(date: Date, timezone: string): Date {
       parts.find((p) => p.type === "day")?.value ?? "0",
       10,
     );
-    const candidateHour = parseInt(
+    let candidateHour = parseInt(
       parts.find((p) => p.type === "hour")?.value ?? "99",
       10,
     );
@@ -236,8 +234,13 @@ function advanceToNextDay(date: Date, timezone: string): Date {
       parts.find((p) => p.type === "minute")?.value ?? "99",
       10,
     );
+    if (candidateHour === 24) candidateHour = 0;
 
-    if (candidateDay === day + 1 && candidateHour === 0 && candidateMinute === 0) {
+    if (
+      candidateDay === day + 1 &&
+      candidateHour === 0 &&
+      candidateMinute === 0
+    ) {
       cursor = candidate;
       break;
     }
