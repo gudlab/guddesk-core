@@ -104,7 +104,7 @@ export const features: Feature[] = [
     slug: "ai-agents",
     name: "AI Agents",
     tagline: "Connect your own bot. Claude helps your team.",
-    headline: "Reply as BOT through the API. Claude drafts the rest.",
+    headline: "Reply as BOT through the API. Claude suggests replies for your team.",
     description:
       "Install your own agent to receive webhooks and reply as BOT. Claude can suggest replies, summarise threads, categorise conversations, read sentiment and suggest articles. A first-party GudDesk agent is on the roadmap. There is no per-resolution fee.",
     icon: "sparkles",
@@ -150,7 +150,7 @@ export const features: Feature[] = [
       {
         title: "Overnight coverage with your bot",
         description:
-          "Your agent receives webhooks while the team is offline and replies as BOT. Claude can suggest articles so a teammate has a draft waiting in the morning.",
+          "Your agent receives webhooks while the team is offline and replies as BOT.",
       },
       {
         title: "Launch day traffic spikes",
@@ -160,9 +160,9 @@ export const features: Feature[] = [
     ],
     faqs: [
       {
-        question: "Is there a built-in GudBot?",
+        question: "Is there a built-in AI agent?",
         answer:
-          "Not yet. GudBot, TriageBot and OnboardBot are on the roadmap. Today you connect your own agent, or use Claude assist on Cloud Pro (self-hosters add an Anthropic key).",
+          "Not yet. One is on the roadmap. Today you connect your own agent, or use Claude assist on Cloud Pro (self-hosters add an Anthropic key).",
       },
       {
         question: "Can I build my own AI agent?",
@@ -309,7 +309,7 @@ export const features: Feature[] = [
       {
         title: "Train AI agents with documentation",
         description:
-          "Claude can suggest published articles in the widget and inbox. Your own agent can search the same help center through the API.",
+          "Claude can suggest published articles. Your own agent can search the same help center through the API.",
       },
     ],
     faqs: [
@@ -321,7 +321,7 @@ export const features: Feature[] = [
       {
         question: "Do articles feed into the AI features?",
         answer:
-          "Claude can suggest published articles in the widget. Your own agent can read the same articles through the API.",
+          "Claude can suggest published articles. Your own agent can read the same articles through the API.",
       },
       {
         question: "Can I import existing documentation?",

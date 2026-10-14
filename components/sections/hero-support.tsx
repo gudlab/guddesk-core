@@ -24,7 +24,7 @@ const capabilities = [
   {
     icon: Icons.automations,
     title: "Automations that scale",
-    desc: "Rules run when a conversation is created, a message arrives or a conversation closes. They can assign, tag, change status, send a message or notify Slack.",
+    desc: "Rules run on new conversations, new messages and closed conversations, plus when a conversation goes unassigned. They can assign, tag, change status, send a message or notify Slack.",
   },
 ];
 

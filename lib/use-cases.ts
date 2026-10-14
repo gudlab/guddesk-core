@@ -66,7 +66,7 @@ export const useCases: UseCase[] = [
       {
         title: "Customer reports a bug",
         description:
-          "An automation can tag the conversation as a bug, assign it to engineering and start an SLA timer. Claude can categorise the thread if you have an Anthropic key.",
+          "An automation can tag the conversation as a bug and assign it to engineering, with an SLA timer running.",
       },
       {
         title: "Renewal is approaching",
@@ -190,7 +190,7 @@ export const useCases: UseCase[] = [
     tagline: "Support that grows with your startup",
     headline: "World-class support on a startup budget",
     description:
-      "Startups need powerful support tools without the enterprise price tag. GudDesk Cloud Free covers 2 members. Connect your own agent, or use Claude assist on Pro. Self-host if you need no caps.",
+      "Startups need powerful support tools at a flat $29 a month. GudDesk Cloud Free covers 2 members. Connect your own agent, or use Claude assist on Pro. Self-host if you need no caps.",
     benefits: [
       {
         title: "Cloud Free: 2 members",
@@ -367,7 +367,7 @@ export const useCases: UseCase[] = [
       {
         title: "Triage with AI",
         description:
-          "Automation rules can tag a message as a bug, feature request or support question and route it to the right maintainer. Claude can categorise the thread if you turn it on.",
+          "Automation rules can tag a message as a bug or a feature request and route it to the right maintainer.",
         icon: "bot",
       },
       {
