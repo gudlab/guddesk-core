@@ -34,7 +34,7 @@ const pluginCapabilities = [
   {
     icon: Icons.sparkles,
     title: "AI-Native",
-    desc: "Claude reply suggestions, summaries, categorisation, sentiment and article suggestions. Self-hosting needs your own ANTHROPIC_API_KEY.",
+    desc: "Claude reply suggestions, summaries and sentiment. Self-hosting needs your own ANTHROPIC_API_KEY.",
   },
 ];
 

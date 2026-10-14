@@ -61,7 +61,7 @@ export const useCases: UseCase[] = [
       {
         title: "New trial user asks a question",
         description:
-          "The widget opens in-app. Claude can suggest a help article. If you connected your own agent, it can reply as BOT. Otherwise a teammate picks it up in the inbox.",
+          "The widget opens in-app. Visitors can search your help center. If you connected your own agent, it can reply as BOT. Otherwise a teammate picks it up in the inbox.",
       },
       {
         title: "Customer reports a bug",
@@ -141,7 +141,7 @@ export const useCases: UseCase[] = [
       {
         title: "Visitor asks about product availability",
         description:
-          "Claude can suggest a product FAQ from your help center. Your own agent can reply as BOT if you have one connected.",
+          "Your own agent can reply as BOT if you have one connected.",
       },
       {
         title: "Customer needs to return an item",
@@ -207,7 +207,7 @@ export const useCases: UseCase[] = [
       {
         title: "AI handles the first wave",
         description:
-          "Connect your own agent to answer as BOT. Claude can suggest replies and articles on Cloud Pro, or when you self-host with an Anthropic key. A first-party GudDesk agent is on the roadmap.",
+          "Connect your own agent to answer as BOT. Claude can suggest replies on Cloud Pro, or when you self-host with an Anthropic key. A first-party GudDesk agent is on the roadmap.",
         icon: "bot",
       },
       {
@@ -231,7 +231,7 @@ export const useCases: UseCase[] = [
       {
         title: "Investor demo or launch day",
         description:
-          "The widget handles the traffic spike. Claude can suggest FAQ articles. You focus on the conversations that matter, such as potential customers and partners.",
+          "The widget handles the traffic spike. Your help center answers common questions. You focus on the conversations that matter, such as potential customers and partners.",
       },
     ],
     features: [
@@ -386,12 +386,12 @@ export const useCases: UseCase[] = [
       {
         title: "New contributor needs guidance",
         description:
-          "Claude can suggest setup articles from your knowledge base. If the contributor needs a person, a teammate replies in the same thread.",
+          "Point contributors to setup articles in your knowledge base. If the contributor needs a person, a teammate replies in the same thread.",
       },
       {
         title: "Release day support spike",
         description:
-          "Claude can suggest the new-release article. Your own agent can reply as BOT if you connected one. You step in only for issues that need a person.",
+          "Your own agent can reply as BOT if you connected one. You step in only for issues that need a person.",
       },
     ],
     features: [

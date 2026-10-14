@@ -106,7 +106,7 @@ export const features: Feature[] = [
     tagline: "Connect your own bot. Claude helps your team.",
     headline: "Reply as BOT through the API. Claude suggests replies for your team.",
     description:
-      "Install your own agent to receive webhooks and reply as BOT. Claude can suggest replies, summarise threads, categorise conversations, read sentiment and suggest articles. A first-party GudDesk agent is on the roadmap. There is no per-resolution fee.",
+      "Install your own agent to receive webhooks and reply as BOT. Claude can suggest replies, summarise threads and read sentiment. A first-party GudDesk agent is on the roadmap. There is no per-resolution fee.",
     icon: "sparkles",
     highlights: [
       {
@@ -124,7 +124,7 @@ export const features: Feature[] = [
       {
         title: "Claude assist",
         description:
-          "Reply suggestions, summaries, categorisation, sentiment and article suggestions. Cloud Pro includes this. Self-hosters set ANTHROPIC_API_KEY.",
+          "Reply suggestions, summaries and sentiment. Cloud Pro includes this. Self-hosters set ANTHROPIC_API_KEY.",
         icon: "sparkles",
       },
       {
@@ -142,7 +142,6 @@ export const features: Feature[] = [
       "Conversation summarization",
       "Sentiment analysis",
       "Reply suggestions",
-      "Article suggestions",
       "No per-resolution fees",
       "First-party agent on the roadmap",
     ],
@@ -276,9 +275,9 @@ export const features: Feature[] = [
         icon: "globe",
       },
       {
-        title: "AI-powered article suggestions",
+        title: "Help center search",
         description:
-          "The chat widget suggests relevant articles before visitors start a conversation. AI agents also search your knowledge base when answering questions.",
+          "Published articles are searchable in your help center. Your own agent can search the same articles through the API.",
         icon: "sparkles",
       },
       {
@@ -309,7 +308,7 @@ export const features: Feature[] = [
       {
         title: "Train AI agents with documentation",
         description:
-          "Claude can suggest published articles. Your own agent can search the same help center through the API.",
+          "Your own agent can search the same help center through the API.",
       },
     ],
     faqs: [
@@ -321,7 +320,7 @@ export const features: Feature[] = [
       {
         question: "Do articles feed into the AI features?",
         answer:
-          "Claude can suggest published articles. Your own agent can read the same articles through the API.",
+          "Your own agent can search the same help center through the API.",
       },
       {
         question: "Can I import existing documentation?",

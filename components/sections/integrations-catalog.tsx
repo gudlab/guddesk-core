@@ -58,7 +58,7 @@ const integrations: Integration[] = [
   {
     name: "Claude AI",
     description:
-      "Reply suggestions, summaries, categorisation, sentiment and article suggestions. Cloud Pro includes this. Self-hosters set ANTHROPIC_API_KEY.",
+      "Reply suggestions, summaries and sentiment. Cloud Pro includes this. Self-hosters set ANTHROPIC_API_KEY.",
     category: "ai-agents",
     icon: "sparkles",
     tier: "pro",

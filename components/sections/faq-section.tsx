@@ -36,7 +36,7 @@ const faqs = [
   {
     question: "What built-in AI features are included?",
     answer:
-      "Claude can suggest replies, summarise conversations, categorise them, read sentiment and suggest help articles. On Cloud these come with Pro. When you self-host, set your own ANTHROPIC_API_KEY to turn them on.",
+      "Claude can suggest replies, summarise conversations and read sentiment. On Cloud these come with Pro. When you self-host, set your own ANTHROPIC_API_KEY to turn them on.",
   },
   {
     question: "How do I install the chat widget?",

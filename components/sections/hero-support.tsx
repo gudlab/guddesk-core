@@ -14,7 +14,7 @@ const capabilities = [
   {
     icon: Icons.sparkles,
     title: "AI help for your team",
-    desc: "Claude drafts reply suggestions and summaries, categorises conversations, reads sentiment and suggests help articles.",
+    desc: "Claude drafts reply suggestions and summaries, and reads sentiment.",
   },
   {
     icon: Icons.inbox,
@@ -99,7 +99,7 @@ export default function HeroSupport() {
                 </div>
                 <div>
                   <div className="mb-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                    Bot (via API)
+                    Sent as BOT through the API
                   </div>
                   <div className="max-w-[75%] rounded-2xl rounded-tl-md bg-muted px-4 py-2.5 text-sm">
                     This article should help:{" "}
@@ -115,7 +115,7 @@ export default function HeroSupport() {
               <div className="flex items-center justify-center gap-1.5 pt-2">
                 <Icons.check className="size-3.5 text-emerald-500" />
                 <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                  Article suggested by Claude
+                  Sent as BOT through the API
                 </span>
               </div>
             </div>

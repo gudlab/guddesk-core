@@ -75,9 +75,8 @@ const proFeatures = [
   "Everything in Free",
   "Unlimited workspace members",
   "Unlimited conversations",
-  "Claude article suggestions",
   "AI reply suggestions & summaries",
-  "Auto-categorization & sentiment",
+  "Sentiment detection",
   "Advanced agent analytics",
   "Remove GudDesk branding",
   "Slack integration",
@@ -429,8 +428,8 @@ export default function PricingPage() {
               </div>
               <h4 className="mb-1 font-heading text-sm">AI-Powered</h4>
               <p className="text-xs text-muted-foreground">
-                Reply suggestions, summaries, auto-categorization, and sentiment
-                analysis powered by Claude.
+                Reply suggestions, summaries and sentiment analysis powered by
+                Claude.
               </p>
             </div>
             <div className="text-center">

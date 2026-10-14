@@ -111,7 +111,7 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Shared inbox / ticketing", competitor: true, guddesk: true },
-      { name: "AI agents", competitor: "Suite Professional ($115/agent/mo as of October 2026)", guddesk: "Agent API; Claude on Pro" },
+      { name: "AI agents", competitor: "Suite Professional ($115/agent/mo billed annually, Oct 2026)", guddesk: "Agent API; Claude on Pro" },
       { name: "Knowledge base", competitor: true, guddesk: true },
       { name: "Workflow automations", competitor: true, guddesk: true },
       { name: "Self-hosting", competitor: false, guddesk: true },
@@ -176,7 +176,7 @@ export const alternatives: Alternative[] = [
     pricing: "Free tier available but limited. Paid plans start at $15/agent/month, AI features at $29+/agent/month.",
     weaknesses: [
       "Free tier is very limited (no automations, basic reporting)",
-      "AI Copilot is an add-on; Pro is $55/agent/month as of October 2026",
+      "AI Copilot is an add-on; Pro is $55/agent/month billed annually as of October 2026",
       "Chat widget (Freshchat) is a separate product with separate pricing",
       "Per-agent pricing across multiple products adds up",
       "Dated UI compared to modern alternatives",
@@ -184,7 +184,7 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: "Separate product (Freshchat)", guddesk: "Included" },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "AI agents", competitor: "Pro plan ($55/agent/mo as of October 2026)", guddesk: "Agent API; Claude on Pro" },
+      { name: "AI agents", competitor: "Pro plan ($55/agent/mo billed annually as of October 2026)", guddesk: "Agent API; Claude on Pro" },
       { name: "Knowledge base", competitor: true, guddesk: true },
       { name: "Workflow automations", competitor: "Growth plan+ ($15/agent/mo)", guddesk: "Included free" },
       { name: "Self-hosting", competitor: false, guddesk: true },
@@ -209,7 +209,7 @@ export const alternatives: Alternative[] = [
       {
         title: "AI that's actually accessible",
         description:
-          "Freshdesk Pro is $55/agent/month as of October 2026, with Freddy AI Copilot extra. GudDesk has no per-agent fee. Connect your own agent on any plan. Claude assist is on Cloud Pro.",
+          "Freshdesk Pro is $55/agent/month billed annually as of October 2026, with Freddy AI Copilot extra. GudDesk has no per-agent fee. Connect your own agent on any plan. Claude assist is on Cloud Pro.",
       },
       {
         title: "Modern developer experience",

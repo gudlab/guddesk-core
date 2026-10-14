@@ -32,7 +32,7 @@ const tabs = [
     id: "ai",
     label: "Built-in AI",
     description:
-      "Claude suggests replies and summarises long threads. It can also categorise conversations, read sentiment and suggest articles. Included on Cloud Pro. Self-hosters add their own ANTHROPIC_API_KEY.",
+      "Claude suggests replies and summarises long threads. It can also read sentiment. Included on Cloud Pro. Self-hosters add their own ANTHROPIC_API_KEY.",
     mock: AIMock,
   },
 ];
