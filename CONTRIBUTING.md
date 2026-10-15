@@ -28,6 +28,7 @@ Never commit `.env`, `.env.local`, or API keys.
 
 ```bash
 pnpm lint
+pnpm test
 pnpm exec tsc --noEmit
 pnpm run build:widget
 ```

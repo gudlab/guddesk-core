@@ -33,24 +33,22 @@ You can also configure the widget from your GudDesk dashboard:
 2. Use the live preview to adjust colors, position, and greeting
 3. Click **Save** — changes apply immediately to all pages with your widget installed
 
-Dashboard settings are synced with your widget and override local `GudDeskSettings` values (except `appId` and `baseUrl`).
+Dashboard settings are the default. Snippet keys (`accentColor`, `position`, `greeting`, `openOnLoad`, `hideOnMobile`) overlay those defaults **after** `/api/widget/config` loads, so a marketing page can differ from the app. Omit a key to keep the dashboard value. `showBranding` is dashboard-only (Pro).
+
+`openOnLoad: true` opens the chat after config loads. `hideOnMobile: true` skips rendering at or below 440px (the same breakpoint as the widget layout CSS).
 
 ## Custom CSS
 
-For advanced styling, you can target the widget container:
+The widget UI lives in Shadow DOM (`#guddesk-widget` is only the host). Page CSS cannot reach the bubble or window. There is no `.guddesk-launcher` class; the bubble is `.fc-bubble` inside the shadow tree. Use `GudDeskSettings` or the dashboard for colors, position, and greeting.
 
 ```css
 #guddesk-widget {
-  /* The widget renders inside this container */
-}
-
-#guddesk-widget .guddesk-launcher {
-  /* Style the chat bubble button */
+  /* Host element only. Inner UI is in shadow DOM and is not styleable from the page. */
 }
 ```
 
 <Callout type="warning">
-  Custom CSS selectors may change between versions. We recommend using the configuration options above for stable customization.
+  Do not target classes inside the shadow tree from page CSS. They will not match.
 </Callout>
 
 ## Accent Color

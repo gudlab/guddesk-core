@@ -1,13 +1,22 @@
-import { render, h } from "preact";
-import { WidgetApp } from "./widget";
-import { isOpen } from "./stores/state";
-import { identify as identifyVisitor } from "./api/client";
+import { h, render } from "preact";
 
-interface GudDeskSettings {
+import { identify as identifyVisitor } from "./api/client";
+import type { IdentifyVisitorInfo } from "./api/identify-payload";
+import { isOpen } from "./stores/state";
+import {
+  findWidgetScriptSrc,
+  resolveDefaultApiOrigin,
+} from "./utils/api-origin";
+import {
+  findWidgetScriptElement,
+  mergeSnippetSettings,
+  parseScriptTagSettings,
+  type WidgetSnippetSettings,
+} from "./utils/snippet-settings";
+import { WidgetApp } from "./widget";
+
+interface GudDeskSettings extends WidgetSnippetSettings {
   appId: string;
-  baseUrl?: string;
-  pusherKey?: string;
-  pusherCluster?: string;
 }
 
 declare global {
@@ -15,13 +24,7 @@ declare global {
     GudDeskSettings?: GudDeskSettings;
     GudDesk?: {
       init: (settings: GudDeskSettings) => void;
-      identify: (info: {
-        userId?: string;
-        name?: string;
-        email?: string;
-        metadata?: Record<string, unknown>;
-        userHash?: string;
-      }) => Promise<void>;
+      identify: (info: IdentifyVisitorInfo) => Promise<void>;
       open: () => void;
       close: () => void;
       destroy: () => void;
@@ -31,25 +34,26 @@ declare global {
 
 let shadowRoot: ShadowRoot | null = null;
 
-function getBaseUrl(): string {
-  // Detect the script's origin to derive the base URL
-  const scripts = document.querySelectorAll("script[src]");
-  for (let i = scripts.length - 1; i >= 0; i--) {
-    const src = (scripts[i] as HTMLScriptElement).src;
-    if (src.includes("guddesk") || src.includes("widget")) {
-      try {
-        const url = new URL(src);
-        // cdn.guddesk.com is the public install path; API lives on guddesk.com.
-        if (url.hostname === "cdn.guddesk.com" || url.hostname === "www.guddesk.com") {
-          return "https://guddesk.com";
-        }
-        return url.origin;
-      } catch {
-        // continue
-      }
-    }
-  }
-  return window.location.origin;
+function getBaseUrl(explicitBaseUrl?: string): string {
+  const scripts = Array.from(document.querySelectorAll("script[src]")).map(
+    (el) => ({ src: (el as HTMLScriptElement).src }),
+  );
+  return resolveDefaultApiOrigin(
+    findWidgetScriptSrc(scripts),
+    window.location.origin,
+    explicitBaseUrl,
+  );
+}
+
+function resolveInitSettings(): GudDeskSettings | null {
+  const scripts = Array.from(document.querySelectorAll("script"));
+  const script = findWidgetScriptElement(
+    scripts.map((el) => el as HTMLScriptElement),
+  );
+  const fromScript = script ? parseScriptTagSettings(script) : {};
+  const merged = mergeSnippetSettings(fromScript, window.GudDeskSettings);
+  if (!merged.appId) return null;
+  return merged as GudDeskSettings;
 }
 
 function init(settings: GudDeskSettings) {
@@ -61,7 +65,7 @@ function init(settings: GudDeskSettings) {
     return;
   }
 
-  const baseUrl = settings.baseUrl || getBaseUrl();
+  const baseUrl = getBaseUrl(settings.baseUrl);
 
   // Create host element + shadow DOM for style isolation
   const host = document.createElement("div");
@@ -76,6 +80,7 @@ function init(settings: GudDeskSettings) {
       baseUrl,
       pusherKey: settings.pusherKey,
       pusherCluster: settings.pusherCluster,
+      snippet: settings,
     }),
     shadowRoot,
   );
@@ -90,16 +95,15 @@ function destroy() {
   }
 }
 
+function boot() {
+  const settings = resolveInitSettings();
+  if (settings) init(settings);
+}
+
 // Public API
 const GudDesk = {
   init,
-  identify: (info: {
-    userId?: string;
-    name?: string;
-    email?: string;
-    metadata?: Record<string, unknown>;
-    userHash?: string;
-  }) => identifyVisitor(info),
+  identify: (info: IdentifyVisitorInfo) => identifyVisitor(info),
   open: () => {
     isOpen.value = true;
   },
@@ -112,16 +116,10 @@ const GudDesk = {
 // Expose globally
 window.GudDesk = GudDesk;
 
-// Auto-init if settings are present
- if (window.GudDeskSettings) {
-  // Wait for DOM ready
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () =>
-      init(window.GudDeskSettings!),
-    );
-  } else {
-    init(window.GudDeskSettings);
-  }
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", boot);
+} else {
+  boot();
 }
 
 export default GudDesk;

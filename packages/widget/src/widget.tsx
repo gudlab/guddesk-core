@@ -2,9 +2,14 @@ import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 
 import { isOpen, config, configLoaded, conversationId, messages, showOfflineForm, restoreState } from "./stores/state";
-import { initClient, fetchConfig, authenticate, fetchMessages } from "./api/client";
+import { initClient, fetchConfig, authenticate, fetchMessages, identify } from "./api/client";
 import { shouldShowWidget } from "./utils/page-match";
 import { initPusher, subscribeToConversation, disconnect, isConnected } from "./api/pusher";
+import {
+  applySnippetAppearance,
+  shouldHideOnMobile,
+  type WidgetSnippetSettings,
+} from "./utils/snippet-settings";
 import { getStyles } from "./utils/styles";
 import { ChatWindow } from "./components/chat-window";
 import { ChatBubble } from "./components/chat-bubble";
@@ -14,12 +19,19 @@ interface WidgetAppProps {
   baseUrl: string;
   pusherKey?: string;
   pusherCluster?: string;
+  snippet?: WidgetSnippetSettings;
 }
 
 // Polling interval when Pusher is not available (4 seconds)
 const POLL_INTERVAL = 4000;
 
-export function WidgetApp({ appId, baseUrl, pusherKey, pusherCluster }: WidgetAppProps) {
+export function WidgetApp({
+  appId,
+  baseUrl,
+  pusherKey,
+  pusherCluster,
+  snippet = {},
+}: WidgetAppProps) {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pusherInitRef = useRef(false);
   const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,15 +83,26 @@ export function WidgetApp({ appId, baseUrl, pusherKey, pusherCluster }: WidgetAp
       fetchConfig().catch(() => {}),
       authenticate().catch(() => {}),
     ]).then(() => {
+      const appearance = applySnippetAppearance(config.value, snippet);
+      config.value = { ...config.value, ...appearance };
+
       // Check if widget should be hidden on this page
       const visible = shouldShowWidget(
         window.location.pathname,
         config.value.pageVisibilityMode,
         config.value.pageVisibilityPatterns,
       );
-      if (!visible) {
+      if (!visible || shouldHideOnMobile(snippet.hideOnMobile, window.innerWidth)) {
         isHidden.value = true;
         return;
+      }
+
+      if (snippet.openOnLoad) {
+        isOpen.value = true;
+      }
+
+      if (snippet.name || snippet.email) {
+        identify({ name: snippet.name, email: snippet.email }).catch(() => {});
       }
 
       // If we have a restored conversation, fetch its messages

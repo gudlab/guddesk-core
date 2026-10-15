@@ -2,14 +2,19 @@ import {
   config,
   configLoaded,
   conversationId,
-  visitorId,
-  visitorToken,
-  visitorEmail,
   messages,
   persistState,
+  visitorEmail,
+  visitorId,
+  visitorToken,
   type Message,
   type WidgetConfig,
 } from "../stores/state";
+import {
+  buildIdentifyPayload,
+  type IdentifyVisitorInfo,
+} from "./identify-payload";
+import { widgetRequestHeaders } from "./request-headers";
 
 let appId = "";
 let baseUrl = "";
@@ -19,17 +24,12 @@ export function initClient(key: string, url: string) {
   baseUrl = url.replace(/\/$/, "");
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
-  if (visitorToken.value) {
-    headers["x-visitor-token"] = visitorToken.value;
-  }
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers = widgetRequestHeaders({
+    hasBody: Boolean(options.body),
+    visitorToken: visitorToken.value,
+    extra: options.headers as Record<string, string> | undefined,
+  });
 
   const res = await fetch(`${baseUrl}${path}`, { ...options, headers });
   if (!res.ok) {
@@ -59,24 +59,14 @@ export async function authenticate(): Promise<void> {
   persistState();
 }
 
-export async function identify(info: {
-  userId?: string;
-  name?: string;
-  email?: string;
-  metadata?: Record<string, unknown>;
-}): Promise<void> {
+export async function identify(info: IdentifyVisitorInfo): Promise<void> {
   const data = await request<{ visitorId: string; visitorToken: string }>(
     "/api/widget/visitors",
     {
       method: "POST",
-      body: JSON.stringify({
-        appId,
-        visitorToken: visitorToken.value,
-        externalId: info.userId,
-        name: info.name,
-        email: info.email,
-        metadata: info.metadata,
-      }),
+      body: JSON.stringify(
+        buildIdentifyPayload(appId, visitorToken.value, info),
+      ),
     },
   );
   visitorId.value = data.visitorId;
