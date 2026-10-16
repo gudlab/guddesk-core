@@ -24,6 +24,45 @@ pnpm dev
 
 Never commit `.env`, `.env.local`, or API keys.
 
+## Preview QA seed
+
+QA authenticated tests need two workspaces on a **dedicated Preview database**, not production. Preview may receive XSS test payloads. Never point the seed at production data.
+
+1. Create a separate Preview Postgres database (Neon branch or a distinct `PREVIEW_DATABASE_URL`). Do not reuse the production database.
+2. In the Vercel project, set Preview-only env vars listed in `.env.example` under "Preview QA seed", plus Preview `DATABASE_URL` (same dedicated database), Stripe **test** keys, `AUTH_SECRET`, and the other boot vars in that file. Do not copy Production Stripe live keys onto Preview.
+3. Apply schema, then seed from a machine that can reach that database:
+
+```bash
+export PREVIEW_DATABASE_URL='postgresql://…preview…'   # preferred over DATABASE_URL
+export PREVIEW_SEED=1
+export PREVIEW_OWNER_A_PASSWORD=        # from your secret store
+export PREVIEW_OWNER_B_PASSWORD=
+export PREVIEW_AGENT_A_PASSWORD=
+export PREVIEW_AGENT_B_PASSWORD=
+export PREVIEW_WORKSPACE_A_IDENTITY_SECRET=
+export STRIPE_SECRET_KEY=sk_test_…      # refused if sk_live_ / rk_live_
+pnpm prisma generate
+DATABASE_URL="$PREVIEW_DATABASE_URL" pnpm prisma db push
+pnpm db:seed:preview
+```
+
+If `PRODUCTION_DATABASE_URL` or `PROD_DATABASE_URL` is set and matches the URL in use, the script exits.
+
+Default logins (passwords are the env values, never committed):
+
+| Email | Role | Workspace |
+|---|---|---|
+| `qa-owner-a@guddesk.test` | OWNER | `preview-a` (HMAC identity secret set) |
+| `qa-agent-a@guddesk.test` | AGENT | `preview-a` |
+| `qa-owner-b@guddesk.test` | OWNER | `preview-b` (HMAC identity secret unset) |
+| `qa-agent-b@guddesk.test` | AGENT | `preview-b` |
+
+Each workspace also gets the `getting-started` collection (3 published articles) and two sample conversations (one open, one closed). Re-running upserts users and articles; existing conversation threads are left in place so XSS payloads QA added are not wiped.
+
+The script refuses `VERCEL_ENV=production` and live Stripe keys. It does not create Stripe customers; first checkout on Preview does that in test mode.
+
+Manual infra still needed: Preview `DATABASE_URL`, Stripe test webhook endpoint for the Preview URL if you test billing webhooks, Google OAuth redirect URIs for the Preview hostname if you test Google login, and Auth.js `AUTH_SECRET` on Preview.
+
 ## Checks
 
 ```bash
