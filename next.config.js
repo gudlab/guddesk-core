@@ -1,10 +1,14 @@
 const { withContentlayer } = require("next-contentlayer2");
+const { apexWwwRedirects } = require("./config/apex-www-redirect.cjs");
 
 import("./env.mjs");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return apexWwwRedirects();
+  },
   async headers() {
     return [
       {
