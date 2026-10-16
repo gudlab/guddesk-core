@@ -41,6 +41,8 @@ jobs:
             exit 1
           fi
           echo "Ran $count tests"
+      - name: Build content
+        run: pnpm build:content
       - name: Typecheck
         run: pnpm typecheck
       - name: Lint
