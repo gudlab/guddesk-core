@@ -16,8 +16,13 @@ export default defineConfig([
       "react-hooks/purity": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/refs": "off",
-      "react-hooks/exhaustive-deps": "off",
     },
+  },
+  {
+    // The widget uses Preact signals; reading .value in deps is intentional
+    // and exhaustive-deps cannot model it.
+    files: ["packages/widget/**"],
+    rules: { "react-hooks/exhaustive-deps": "off" },
   },
   globalIgnores([
     ".next/**",

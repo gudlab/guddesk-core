@@ -47,7 +47,6 @@ export async function GET(
       return withHeaders(apiError("Article not found", 404), rateLimitHeaders);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { workspaceId: _ws, ...data } = article;
     return withHeaders(apiOk(data), rateLimitHeaders);
   } catch (error) {

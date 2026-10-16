@@ -73,6 +73,7 @@ function getTimeInTimezone(
     if (part.type === "minute") minutes = parseInt(part.value, 10);
   }
   // Intl returns hour 24 as 0 at midnight
+  if (hours === 24) hours = 0;
   return { hours, minutes };
 }
 

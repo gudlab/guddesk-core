@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 env:
   NEXT_PUBLIC_APP_URL: http://localhost:3000

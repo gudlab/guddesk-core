@@ -14,7 +14,7 @@
     "build": "pnpm run build:widget && pnpm run build:content && next build",
     "turbo": "next dev --turbo",
     "start": "next start",
-    "lint": "eslint . --max-warnings 0 --report-unused-disable-directives-severity off",
+    "lint": "eslint . --max-warnings 0",
     "test": "node scripts/run-tests.mjs",
     "typecheck": "tsc --noEmit && pnpm --dir packages/widget typecheck",
     "preview": "next build && next start",
