@@ -12,6 +12,7 @@ import { Icons } from "@/components/shared/icons";
 
 interface WorkspaceMember {
   id: string;
+  userId?: string;
   user: { name: string | null; image: string | null };
 }
 
@@ -25,6 +26,8 @@ interface InboxLayoutProps {
   workspaceId: string;
   members: WorkspaceMember[];
   cannedResponses: CannedResponse[];
+  currentUserId?: string;
+  currentUserName?: string;
 }
 
 export function InboxLayout({

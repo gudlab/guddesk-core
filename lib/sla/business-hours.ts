@@ -42,7 +42,10 @@ function parseTimeToMinutes(time: string): number {
 /**
  * Get the day-of-week name for a Date in a given timezone.
  */
-function getDayName(date: Date, timezone: string): (typeof DAY_NAMES)[number] {
+function getDayName(
+  date: Date,
+  timezone: string,
+): (typeof DAY_NAMES)[number] {
   const dayIndex = new Date(
     date.toLocaleString("en-US", { timeZone: timezone }),
   ).getDay();
@@ -69,7 +72,7 @@ function getTimeInTimezone(
     if (part.type === "hour") hours = parseInt(part.value, 10);
     if (part.type === "minute") minutes = parseInt(part.value, 10);
   }
-  // Node 20 Intl uses hour 24 at midnight; treat that as 0.
+  // Intl returns hour 24 as 0 at midnight
   if (hours === 24) hours = 0;
   return { hours, minutes };
 }
@@ -150,7 +153,7 @@ export function addBusinessMinutes(
 
     // If this day has no schedule or is a holiday, advance to next day's start
     if (!daySchedule || isHoliday(cursor, holidays, timezone)) {
-      cursor = advanceToNextDay(cursor, timezone);
+      cursor = advanceCursorToNextDay(cursor, timezone);
       continue;
     }
 
@@ -168,7 +171,7 @@ export function addBusinessMinutes(
 
     // After business hours: advance to next day
     if (currentMinutes >= endMinutes) {
-      cursor = advanceToNextDay(cursor, timezone);
+      cursor = advanceCursorToNextDay(cursor, timezone);
       continue;
     }
 
@@ -182,27 +185,42 @@ export function addBusinessMinutes(
       // Consume the rest of this window and move to next day
       remaining -= availableMinutes;
       cursor = new Date(cursor.getTime() + availableMinutes * 60 * 1000);
-      cursor = advanceToNextDay(cursor, timezone);
+      cursor = advanceCursorToNextDay(cursor, timezone);
     }
   }
 
+  if (remaining > 0) {
+    throw new Error(
+      `addBusinessMinutes exceeded iteration cap with ${remaining} minutes left`,
+    );
+  }
+
   return cursor;
+}
+
+function advanceCursorToNextDay(date: Date, timezone: string): Date {
+  const next = advanceToNextDay(date, timezone);
+  if (next.getTime() <= date.getTime()) {
+    throw new Error(
+      `advanceToNextDay did not move forward from ${date.toISOString()} (${timezone})`,
+    );
+  }
+  return next;
 }
 
 /**
  * Advance a cursor to the start of the next calendar day in the given timezone.
  */
 function advanceToNextDay(date: Date, timezone: string): Date {
-  // Get the current date string and add one day
   const dateStr = getDateString(date, timezone);
   const [year, month, day] = dateStr.split("-").map(Number);
-  const nextDay = new Date(Date.UTC(year, month - 1, day + 1));
+  // Date.UTC overflows the month (31 Oct + 1 → 1 Nov). Do not compare
+  // candidateDay === day + 1; that looks for day 32 and never matches.
+  const nextCivil = new Date(Date.UTC(year, month - 1, day + 1));
+  const nextYear = nextCivil.getUTCFullYear();
+  const nextMonth = nextCivil.getUTCMonth() + 1;
+  const nextDay = nextCivil.getUTCDate();
 
-  // Convert "next day midnight in timezone" back to UTC
-  // Create a date string for next day and parse it in the timezone
-  const nextDayStr = `${year}-${String(month).padStart(2, "0")}-${String(day + 1).padStart(2, "0")}T00:00:00`;
-
-  // Use a simple approach: compute the offset
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
     year: "numeric",
@@ -214,19 +232,24 @@ function advanceToNextDay(date: Date, timezone: string): Date {
     hour12: false,
   });
 
-  // Start from an approximate UTC midnight of the next day
-  let cursor = new Date(nextDay);
+  let cursor = nextCivil;
 
-  // Iterate to find the exact UTC time that corresponds to midnight in the timezone
-  // This handles DST transitions correctly
   for (let i = -14; i <= 14; i++) {
-    const candidate = new Date(nextDay.getTime() + i * 60 * 60 * 1000);
+    const candidate = new Date(nextCivil.getTime() + i * 60 * 60 * 1000);
     const parts = formatter.formatToParts(candidate);
+    const candidateYear = parseInt(
+      parts.find((p) => p.type === "year")?.value ?? "0",
+      10,
+    );
+    const candidateMonth = parseInt(
+      parts.find((p) => p.type === "month")?.value ?? "0",
+      10,
+    );
     const candidateDay = parseInt(
       parts.find((p) => p.type === "day")?.value ?? "0",
       10,
     );
-    let candidateHour = parseInt(
+    const candidateHour = parseInt(
       parts.find((p) => p.type === "hour")?.value ?? "99",
       10,
     );
@@ -234,11 +257,14 @@ function advanceToNextDay(date: Date, timezone: string): Date {
       parts.find((p) => p.type === "minute")?.value ?? "99",
       10,
     );
-    if (candidateHour === 24) candidateHour = 0;
 
+    const midnight =
+      candidateHour === 0 || candidateHour === 24;
     if (
-      candidateDay === day + 1 &&
-      candidateHour === 0 &&
+      candidateYear === nextYear &&
+      candidateMonth === nextMonth &&
+      candidateDay === nextDay &&
+      midnight &&
       candidateMinute === 0
     ) {
       cursor = candidate;

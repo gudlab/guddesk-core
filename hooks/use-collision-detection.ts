@@ -38,7 +38,6 @@ export function useCollisionDetection(
     channelRef.current = channel;
 
     function updateViewers() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const presenceChannel = channel as any;
       if (!presenceChannel.members) return;
       const list: Viewer[] = [];
