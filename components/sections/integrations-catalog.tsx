@@ -46,53 +46,32 @@ const categories: { id: IntegrationCategory; label: string }[] = [
 const integrations: Integration[] = [
   // AI Agents
   {
-    name: "GudBot",
-    description:
-      "AI support agent that resolves L1 tickets autonomously — answers FAQs, suggests articles, and escalates when stuck.",
-    category: "ai-agents",
-    icon: "sparkles",
-    tier: "free",
-    status: "available",
-    href: "/docs",
-  },
-  {
-    name: "TriageBot",
-    description:
-      "Routes conversations by intent. Detects billing, bugs, or feature requests and assigns to the right team instantly.",
-    category: "ai-agents",
-    icon: "bot",
-    tier: "free",
-    status: "available",
-    href: "/docs",
-  },
-  {
-    name: "OnboardBot",
-    description:
-      "Greets new visitors, collects context, and walks them through setup — like a concierge in your widget.",
-    category: "ai-agents",
-    icon: "bot",
-    tier: "free",
-    status: "available",
-    href: "/docs",
-  },
-  {
     name: "Custom Agents",
     description:
-      "Build your own AI agent in any language using webhooks and the REST API. Deploy bots that reply as BOT natively.",
+      "Connect your own bot with a webhook and an API key. It hears about new messages and replies as BOT in the widget and inbox.",
     category: "ai-agents",
     icon: "code",
     tier: "free",
     status: "available",
-    href: "/docs",
+    href: "/docs/agents/custom-agents",
   },
   {
-    name: "Claude AI (Built-in)",
+    name: "Claude AI",
     description:
-      "One-click reply suggestions, conversation summaries, auto-categorization, and sentiment analysis — powered by Claude.",
+      "Reply suggestions, summaries and sentiment. Cloud Pro includes this. Self-hosters set ANTHROPIC_API_KEY.",
     category: "ai-agents",
     icon: "sparkles",
     tier: "pro",
     status: "available",
+  },
+  {
+    name: "GudDesk AI agent",
+    description:
+      "A first-party agent that answers from your help center. Not shipped yet. Use the agent API until it is.",
+    category: "ai-agents",
+    icon: "bot",
+    tier: "pro",
+    status: "coming-soon",
   },
 
   // Channels
@@ -526,7 +505,7 @@ export default function IntegrationsCatalog() {
               <h4 className="mb-1 font-heading text-sm">Open Source</h4>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 Fork the repo, contribute plugins, or self-host with your own
-                custom integrations. GPL-3.0 licensed.
+                custom integrations. AGPL-3.0 licensed.
               </p>
             </div>
           </div>

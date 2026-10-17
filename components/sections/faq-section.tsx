@@ -11,32 +11,32 @@ const faqs = [
   {
     question: "Is GudDesk really free?",
     answer:
-      "Yes. GudDesk is 100% open source under the AGPL-3.0 license. You get live chat, shared inbox, knowledge base, automations, AI features, and unlimited seats — no paywalls, no limits, no credit card required.",
+      "The code is open source under AGPL-3.0 and free to self-host with no caps. GudDesk Cloud has a Free plan for 2 members and 500 conversations a month. Pro is $29 a month flat for any number of seats.",
   },
   {
     question: "What are AI agent plugins?",
     answer:
-      "AI agents are bots you connect to GudDesk that can autonomously read conversations, reply to customers, triage issues, suggest articles, and escalate to humans. Use pre-built agents like GudBot, or build your own with our REST API and webhook events. Agents send messages as the BOT type — fully supported in the widget and inbox.",
+      "An agent is a bot you connect to GudDesk. Installing one gives it a webhook and an API key. It hears about new messages and replies as BOT, and those replies show in the widget and inbox. A built-in GudDesk AI agent is on the roadmap.",
   },
   {
     question: "Can I build my own agent?",
     answer:
-      "Yes. GudDesk exposes a full REST API and event-driven webhooks for conversation lifecycle events (message received, conversation created, tag added, etc.). Build agents in any language — Python, TypeScript, Go — that listen to events and take actions via the API. The BOT message type ensures agent replies appear natively in the widget.",
+      "Yes. Webhooks fire on new conversations, new messages, assignments and closed conversations. Your agent can answer through the REST API or the MCP server, in any language you like. Its replies are stored as BOT messages.",
   },
   {
     question: "How does GudDesk compare to Intercom?",
     answer:
-      "GudDesk offers live chat, shared inbox, knowledge base, AI agents, and automations — completely free and open source. Intercom charges $29–$99/seat/month plus extra for AI resolutions. GudDesk has no per-seat pricing, no usage limits, and you own your data.",
+      "Intercom charges per seat, from $29 a month on Essential billed annually, plus $0.99 for each Fin AI outcome. GudDesk Pro is $29 a month flat for the whole team, with no per-resolution fee. You can also self-host GudDesk, which Intercom doesn't offer. Intercom has a built-in autonomous AI agent today; GudDesk doesn't yet.",
   },
   {
     question: "Can I self-host GudDesk?",
     answer:
-      "Absolutely. GudDesk is open source and designed to run on your own infrastructure. Deploy with Docker, run on any cloud provider, or use our managed hosting. Your data stays on your servers.",
+      "Yes. Clone the repo, point it at your own Postgres and run it on any Node host, or use GudDesk Cloud. When you self-host, your data stays on your servers.",
   },
   {
     question: "What built-in AI features are included?",
     answer:
-      "GudDesk includes Claude-powered reply suggestions, conversation summarization, automatic categorization, sentiment analysis, and smart article recommendations. Just set your ANTHROPIC_API_KEY environment variable to enable all AI features. You can also connect external AI agents via the plugin API.",
+      "Claude can suggest replies, summarise conversations and read sentiment. On Cloud these come with Pro. When you self-host, set your own ANTHROPIC_API_KEY to turn them on.",
   },
   {
     question: "How do I install the chat widget?",
