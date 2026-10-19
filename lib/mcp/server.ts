@@ -9,6 +9,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { enforceMcpToolAccess } from "./access";
 import type { McpAuthContext } from "./auth";
+import { withSafeToolErrors } from "./errors";
 import { registerAgentTools } from "./tools/agents";
 import { registerArticleTools } from "./tools/articles";
 import { registerCompanyTools } from "./tools/companies";
@@ -50,6 +51,10 @@ export function createMcpServer(
     version: "1.0.0",
   });
 
+  // Both patch registerTool, so every tool gets both wrappers. A refused
+  // call returns the permission refusal without running the handler, and
+  // anything a handler throws comes back as a generic error (see errors.ts).
+  withSafeToolErrors(server);
   enforceMcpToolAccess(server, auth.permission);
 
   for (const register of registrars) {

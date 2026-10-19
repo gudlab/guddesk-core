@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+import { WorkspaceRole } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
 import type { McpAuthContext } from "../auth";
 
@@ -58,7 +60,10 @@ export function registerWorkspaceTools(server: McpServer, auth: McpAuthContext) 
     {
       description: "List all members of the current workspace with their roles.",
       inputSchema: {
-        role: z.enum(["OWNER", "ADMIN", "MEMBER"]).optional().describe("Filter by role"),
+        role: z
+          .enum(WorkspaceRole)
+          .optional()
+          .describe(`Filter by role (${Object.values(WorkspaceRole).join(", ")})`),
       },
     },
     async ({ role }) => {
