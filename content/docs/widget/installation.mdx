@@ -164,6 +164,10 @@ window.GudDesk.identify({
   Once identity verification is enabled, any `identify()` call with a `userId` **must** include a valid `userHash`. Calls without it will be rejected. Anonymous visitors (no `userId`) are not affected.
 </Callout>
 
+<Callout type="info">
+  The field is called `userHash`, not `hash`. The widget does not forward a field named `hash`. With an identity secret set, an identify call without `userHash` is rejected with a 403. Without a secret, the `userId` is dropped and the visitor stays anonymous.
+</Callout>
+
 ## Verify Installation
 
 After adding the snippet:
