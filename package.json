@@ -10,7 +10,7 @@
     "dev": "next dev",
     "dev:turbo": "contentlayer2 build && next dev --turbo",
     "build:content": "contentlayer2 build",
-    "build:widget": "cd packages/widget && pnpm install && pnpm run build && cp dist/guddesk.umd.cjs ../../public/widget.js",
+    "build:widget": "cd packages/widget && pnpm install && pnpm run build && cp dist/guddesk.umd.cjs ../../public/widget.js && node ../../scripts/check-widget-bundle.mjs",
     "build": "pnpm run build:widget && pnpm run build:content && next build",
     "turbo": "next dev --turbo",
     "start": "next start",
