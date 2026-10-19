@@ -5,6 +5,7 @@ import { createHash } from "crypto";
 import { NextRequest } from "next/server";
 import { ApiKeyPermission } from "@prisma/client";
 
+import { permissionAtLeast } from "@/lib/api-permissions";
 import { prisma } from "@/lib/db";
 
 export interface AuthenticatedApiContext {
@@ -93,12 +94,7 @@ export function hasPermission(
   context: AuthenticatedApiContext,
   required: ApiKeyPermission,
 ): boolean {
-  const levels: Record<ApiKeyPermission, number> = {
-    READ_ONLY: 1,
-    READ_WRITE: 2,
-    FULL_ACCESS: 3,
-  };
-  return levels[context.permission] >= levels[required];
+  return permissionAtLeast(context.permission, required);
 }
 
 /**
