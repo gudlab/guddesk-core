@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
+import { widgetPrimaryColorError } from "@/lib/widget-color";
 import { useState } from "react";
 interface WidgetConfiguratorProps {
   workspaceId: string;
@@ -39,8 +40,13 @@ export function WidgetConfigurator({
 }: WidgetConfiguratorProps) {
   const [isPending, startTransition] = useTransition();
   const [config, setConfig] = useState(settings);
+  const colorError = widgetPrimaryColorError(config.primaryColor);
 
   function handleSave() {
+    if (colorError) {
+      toast.error(colorError);
+      return;
+    }
     startTransition(async () => {
       const result = await updateWidgetSettings(workspaceId, {
         ...config,
@@ -94,7 +100,7 @@ export function WidgetConfigurator({
               <input
                 type="color"
                 id="primaryColor"
-                value={config.primaryColor}
+                value={colorError ? "#3ECF8E" : config.primaryColor}
                 onChange={(e) =>
                   setConfig((s) => ({ ...s, primaryColor: e.target.value }))
                 }
@@ -105,9 +111,19 @@ export function WidgetConfigurator({
                 onChange={(e) =>
                   setConfig((s) => ({ ...s, primaryColor: e.target.value }))
                 }
+                placeholder="#3ECF8E"
+                maxLength={7}
+                aria-label="Primary color hex value"
+                aria-invalid={colorError ? true : undefined}
+                aria-describedby={colorError ? "primaryColor-error" : undefined}
                 className="w-28"
               />
             </div>
+            {colorError && (
+              <p id="primaryColor-error" className="text-sm text-destructive">
+                {colorError}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -291,7 +307,11 @@ export function WidgetConfigurator({
           </div>
         </div>
 
-        <Button onClick={handleSave} disabled={isPending} className="w-full">
+        <Button
+          onClick={handleSave}
+          disabled={isPending || Boolean(colorError)}
+          className="w-full"
+        >
           {isPending && (
             <Icons.spinner className="mr-2 size-4 animate-spin" />
           )}

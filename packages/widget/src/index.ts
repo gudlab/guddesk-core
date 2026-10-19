@@ -7,13 +7,16 @@ import {
   findWidgetScriptSrc,
   resolveDefaultApiOrigin,
 } from "./utils/api-origin";
+import {
+  findWidgetScriptElement,
+  mergeSnippetSettings,
+  parseScriptTagSettings,
+  type WidgetSnippetSettings,
+} from "./utils/snippet-settings";
 import { WidgetApp } from "./widget";
 
-interface GudDeskSettings {
+interface GudDeskSettings extends WidgetSnippetSettings {
   appId: string;
-  baseUrl?: string;
-  pusherKey?: string;
-  pusherCluster?: string;
 }
 
 declare global {
@@ -42,6 +45,17 @@ function getBaseUrl(explicitBaseUrl?: string): string {
   );
 }
 
+function resolveInitSettings(): GudDeskSettings | null {
+  const scripts = Array.from(document.querySelectorAll("script"));
+  const script = findWidgetScriptElement(
+    scripts.map((el) => el as HTMLScriptElement),
+  );
+  const fromScript = script ? parseScriptTagSettings(script) : {};
+  const merged = mergeSnippetSettings(fromScript, window.GudDeskSettings);
+  if (!merged.appId) return null;
+  return merged as GudDeskSettings;
+}
+
 function init(settings: GudDeskSettings) {
   if (shadowRoot) return; // Already initialized
 
@@ -66,6 +80,7 @@ function init(settings: GudDeskSettings) {
       baseUrl,
       pusherKey: settings.pusherKey,
       pusherCluster: settings.pusherCluster,
+      snippet: settings,
     }),
     shadowRoot,
   );
@@ -78,6 +93,11 @@ function destroy() {
     host.remove();
     shadowRoot = null;
   }
+}
+
+function boot() {
+  const settings = resolveInitSettings();
+  if (settings) init(settings);
 }
 
 // Public API
@@ -96,16 +116,10 @@ const GudDesk = {
 // Expose globally
 window.GudDesk = GudDesk;
 
-// Auto-init if settings are present
-if (window.GudDeskSettings) {
-  // Wait for DOM ready
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () =>
-      init(window.GudDeskSettings!),
-    );
-  } else {
-    init(window.GudDeskSettings);
-  }
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", boot);
+} else {
+  boot();
 }
 
 export default GudDesk;
