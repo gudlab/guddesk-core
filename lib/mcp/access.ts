@@ -6,11 +6,15 @@
  * deletes or sends) need READ_WRITE or better, the same level the REST API
  * asks for on create and update routes.
  *
- * enforceMcpToolAccess() wraps the server's registerTool so the check runs
- * inside every tool handler. Registering a tool that is not in the map throws,
- * so a new tool cannot ship without an access level.
+ * enforceMcpToolAccess() checks the key at tools/call dispatch and again inside
+ * every tool handler. Registering a tool that is not in the map throws, so a
+ * new tool cannot ship without an access level.
  */
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import type { ApiKeyPermission } from "@prisma/client";
 
 import { isApiKeyPermission, permissionAtLeast } from "../api-permissions";
@@ -92,48 +96,141 @@ export function mcpAccessRefusal(
 
 type AnyHandler = (...args: unknown[]) => unknown;
 
+type ToolUpdates = { name?: unknown; callback?: unknown };
+type UpdatableTool = { update: (updates: ToolUpdates) => void };
+
+const BLOCKED_MESSAGE =
+  "is not allowed on the GudDesk MCP server. Only tools registered with server.registerTool() are supported, so the API key permission check always runs.";
+
+function blocked(api: string): () => never {
+  return () => {
+    throw new Error(`${api} ${BLOCKED_MESSAGE}`);
+  };
+}
+
+function toolNameOf(request: unknown): string {
+  const name = (request as { params?: { name?: unknown } } | undefined)?.params
+    ?.name;
+  return typeof name === "string" ? name : "";
+}
+
 /**
- * Patch `server` so every tool registered after this call checks the key's
- * permission before its handler runs. Call it before registering any tools.
+ * Patch `server` so the key's permission is checked on every tool call.
+ * Call it before registering any tools.
+ *
+ * The check runs in two places:
+ * - at tools/call dispatch, before the SDK looks up the tool or validates its
+ *   arguments, so swapping a tool's handler cannot skip it
+ * - inside each tool handler, including handlers set later with
+ *   RegisteredTool.update({ callback })
+ *
+ * Every other way to add a request handler, resource, prompt or task tool
+ * throws, because none of them would go through the check.
  */
 export function enforceMcpToolAccess(
   server: McpServer,
   permission: unknown,
 ): McpServer {
-  const register = server.registerTool.bind(server) as (
-    name: string,
-    config: unknown,
-    handler: AnyHandler,
-  ) => unknown;
-
-  const guardedRegisterTool = (
-    name: string,
-    config: unknown,
-    handler: AnyHandler,
-  ) => {
+  const guardHandler = (name: string, handler: AnyHandler): AnyHandler => {
     const access = mcpToolAccess(name);
     if (!access) {
       throw new Error(
         `MCP tool "${name}" has no access level. Add it to MCP_TOOL_ACCESS in lib/mcp/access.ts.`,
       );
     }
-    const guarded: AnyHandler = async (...args) => {
+    return async (...args) => {
       if (!canCallMcpTool(permission, access)) {
         return mcpAccessRefusal(name, permission);
       }
       return handler(...args);
     };
-    return register(name, config, guarded);
   };
 
+  // Dispatch level. McpServer installs its tools/list and tools/call handlers
+  // through this method when the first tool is registered.
+  const lowLevel = server.server;
+  const setRequestHandler = lowLevel.setRequestHandler.bind(lowLevel) as (
+    schema: unknown,
+    handler: AnyHandler,
+  ) => void;
+  const guardedSetRequestHandler = (schema: unknown, handler: AnyHandler) => {
+    if (schema === ListToolsRequestSchema) {
+      return setRequestHandler(schema, handler);
+    }
+    if (schema === CallToolRequestSchema) {
+      return setRequestHandler(schema, async (request, ...rest) => {
+        const name = toolNameOf(request);
+        const access = mcpToolAccess(name);
+        if (!access) {
+          return {
+            isError: true,
+            content: [{ type: "text", text: `Tool ${name} not found.` }],
+          };
+        }
+        if (!canCallMcpTool(permission, access)) {
+          return mcpAccessRefusal(name, permission);
+        }
+        return handler(request, ...rest);
+      });
+    }
+    throw new Error(`server.server.setRequestHandler() ${BLOCKED_MESSAGE}`);
+  };
+  lowLevel.setRequestHandler =
+    guardedSetRequestHandler as unknown as typeof lowLevel.setRequestHandler;
+  Object.defineProperty(lowLevel, "fallbackRequestHandler", {
+    configurable: false,
+    get: () => undefined,
+    set: blocked("server.server.fallbackRequestHandler"),
+  });
+
+  // Handler level.
+  const register = server.registerTool.bind(server) as (
+    name: string,
+    config: unknown,
+    handler: AnyHandler,
+  ) => UpdatableTool;
+  const guardedRegisterTool = (
+    name: string,
+    config: unknown,
+    handler: AnyHandler,
+  ) => {
+    const tool = register(name, config, guardHandler(name, handler));
+    const update = tool.update.bind(tool);
+    tool.update = (updates: ToolUpdates) => {
+      if (typeof updates.name === "string" && updates.name !== name) {
+        throw new Error(
+          `Renaming MCP tool "${name}" is not allowed. Register "${updates.name}" as a new tool instead.`,
+        );
+      }
+      if (typeof updates.callback !== "undefined") {
+        updates = {
+          ...updates,
+          callback: guardHandler(name, updates.callback as AnyHandler),
+        };
+      }
+      return update(updates);
+    };
+    return tool;
+  };
   server.registerTool =
     guardedRegisterTool as unknown as McpServer["registerTool"];
-  // The older server.tool() API would skip the check. Block it.
-  server.tool = (() => {
-    throw new Error(
-      "Use server.registerTool() for GudDesk MCP tools so the API key permission check runs.",
-    );
-  }) as unknown as McpServer["tool"];
+
+  // APIs that would add a handler without the check.
+  server.tool = blocked("server.tool()") as unknown as McpServer["tool"];
+  server.registerResource = blocked(
+    "server.registerResource()",
+  ) as unknown as McpServer["registerResource"];
+  server.resource = blocked(
+    "server.resource()",
+  ) as unknown as McpServer["resource"];
+  server.registerPrompt = blocked(
+    "server.registerPrompt()",
+  ) as unknown as McpServer["registerPrompt"];
+  server.prompt = blocked("server.prompt()") as unknown as McpServer["prompt"];
+  const tasks = server.experimental.tasks as unknown as Record<string, unknown>;
+  tasks.registerToolTask = blocked(
+    "server.experimental.tasks.registerToolTask()",
+  );
 
   return server;
 }
