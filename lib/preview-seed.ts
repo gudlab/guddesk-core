@@ -6,6 +6,24 @@
  * Credentials come from env. This module never prints passwords, identity
  * secrets, or Stripe keys. Preview may receive XSS test payloads. Never
  * point the seed at production data.
+ *
+ * Safety guards, all checked before any write:
+ * - PREVIEW_SEED must be "1".
+ * - VERCEL_ENV must be unset, empty, or "preview" (trimmed, any case).
+ * - Stripe keys must be test-mode keys.
+ * - Every seeded login email must end in @guddesk.test and every seeded
+ *   workspace slug must start with "preview-", even when overridden from env.
+ *   The upserts reset passwords and identity secrets, so they must never
+ *   match a real user or a real workspace.
+ * - The database URL comes only from PREVIEW_DATABASE_URL. There is no
+ *   DATABASE_URL fallback. PRODUCTION_DATABASE_URL (or PROD_DATABASE_URL)
+ *   must also be set, and the seed refuses when both URLs point at the same
+ *   database after normalising host (lowercased, Neon "-pooler" suffix
+ *   stripped from the first label), port (default 5432), and database name.
+ * - In-DB guard: PRODUCTION_WORKSPACE_SLUG must be set (the repo has no
+ *   fixed hosted workspace slug to default to). Before the first write the
+ *   seed asks the store whether a workspace with that slug exists, and
+ *   refuses if it does, because then the target is the production database.
  */
 
 export const PREVIEW_SEED_DEFAULTS = {
@@ -65,7 +83,8 @@ export const PREVIEW_SAMPLE_THREADS = [
     visitorEmail: "sam.rivera@example.test",
     status: "OPEN" as const,
     subject: "Widget not loading on checkout",
-    visitorMessage: "The chat bubble does not show on the checkout page after a refresh.",
+    visitorMessage:
+      "The chat bubble does not show on the checkout page after a refresh.",
     agentMessage: "Thanks Sam. Checking the snippet on that URL next.",
   },
   {
@@ -81,6 +100,10 @@ export const PREVIEW_SAMPLE_THREADS = [
 ] as const;
 
 const MIN_PASSWORD_LENGTH = 8;
+
+export const PREVIEW_EMAIL_DOMAIN = "@guddesk.test";
+export const PREVIEW_SLUG_PREFIX = "preview-";
+const DEFAULT_POSTGRES_PORT = "5432";
 
 export class PreviewSeedError extends Error {
   constructor(message: string) {
@@ -112,6 +135,8 @@ export type PreviewSeedConfig = {
   };
   stripeSecretKey: string;
   stripePublishableKey?: string;
+  /** Slug of the real production workspace. Its presence means "not Preview". */
+  productionWorkspaceSlug: string;
 };
 
 export type PreviewSeedMessage = {
@@ -122,12 +147,20 @@ export type PreviewSeedMessage = {
 };
 
 export type PreviewSeedStore = {
+  /**
+   * Read-only lookup used by the in-DB guard before any write. Returns true
+   * when a workspace with this exact slug already exists.
+   */
+  workspaceSlugExists(slug: string): Promise<boolean>;
   upsertUser(input: {
     email: string;
     name: string;
     passwordHash: string;
   }): Promise<{ id: string }>;
-  upsertWorkspace(input: { slug: string; name: string }): Promise<{ id: string }>;
+  upsertWorkspace(input: {
+    slug: string;
+    name: string;
+  }): Promise<{ id: string }>;
   upsertWidgetSettings(input: {
     workspaceId: string;
     workspaceName: string;
@@ -233,36 +266,139 @@ export function assertStripeTestMode(opts: {
   }
 }
 
+export type NormalisedDatabaseTarget = {
+  host: string;
+  port: string;
+  database: string;
+};
+
 /**
- * Prefer PREVIEW_DATABASE_URL so a local .env.local can keep a production
- * DATABASE_URL without the seed writing to it. Preview may receive XSS test
- * payloads, so this URL must never be production.
+ * Reduce a Postgres URL to the parts that identify the target database:
+ * host (lowercased, with a Neon style "-pooler" suffix removed from the
+ * first label), port (default 5432), and database name (lowercased, so a
+ * case-only difference still counts as the same database). Throws on a URL
+ * that cannot be parsed or has no host.
+ */
+export function normaliseDatabaseUrl(
+  raw: string,
+  label: string,
+): NormalisedDatabaseTarget {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw.trim());
+  } catch {
+    throw new PreviewSeedError(`${label} is not a valid database URL.`);
+  }
+  if (parsed.protocol !== "postgresql:" && parsed.protocol !== "postgres:") {
+    throw new PreviewSeedError(
+      `${label} must be a postgresql:// or postgres:// URL.`,
+    );
+  }
+  const rawHost = parsed.hostname.toLowerCase().replace(/\.$/, "");
+  if (!rawHost) {
+    throw new PreviewSeedError(`${label} has no host.`);
+  }
+  const labels = rawHost.split(".");
+  labels[0] = labels[0].replace(/-pooler$/, "");
+  const host = labels.join(".");
+  const port = parsed.port || DEFAULT_POSTGRES_PORT;
+  let database: string;
+  try {
+    database = decodeURIComponent(parsed.pathname.replace(/^\/+/, ""));
+  } catch {
+    throw new PreviewSeedError(`${label} has an invalid database name.`);
+  }
+  return { host, port, database: database.toLowerCase() };
+}
+
+export function isSameDatabaseTarget(
+  a: NormalisedDatabaseTarget,
+  b: NormalisedDatabaseTarget,
+): boolean {
+  return a.host === b.host && a.port === b.port && a.database === b.database;
+}
+
+/**
+ * The seed only ever uses PREVIEW_DATABASE_URL. DATABASE_URL is ignored on
+ * purpose, so a local .env.local that points DATABASE_URL at production can
+ * never be picked up. A production URL must also be set so the seed can
+ * prove the two targets differ. Preview may receive XSS test payloads.
  */
 export function resolvePreviewDatabaseUrl(env: NodeJS.Dict<string>): {
   url: string;
-  source: "PREVIEW_DATABASE_URL" | "DATABASE_URL";
+  source: "PREVIEW_DATABASE_URL";
 } {
-  const preview = env.PREVIEW_DATABASE_URL?.trim() ?? "";
-  const fallback = env.DATABASE_URL?.trim() ?? "";
-  const url = preview || fallback;
+  const url = env.PREVIEW_DATABASE_URL?.trim() ?? "";
   if (!url) {
     throw new PreviewSeedError(
-      "Set PREVIEW_DATABASE_URL (preferred) or DATABASE_URL to a dedicated Preview Postgres database. Never point the seed at production. Preview may receive XSS test payloads.",
+      "PREVIEW_DATABASE_URL is required. Point it at a dedicated Preview Postgres database. DATABASE_URL is never used by the seed. Never point the seed at production. Preview may receive XSS test payloads.",
     );
   }
 
-  const production =
-    env.PRODUCTION_DATABASE_URL?.trim() || env.PROD_DATABASE_URL?.trim() || "";
-  if (production && url === production) {
+  const productionKeys = (
+    ["PRODUCTION_DATABASE_URL", "PROD_DATABASE_URL"] as const
+  ).filter((key) => env[key]?.trim());
+  if (productionKeys.length === 0) {
     throw new PreviewSeedError(
-      "Refusing to seed: the database URL matches PRODUCTION_DATABASE_URL / PROD_DATABASE_URL. Preview may receive XSS test payloads. Point PREVIEW_DATABASE_URL at a separate database.",
+      "PRODUCTION_DATABASE_URL (or PROD_DATABASE_URL) is required so the seed can check that PREVIEW_DATABASE_URL is not the production database. The value is only compared, never connected to.",
     );
   }
 
-  return {
-    url,
-    source: preview ? "PREVIEW_DATABASE_URL" : "DATABASE_URL",
-  };
+  const previewTarget = normaliseDatabaseUrl(url, "PREVIEW_DATABASE_URL");
+  for (const key of productionKeys) {
+    const productionTarget = normaliseDatabaseUrl(env[key]!, key);
+    if (isSameDatabaseTarget(previewTarget, productionTarget)) {
+      throw new PreviewSeedError(
+        `Refusing to seed: PREVIEW_DATABASE_URL points at the same host, port, and database as ${key}. Preview may receive XSS test payloads. Point PREVIEW_DATABASE_URL at a separate database.`,
+      );
+    }
+  }
+
+  return { url, source: "PREVIEW_DATABASE_URL" };
+}
+
+export function assertPreviewEmail(email: string, key: string): void {
+  const local = email.slice(0, -PREVIEW_EMAIL_DOMAIN.length);
+  if (!email.endsWith(PREVIEW_EMAIL_DOMAIN) || !local || local.includes("@")) {
+    throw new PreviewSeedError(
+      `${key} must be an address ending in ${PREVIEW_EMAIL_DOMAIN}. The seed resets passwords, so it only touches synthetic QA accounts.`,
+    );
+  }
+}
+
+export function assertPreviewSlug(slug: string, key: string): void {
+  if (
+    !slug.startsWith(PREVIEW_SLUG_PREFIX) ||
+    slug.length === PREVIEW_SLUG_PREFIX.length
+  ) {
+    throw new PreviewSeedError(
+      `${key} must start with "${PREVIEW_SLUG_PREFIX}". The seed overwrites widget identity secrets, so it only touches Preview workspaces.`,
+    );
+  }
+}
+
+export function assertPreviewVercelEnv(value: string | undefined): void {
+  const normalised = value?.trim().toLowerCase() ?? "";
+  if (normalised === "" || normalised === "preview") return;
+  throw new PreviewSeedError(
+    `Refusing to seed: VERCEL_ENV=${value?.trim()}. Only an unset VERCEL_ENV or VERCEL_ENV=preview is allowed. Preview may receive XSS test payloads.`,
+  );
+}
+
+/**
+ * In-DB guard. Runs before any write. If the production workspace slug
+ * exists in the target database, the target is production (or a copy of
+ * it), so the seed stops.
+ */
+export async function assertPreviewDatabase(
+  store: Pick<PreviewSeedStore, "workspaceSlugExists">,
+  productionWorkspaceSlug: string,
+): Promise<void> {
+  if (await store.workspaceSlugExists(productionWorkspaceSlug)) {
+    throw new PreviewSeedError(
+      `Refusing to seed: workspace "${productionWorkspaceSlug}" (PRODUCTION_WORKSPACE_SLUG) exists in this database, so it looks like production. Preview may receive XSS test payloads.`,
+    );
+  }
 }
 
 function requireEnv(env: NodeJS.Dict<string>, key: string): string {
@@ -319,7 +455,9 @@ function requireAgentPassword(
     };
   }
 
-  throw new PreviewSeedError(`${specificKey} is required and must not be empty.`);
+  throw new PreviewSeedError(
+    `${specificKey} is required and must not be empty.`,
+  );
 }
 
 export function parsePreviewSeedEnv(
@@ -331,11 +469,7 @@ export function parsePreviewSeedEnv(
     );
   }
 
-  if (env.VERCEL_ENV === "production") {
-    throw new PreviewSeedError(
-      "Refusing to seed: VERCEL_ENV=production. Run against a Vercel Preview (or omit VERCEL_ENV) with a dedicated Preview DATABASE_URL. Preview may receive XSS test payloads.",
-    );
-  }
+  assertPreviewVercelEnv(env.VERCEL_ENV);
 
   assertStripeTestMode({
     secretKey: env.STRIPE_SECRET_KEY,
@@ -346,21 +480,29 @@ export function parsePreviewSeedEnv(
   const ownerBPassword = requirePassword(env, PREVIEW_PASSWORD_ENV.ownerB);
   const agentA = requireAgentPassword(env, PREVIEW_PASSWORD_ENV.agentA);
   const agentB = requireAgentPassword(env, PREVIEW_PASSWORD_ENV.agentB);
-  const identitySecret = requireEnv(
-    env,
-    "PREVIEW_WORKSPACE_A_IDENTITY_SECRET",
-  );
+  const identitySecret = requireEnv(env, "PREVIEW_WORKSPACE_A_IDENTITY_SECRET");
+
+  const productionWorkspaceSlug = requireEnv(env, "PRODUCTION_WORKSPACE_SLUG");
+  if (productionWorkspaceSlug.toLowerCase().startsWith(PREVIEW_SLUG_PREFIX)) {
+    throw new PreviewSeedError(
+      `PRODUCTION_WORKSPACE_SLUG must be the real production workspace slug, not a "${PREVIEW_SLUG_PREFIX}" slug.`,
+    );
+  }
 
   const publishable = env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim();
 
-  return {
+  const config: PreviewSeedConfig = {
     ownerA: {
       email: optionalEnv(
         env,
         "PREVIEW_OWNER_A_EMAIL",
         PREVIEW_SEED_DEFAULTS.ownerAEmail,
       ).toLowerCase(),
-      name: optionalEnv(env, "PREVIEW_OWNER_A_NAME", PREVIEW_SEED_DEFAULTS.ownerAName),
+      name: optionalEnv(
+        env,
+        "PREVIEW_OWNER_A_NAME",
+        PREVIEW_SEED_DEFAULTS.ownerAName,
+      ),
       password: ownerAPassword,
       passwordEnv: PREVIEW_PASSWORD_ENV.ownerA,
     },
@@ -370,7 +512,11 @@ export function parsePreviewSeedEnv(
         "PREVIEW_OWNER_B_EMAIL",
         PREVIEW_SEED_DEFAULTS.ownerBEmail,
       ).toLowerCase(),
-      name: optionalEnv(env, "PREVIEW_OWNER_B_NAME", PREVIEW_SEED_DEFAULTS.ownerBName),
+      name: optionalEnv(
+        env,
+        "PREVIEW_OWNER_B_NAME",
+        PREVIEW_SEED_DEFAULTS.ownerBName,
+      ),
       password: ownerBPassword,
       passwordEnv: PREVIEW_PASSWORD_ENV.ownerB,
     },
@@ -380,7 +526,11 @@ export function parsePreviewSeedEnv(
         "PREVIEW_AGENT_A_EMAIL",
         PREVIEW_SEED_DEFAULTS.agentAEmail,
       ).toLowerCase(),
-      name: optionalEnv(env, "PREVIEW_AGENT_A_NAME", PREVIEW_SEED_DEFAULTS.agentAName),
+      name: optionalEnv(
+        env,
+        "PREVIEW_AGENT_A_NAME",
+        PREVIEW_SEED_DEFAULTS.agentAName,
+      ),
       password: agentA.password,
       passwordEnv: agentA.passwordEnv,
     },
@@ -390,7 +540,11 @@ export function parsePreviewSeedEnv(
         "PREVIEW_AGENT_B_EMAIL",
         PREVIEW_SEED_DEFAULTS.agentBEmail,
       ).toLowerCase(),
-      name: optionalEnv(env, "PREVIEW_AGENT_B_NAME", PREVIEW_SEED_DEFAULTS.agentBName),
+      name: optionalEnv(
+        env,
+        "PREVIEW_AGENT_B_NAME",
+        PREVIEW_SEED_DEFAULTS.agentBName,
+      ),
       password: agentB.password,
       passwordEnv: agentB.passwordEnv,
     },
@@ -421,7 +575,22 @@ export function parsePreviewSeedEnv(
     },
     stripeSecretKey: env.STRIPE_SECRET_KEY!.trim(),
     stripePublishableKey: publishable || undefined,
+    productionWorkspaceSlug,
   };
+
+  assertPreviewEmail(config.ownerA.email, "PREVIEW_OWNER_A_EMAIL");
+  assertPreviewEmail(config.ownerB.email, "PREVIEW_OWNER_B_EMAIL");
+  assertPreviewEmail(config.agentA.email, "PREVIEW_AGENT_A_EMAIL");
+  assertPreviewEmail(config.agentB.email, "PREVIEW_AGENT_B_EMAIL");
+  assertPreviewSlug(config.workspaceA.slug, "PREVIEW_WORKSPACE_A_SLUG");
+  assertPreviewSlug(config.workspaceB.slug, "PREVIEW_WORKSPACE_B_SLUG");
+  if (config.workspaceA.slug === config.workspaceB.slug) {
+    throw new PreviewSeedError(
+      "PREVIEW_WORKSPACE_A_SLUG and PREVIEW_WORKSPACE_B_SLUG must differ.",
+    );
+  }
+
+  return config;
 }
 
 async function seedWorkspaceContent(
@@ -496,6 +665,14 @@ export async function seedPreviewAccounts(
   config: PreviewSeedConfig,
   hashPassword: (password: string) => Promise<string>,
 ): Promise<PreviewSeedResult> {
+  assertPreviewEmail(config.ownerA.email, "ownerA.email");
+  assertPreviewEmail(config.ownerB.email, "ownerB.email");
+  assertPreviewEmail(config.agentA.email, "agentA.email");
+  assertPreviewEmail(config.agentB.email, "agentB.email");
+  assertPreviewSlug(config.workspaceA.slug, "workspaceA.slug");
+  assertPreviewSlug(config.workspaceB.slug, "workspaceB.slug");
+  await assertPreviewDatabase(store, config.productionWorkspaceSlug);
+
   const [ownerAHash, ownerBHash, agentAHash, agentBHash] = await Promise.all([
     hashPassword(config.ownerA.password),
     hashPassword(config.ownerB.password),
@@ -610,7 +787,7 @@ export async function seedPreviewAccounts(
 export function formatPreviewSeedReport(
   config: PreviewSeedConfig,
   result: PreviewSeedResult,
-  databaseSource?: "PREVIEW_DATABASE_URL" | "DATABASE_URL",
+  databaseSource?: "PREVIEW_DATABASE_URL",
 ): string {
   const lines = [
     "Preview seed complete (idempotent upsert).",

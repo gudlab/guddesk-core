@@ -3,15 +3,18 @@
  *
  *   PREVIEW_SEED=1 pnpm db:seed:preview
  *
- * Reads PREVIEW_DATABASE_URL (preferred) or DATABASE_URL, plus credentials,
- * from the environment (and from .env / .env.local if present). Never commit
- * those files. Refuses live Stripe keys, VERCEL_ENV=production, and a URL
- * that matches PRODUCTION_DATABASE_URL. Preview may receive XSS test
- * payloads; never point this at production data.
+ * Reads only the process environment. It does not load .env or .env.local,
+ * so a local file that points DATABASE_URL at production is never picked
+ * up. The database comes only from PREVIEW_DATABASE_URL, and the Prisma
+ * client below is built with that URL explicitly. DATABASE_URL is ignored.
+ *
+ * Refuses: live Stripe keys, any VERCEL_ENV other than unset or "preview",
+ * a missing PRODUCTION_DATABASE_URL / PROD_DATABASE_URL, a preview URL that
+ * normalises to the production database, non @guddesk.test emails, non
+ * "preview-" slugs, and a database that already contains the workspace
+ * named by PRODUCTION_WORKSPACE_SLUG. Preview may receive XSS test payloads;
+ * never point this at production data.
  */
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -25,31 +28,15 @@ import {
   type PreviewSeedStore,
 } from "../lib/preview-seed";
 
-function loadEnvFile(filePath: string): void {
-  if (!existsSync(filePath)) return;
-  for (const rawLine of readFileSync(filePath, "utf8").split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const eq = line.indexOf("=");
-    if (eq <= 0) continue;
-    const key = line.slice(0, eq).trim();
-    if (!key || process.env[key] !== undefined) continue;
-    let value = line.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    process.env[key] = value;
-  }
-}
-
-loadEnvFile(resolve(process.cwd(), ".env"));
-loadEnvFile(resolve(process.cwd(), ".env.local"));
-
 function createStore(prisma: PrismaClient): PreviewSeedStore {
   return {
+    async workspaceSlugExists(slug) {
+      const existing = await prisma.workspace.findUnique({
+        where: { slug },
+        select: { id: true },
+      });
+      return existing !== null;
+    },
     async upsertUser({ email, name, passwordHash }) {
       return prisma.user.upsert({
         where: { email },
@@ -220,6 +207,8 @@ async function main(): Promise<void> {
   const config = parsePreviewSeedEnv(process.env);
   const database = resolvePreviewDatabaseUrl(process.env);
 
+  // Connect to PREVIEW_DATABASE_URL explicitly. Never rely on an ambient
+  // DATABASE_URL.
   const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: database.url }),
   });
