@@ -388,66 +388,12 @@ curl -X DELETE https://guddesk.com/api/agent/webhooks \
 
 ## MCP Server
 
-GudDesk exposes a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server, allowing AI assistants like Claude Desktop to interact with your support data using natural language.
+GudDesk also runs a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server at `POST https://guddesk.com/api/mcp` (or `/api/mcp` on a self-hosted domain). It uses the same `gd_` API keys, scoped to one workspace, and registers 26 tools.
 
-### HTTP Transport
-
-Send MCP requests to:
-
-```
-POST https://guddesk.com/api/mcp
-```
-
-Authenticate with the same API key as the REST API:
-
-```
-Authorization: Bearer gd_abc123...
-```
-
-### Claude Desktop (Stdio)
-
-Add GudDesk to your Claude Desktop config (`claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "guddesk": {
-      "command": "npx",
-      "args": ["guddesk-mcp"],
-      "env": {
-        "GUDDESK_API_KEY": "gd_abc123..."
-      }
-    }
-  }
-}
-```
-
-### Available Tools
-
-The MCP server exposes these tools:
-
-| Tool | Description |
-|---|---|
-| `list_conversations` | List and filter conversations |
-| `get_conversation` | Get conversation details |
-| `update_conversation` | Update status, assignee, tags, priority |
-| `assign_conversation` | Assign a conversation to a team member |
-| `close_conversation` | Close a conversation |
-| `list_messages` | List messages in a conversation |
-| `send_message` | Send a message to a conversation |
-| `add_internal_note` | Add an internal note |
-| `list_customers` | List customers |
-| `get_customer` | Get customer details with recent conversations |
-| `update_customer` | Update customer name, email, avatar, or metadata |
-| `list_articles` | List knowledge base articles |
-| `get_article` | Get article content |
-| `search_articles` | Search articles by keyword |
-| `get_workspace` | Get workspace details |
-| `list_workspace_members` | List team members |
-| `list_agents` | List installed agents |
-| `get_agent` | Get agent details |
+See [MCP Server](/docs/api/mcp) for the tool list, a copy-paste `tools/call` example, and setup for Cursor and Claude Desktop.
 
 ## Next Steps
 
 - [Webhooks](/docs/api/webhooks) — Receive real-time event notifications
+- [MCP Server](/docs/api/mcp) for MCP clients such as Cursor and Claude Desktop
 - [gud-agent](https://github.com/gudlab/gud-agent) — Open-source AI support agent

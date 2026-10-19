@@ -1,0 +1,248 @@
+---
+title: MCP Server
+description: Connect MCP clients such as Cursor and Claude Desktop to a GudDesk workspace.
+---
+
+GudDesk runs a [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server. An MCP client can use it to read and update one workspace: conversations, messages, customers, companies, segments, articles, members and installed agents.
+
+There are two ways to connect:
+
+- **HTTP** at `/api/mcp`. Works with GudDesk Cloud and with self-hosted instances.
+- **stdio** by running `bin/guddesk-mcp.ts` from a clone of this repo. Self-hosted only, because the script reads API keys straight from your database.
+
+## API key
+
+Both transports use a normal GudDesk API key. Create one in **Dashboard > Settings > API Keys**.
+
+The key must:
+
+- start with `gd_`
+- be enabled and not expired
+- be scoped to a single workspace. Keys set to "All Workspaces" are rejected, because an MCP client has no way to pick a workspace.
+
+Every tool works on the workspace the key is scoped to. You do not pass a `workspaceId`.
+
+<Callout type="warning">
+The MCP server does not check the key's permission level yet. A **Read Only** key can still call tools that write, such as `send_message` and `update_customer`. Only give an MCP client a key you are happy for it to write with.
+</Callout>
+
+## HTTP
+
+```
+POST https://guddesk.com/api/mcp
+```
+
+Self-hosted instances use their own domain:
+
+```
+POST https://your-domain.com/api/mcp
+```
+
+Send the key as a Bearer token:
+
+```
+Authorization: Bearer gd_your_key_here
+```
+
+The endpoint uses the MCP Streamable HTTP transport in stateless mode. Each request is handled on its own, there are no sessions, and no `Mcp-Session-Id` header is returned. A missing or invalid key gets a `401` with a JSON-RPC error.
+
+### Example: list open conversations
+
+You can call a tool directly without an `initialize` request first. The `Accept` header must list both `application/json` and `text/event-stream`, or the server answers `406 Not Acceptable`.
+
+```bash
+curl https://guddesk.com/api/mcp \
+  -H "Authorization: Bearer gd_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "list_conversations",
+      "arguments": { "status": "OPEN", "limit": 10 }
+    }
+  }'
+```
+
+The reply comes back as a single server-sent event:
+
+```
+event: message
+data: {"result":{"content":[{"type":"text","text":"{\n  \"items\": [ ... ],\n  \"nextCursor\": null\n}"}]},"jsonrpc":"2.0","id":1}
+```
+
+The `text` field holds the tool output as a JSON string. For `list_conversations` it looks like this:
+
+```json
+{
+  "items": [
+    {
+      "id": "conversation_id",
+      "status": "OPEN",
+      "subject": "Widget not loading on checkout",
+      "priority": 0,
+      "tags": [],
+      "lastMessageAt": "2026-10-19T08:00:00.000Z",
+      "lastMessagePreview": "Thanks, checking the snippet now.",
+      "createdAt": "2026-10-19T07:55:00.000Z",
+      "closedAt": null,
+      "visitor": {
+        "id": "visitor_id",
+        "name": "Sam Rivera",
+        "email": "sam@example.com",
+        "avatarUrl": null
+      },
+      "assignee": null,
+      "_count": { "messages": 2 }
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+Results are sorted by `lastMessageAt`, newest first. When `nextCursor` is not null, pass it back as `cursor` to get the next page.
+
+To see every tool with its input schema, send `"method": "tools/list"` with the same headers.
+
+### Errors from tools
+
+When a tool cannot find a record, or has nothing to update, it still returns a normal result. The JSON in `text` is an object with an `error` field, for example `{"error": "Conversation not found"}`. Check for that field in your client.
+
+## Cursor
+
+Cursor can connect over HTTP. Add this to `~/.cursor/mcp.json`, or to `.cursor/mcp.json` in a project:
+
+```json
+{
+  "mcpServers": {
+    "guddesk": {
+      "url": "https://guddesk.com/api/mcp",
+      "headers": {
+        "Authorization": "Bearer gd_your_key_here"
+      }
+    }
+  }
+}
+```
+
+Self-hosters change the URL to their own domain.
+
+## Claude Desktop (stdio, self-hosted)
+
+GudDesk does not publish an npm package for the MCP server yet, so there is no `npx guddesk-mcp`. Run the script from a clone of this repo instead. It needs:
+
+- a clone with dependencies installed (`pnpm install`, which also runs `prisma generate`)
+- `DATABASE_URL` pointing at your GudDesk database, because the script looks up the API key there
+- `GUDDESK_API_KEY` set to a workspace key from that instance
+
+Try it from the repo root first:
+
+```bash
+DATABASE_URL="postgresql://..." GUDDESK_API_KEY=gd_your_key_here npx tsx bin/guddesk-mcp.ts
+```
+
+If the key is missing, invalid, expired or not scoped to a workspace, the script prints an error and exits.
+
+Then add it to `claude_desktop_config.json`. On macOS the file is in `~/Library/Application Support/Claude/`, on Windows in `%APPDATA%\Claude\`.
+
+```json
+{
+  "mcpServers": {
+    "guddesk": {
+      "command": "npx",
+      "args": [
+        "tsx",
+        "--tsconfig",
+        "/path/to/guddesk-core/tsconfig.json",
+        "/path/to/guddesk-core/bin/guddesk-mcp.ts"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://...",
+        "GUDDESK_API_KEY": "gd_your_key_here"
+      }
+    }
+  }
+}
+```
+
+Keep the `--tsconfig` argument. Claude Desktop does not start the script from the repo folder, and without it the `@/` imports in the code fail to resolve.
+
+The same `command`, `args` and `env` work in any other MCP client that can start a stdio server.
+
+## Tools
+
+The server registers 26 tools.
+
+### Conversations
+
+| Tool | What it does | Inputs |
+|---|---|---|
+| `list_conversations` | List conversations, newest activity first | `status` (`OPEN`, `SNOOZED`, `CLOSED`), `assigneeId`, `limit` (1 to 100, default 25), `cursor` |
+| `get_conversation` | Get one conversation with visitor, assignee and message count | `conversationId` |
+| `update_conversation` | Change status, assignee, priority, tags or subject | `conversationId`, `status`, `assigneeId` (or `null` to unassign), `priority` (0 to 3), `tags`, `subject` |
+| `assign_conversation` | Assign a conversation to a workspace member | `conversationId`, `assigneeId` |
+| `close_conversation` | Close a conversation | `conversationId` |
+
+`assigneeId` is a workspace member ID, as returned by `list_workspace_members`, not a user ID.
+
+### Messages
+
+| Tool | What it does | Inputs |
+|---|---|---|
+| `list_messages` | List messages in a conversation, oldest first | `conversationId`, `limit` (1 to 100, default 50), `cursor` |
+| `send_message` | Send a reply the customer can see | `conversationId`, `body`, `type` (`BOT` or `AGENT`, default `BOT`), `senderName` |
+| `add_internal_note` | Add a note only your team can see | `conversationId`, `body`, `senderName` |
+
+### Customers
+
+| Tool | What it does | Inputs |
+|---|---|---|
+| `list_customers` | List customers (widget visitors) | `email` (exact match), `limit` (1 to 100, default 25), `cursor` |
+| `get_customer` | Get a customer with their recent conversations | `customerId` |
+| `update_customer` | Change name, email, avatar URL or metadata | `customerId`, `name`, `email`, `avatarUrl`, `metadata` |
+| `list_customer_events` | List a customer's timeline events | `customerId`, `type` (for example `customer.identified`), `limit` (1 to 100, default 25), `cursor` |
+
+### Companies
+
+| Tool | What it does | Inputs |
+|---|---|---|
+| `list_companies` | List companies | `domain` (exact match), `limit` (1 to 100, default 25), `cursor` |
+| `get_company` | Get a company with its customers | `companyId` |
+| `create_company` | Create a company. Fails if the domain is already used | `name`, `domain`, `website`, `logoUrl`, `industry`, `metadata` |
+| `update_company` | Change a company's details | `companyId`, `name`, `domain`, `website`, `logoUrl`, `industry`, `metadata` |
+
+### Segments
+
+| Tool | What it does | Inputs |
+|---|---|---|
+| `list_segments` | List customer segments | `limit` (1 to 100, default 25), `cursor` |
+| `get_segment` | Get a segment and its conditions | `segmentId` |
+| `create_segment` | Create a segment. All conditions must match | `name`, `description`, `conditions` (list of `field`, `operator`, `value`), `color` |
+
+Condition operators are `equals`, `contains`, `gt`, `lt`, `before`, `after`, `is_set` and `is_not_set`. Fields include `email`, `companyId`, `lastSeenAt` and `metadata.<key>`.
+
+### Knowledge base
+
+| Tool | What it does | Inputs |
+|---|---|---|
+| `list_articles` | List articles | `collectionId`, `published`, `limit` (1 to 100, default 25), `cursor` |
+| `get_article` | Get an article's full content | `articleId` |
+| `search_articles` | Search published articles by title or content | `query`, `limit` (1 to 50, default 10) |
+
+### Workspace and agents
+
+| Tool | What it does | Inputs |
+|---|---|---|
+| `get_workspace` | Get the workspace with member, conversation and article counts | none |
+| `list_workspace_members` | List members and their roles | `role` (`OWNER`, `ADMIN`, `MEMBER`) |
+| `list_agents` | List installed agents | `type` (`BUILT_IN`, `MARKETPLACE`, `CUSTOM`), `enabled` |
+| `get_agent` | Get one installed agent | `agentId` |
+
+Inputs not marked as required are optional, except the ID a tool acts on and the `body` or `name` it creates.
+
+## Next steps
+
+- [API Overview](/docs/api/overview) for the REST API
+- [Webhooks](/docs/api/webhooks) for real-time events
