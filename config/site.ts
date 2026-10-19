@@ -43,7 +43,6 @@ export const footerLinks: SidebarNavItem[] = [
     items: [
       { title: "Blog", href: "/blog" },
       { title: "Documentation", href: "/docs" },
-      { title: "Help Center", href: "/help" },
       { title: "Roadmap", href: "/roadmap" },
       { title: "GitHub", href: "https://github.com/gudlab/guddesk-core" },
     ],
