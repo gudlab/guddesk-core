@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import {
   addBusinessMinutes,
   DEFAULT_SCHEDULE,
+  getDayName,
   isWithinBusinessHours,
   type WeekSchedule,
 } from "./business-hours";
@@ -338,6 +339,27 @@ describe("toLocaleString weekday (issue #8)", () => {
     assert.equal(
       isWithinBusinessHours(instant, wednesdayOnly, "America/Los_Angeles"),
       false,
+    );
+  });
+});
+
+describe("getDayName (issue #8)", () => {
+  it(
+    "uses the workspace timezone, not the runtime's",
+    { timeout: 5_000 },
+    () => {
+      const t = new Date("2026-09-16T00:30:00Z");
+      assert.equal(getDayName(t, "America/Los_Angeles"), "tuesday");
+      assert.equal(getDayName(t, "Europe/London"), "wednesday");
+      assert.equal(getDayName(t, "Pacific/Auckland"), "wednesday");
+    },
+  );
+
+  it("is stable across a DST change", { timeout: 5_000 }, () => {
+    // US clocks go back at 09:00Z on 1 Nov 2026; 08:30Z is still Sunday 01:30 PDT.
+    assert.equal(
+      getDayName(new Date("2026-11-01T08:30:00Z"), "America/Los_Angeles"),
+      "sunday",
     );
   });
 });
