@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 
-import { isOpen, config, configLoaded, conversationId, messages, showOfflineForm, restoreState } from "./stores/state";
+import { isOpen, config, configLoaded, conversationId, messages, showOfflineForm, restoreState, visitorId } from "./stores/state";
 import { initClient, fetchConfig, authenticate, fetchMessages, identify } from "./api/client";
 import { shouldShowWidget } from "./utils/page-match";
 import { initPusher, subscribeToConversation, disconnect, isConnected } from "./api/pusher";
@@ -10,6 +10,12 @@ import {
   shouldHideOnMobile,
   type WidgetSnippetSettings,
 } from "./utils/snippet-settings";
+import { safeCssColor } from "./utils/css-color";
+import {
+  browserIdentifyStorage,
+  rememberIdentify,
+  shouldSendIdentify,
+} from "./utils/identify-cache";
 import { getStyles } from "./utils/styles";
 import { ChatWindow } from "./components/chat-window";
 import { ChatBubble } from "./components/chat-bubble";
@@ -101,8 +107,27 @@ export function WidgetApp({
         isOpen.value = true;
       }
 
+      // Only identify when the snippet identity changed since the last
+      // identify for this appId and visitor. Each identify adds a timeline
+      // event on the server, so do not repeat it on every page load.
       if (snippet.name || snippet.email) {
-        identify({ name: snippet.name, email: snippet.email }).catch(() => {});
+        const storage = browserIdentifyStorage();
+        const identity = { name: snippet.name, email: snippet.email };
+        if (
+          shouldSendIdentify(storage, appId, {
+            ...identity,
+            visitorId: visitorId.value,
+          })
+        ) {
+          identify(identity)
+            .then(() => {
+              rememberIdentify(storage, appId, {
+                ...identity,
+                visitorId: visitorId.value,
+              });
+            })
+            .catch(() => {});
+        }
       }
 
       // If we have a restored conversation, fetch its messages
@@ -200,7 +225,7 @@ export function WidgetApp({
 
   return (
     <>
-      <style>{getStyles(config.value.primaryColor, config.value.position)}</style>
+      <style>{getStyles(safeCssColor(config.value.primaryColor), config.value.position)}</style>
       <div class="fc-container">
         {isOpen.value && <ChatWindow />}
         <ChatBubble />
