@@ -169,4 +169,93 @@ describe("POST /api/widget/visitors identify (route core)", () => {
     assert.equal(h.visitors.size, 0);
     assert.equal(h.tracked.length, 0);
   });
+
+  it("returns 403 when a secret is set and userHash is missing, without touching the stored visitor", async () => {
+    const h = harness({ identitySecret: "s3cret" });
+    h.visitors.set("vis_known", {
+      id: "vis_known",
+      externalId: "user_1",
+      name: "Jane",
+      email: "jane@acme.test",
+    });
+    let lookups = 0;
+    const findByExternalId = h.deps.db.findVisitorByExternalId;
+    h.deps.db.findVisitorByExternalId = async (...args) => {
+      lookups += 1;
+      return findByExternalId(...args);
+    };
+
+    for (const userHash of [undefined, "", null]) {
+      const result = await identifyWidgetVisitor(
+        {
+          appId: "app_1",
+          externalId: "user_1",
+          userHash,
+          name: "Mallory",
+          email: "mallory@evil.test",
+        },
+        h.deps,
+      );
+      assert.equal(result.status, 403, `userHash ${String(userHash)}`);
+      assert.equal(typeof result.body.error, "string");
+      assert.equal(result.body.visitorToken, undefined);
+    }
+
+    assert.equal(lookups, 0, "no lookup by externalId without a valid hash");
+    assert.equal(h.visitors.size, 1);
+    assert.deepEqual(h.visitors.get("vis_known"), {
+      id: "vis_known",
+      externalId: "user_1",
+      name: "Jane",
+      email: "jane@acme.test",
+    });
+    assert.equal(h.tracked.length, 0);
+    assert.equal(h.assigned.length, 0);
+  });
+
+  it("drops the userId when no secret is set, so the visitor stays anonymous", async () => {
+    const h = harness({ identitySecret: null });
+    h.visitors.set("vis_known", {
+      id: "vis_known",
+      externalId: "user_1",
+      name: "Jane",
+      email: "jane@acme.test",
+    });
+
+    const result = await identifyWidgetVisitor(
+      { appId: "app_1", externalId: "user_1", name: "Guest" },
+      h.deps,
+    );
+
+    assert.equal(result.status, 200);
+    assert.notEqual(result.body.visitorId, "vis_known", "not merged");
+    const created = h.visitors.get(result.body.visitorId as string);
+    assert.equal(created?.externalId, null);
+    assert.equal(created?.name, "Guest");
+    assert.deepEqual(h.visitors.get("vis_known"), {
+      id: "vis_known",
+      externalId: "user_1",
+      name: "Jane",
+      email: "jane@acme.test",
+    });
+    assert.equal(h.tracked.length, 1);
+    assert.equal(
+      (h.tracked[0]?.[4] as { externalId: unknown }).externalId,
+      null,
+    );
+
+    // A token for the anonymous visitor plus a userId still does not set it.
+    await identifyWidgetVisitor(
+      {
+        appId: "app_1",
+        visitorToken: result.body.visitorToken,
+        externalId: "user_1",
+      },
+      h.deps,
+    );
+    assert.equal(
+      h.visitors.get(result.body.visitorId as string)?.externalId,
+      null,
+    );
+  });
 });
