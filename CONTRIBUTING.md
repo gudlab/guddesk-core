@@ -35,7 +35,6 @@ QA authenticated tests need two workspaces on a **dedicated Preview database**, 
 ```bash
 export PREVIEW_DATABASE_URL='postgresql://…preview…'   # the only URL the seed connects to
 export PRODUCTION_DATABASE_URL='postgresql://…prod…'  # compared only, never connected to
-export PRODUCTION_WORKSPACE_SLUG=                     # slug of the real production workspace
 export PREVIEW_SEED=1
 export PREVIEW_OWNER_A_PASSWORD=        # from your secret store
 export PREVIEW_OWNER_B_PASSWORD=
@@ -48,7 +47,7 @@ DATABASE_URL="$PREVIEW_DATABASE_URL" pnpm prisma db push
 pnpm db:seed:preview
 ```
 
-The seed reads only `PREVIEW_DATABASE_URL`. It never falls back to `DATABASE_URL` and does not load `.env` or `.env.local`. `PRODUCTION_DATABASE_URL` (or `PROD_DATABASE_URL`) is required, and the script exits if it points at the same database as `PREVIEW_DATABASE_URL`. The comparison ignores credentials, query string, host case, and a Neon `-pooler` host suffix, and treats a missing port as 5432. Before any write the script also exits if a workspace with the slug in `PRODUCTION_WORKSPACE_SLUG` exists in the target database.
+The seed reads only `PREVIEW_DATABASE_URL`. It never falls back to `DATABASE_URL` and does not load `.env` or `.env.local`. `PRODUCTION_DATABASE_URL` (or `PROD_DATABASE_URL`) is required, and the script exits if it points at the same database as `PREVIEW_DATABASE_URL`. Both URLs are parsed with `pg-connection-string`, the same parser `pg` uses, and the comparison ignores credentials, host case, and a Neon `-pooler` host suffix, and treats a missing port as 5432. Either URL is refused outright if it has a `host`, `hostaddr`, `port`, `dbname`, `database`, `db`, `user`, or `options` query param, a `%` in the host, or no database name (always write the database, for example `/neondb`). Before any write the script also exits if the target database has any workspace whose slug does not start with `preview-`, so it only ever runs against an empty or Preview-only database.
 
 Account email overrides must end in `@guddesk.test` and workspace slug overrides must start with `preview-`. Anything else is refused, because the seed resets passwords and widget identity secrets.
 
