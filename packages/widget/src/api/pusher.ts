@@ -10,7 +10,8 @@ let reconnectHandler: (() => void) | null = null;
 const CONNECT_TIMEOUT_MS = 8000;
 
 export async function initPusher(key: string, cluster: string, authEndpoint: string) {
-  // Dynamically load pusher-js to keep bundle small when not using real-time
+  // pusher-js is bundled into widget.js (see vite.config.ts), so this import
+  // resolves inside the bundle and never asks the browser for "pusher-js".
   const { default: Pusher } = await import("pusher-js");
 
   // Use a customHandler so the visitor token is read at the time of each

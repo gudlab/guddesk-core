@@ -12,12 +12,10 @@ export default defineConfig({
         format === "umd" ? "guddesk.umd.cjs" : "guddesk.js",
     },
     rollupOptions: {
-      external: ["pusher-js"],
+      // pusher-js is bundled in. widget.js runs as a classic script on
+      // customer sites, where a bare import("pusher-js") cannot resolve.
       output: {
         inlineDynamicImports: true,
-        globals: {
-          "pusher-js": "Pusher",
-        },
       },
     },
     minify: "esbuild",

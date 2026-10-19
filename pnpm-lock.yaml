@@ -336,6 +336,9 @@ importers:
       preact:
         specifier: ^10.25.4
         version: 10.28.4
+      pusher-js:
+        specifier: 8.4.0
+        version: 8.4.0
     devDependencies:
       '@preact/preset-vite':
         specifier: ^2.9.4
