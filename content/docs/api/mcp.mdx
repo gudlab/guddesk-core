@@ -23,7 +23,7 @@ The key must:
 Every tool works on the workspace the key is scoped to. You do not pass a `workspaceId`.
 
 <Callout type="warning">
-The MCP server does not check the key's permission level yet. A **Read Only** key can still call tools that write, such as `send_message` and `update_customer`. Only give an MCP client a key you are happy for it to write with.
+Until [#22](https://github.com/gudlab/guddesk-core/issues/22) is fixed, the MCP server does not check the key's permission level. A **Read Only** key can still call tools that write, such as `send_message` and `update_customer`. Only give an MCP client a key you are happy for it to write with.
 </Callout>
 
 ## HTTP
@@ -137,6 +137,8 @@ GudDesk does not publish an npm package for the MCP server yet, so there is no `
 - `DATABASE_URL` pointing at your GudDesk database, because the script looks up the API key there
 - `GUDDESK_API_KEY` set to a workspace key from that instance
 
+The two variables are all the script needs. The script skips the check on the rest of the app env (`AUTH_SECRET`, `RESEND_API_KEY` and so on), and realtime updates through Pusher are turned off unless the Pusher variables are set.
+
 Try it from the repo root first:
 
 ```bash
@@ -236,7 +238,7 @@ Condition operators are `equals`, `contains`, `gt`, `lt`, `before`, `after`, `is
 | Tool | What it does | Inputs |
 |---|---|---|
 | `get_workspace` | Get the workspace with member, conversation and article counts | none |
-| `list_workspace_members` | List members and their roles | `role` (`OWNER`, `ADMIN`, `MEMBER`) |
+| `list_workspace_members` | List members and their roles | `role` (`OWNER` or `ADMIN`). `MEMBER` is accepted by the schema but currently fails, and `AGENT` and `VIEWER` are not accepted yet. See [#23](https://github.com/gudlab/guddesk-core/issues/23). |
 | `list_agents` | List installed agents | `type` (`BUILT_IN`, `MARKETPLACE`, `CUSTOM`), `enabled` |
 | `get_agent` | Get one installed agent | `agentId` |
 
