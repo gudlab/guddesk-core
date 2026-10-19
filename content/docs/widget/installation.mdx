@@ -165,7 +165,7 @@ window.GudDesk.identify({
 </Callout>
 
 <Callout type="info">
-  The field is called `userHash`, not `hash`. If you send `hash`, the widget ignores it and the identify call is rejected as unverified.
+  The field is called `userHash`, not `hash`. The widget does not forward a field named `hash`. With an identity secret set, an identify call without `userHash` is rejected with a 403. Without a secret, the `userId` is dropped and the visitor stays anonymous.
 </Callout>
 
 ## Verify Installation
