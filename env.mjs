@@ -2,6 +2,10 @@ import { createEnv } from "@t3-oss/env-nextjs"
 import { z } from "zod"
 
 export const env = createEnv({
+  // Scripts that run outside Next.js, such as the MCP stdio server in
+  // bin/guddesk-mcp.ts, set SKIP_ENV_VALIDATION=1 because they only need
+  // DATABASE_URL and not the full app env.
+  skipValidation: process.env.SKIP_ENV_VALIDATION === "1",
   server: {
     // This is optional because it's only used in development.
     // See https://next-auth.js.org/deployment.

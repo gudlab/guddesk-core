@@ -22,7 +22,7 @@ Most support platforms charge per-agent, lock AI behind expensive add-ons, and t
 - **REST API v1** — full CRUD for conversations, customers (including PATCH updates), articles, workspaces, agents; cursor-based pagination, rate limiting
 - **API keys** — account-level keys with optional workspace scoping ("All Workspaces" or single workspace), permission levels (Read Only / Read & Write / Full Access)
 - **Agent framework** — install/uninstall agents via API with auto-provisioned webhook endpoints and dedicated API keys
-- **MCP server** — Model Context Protocol support for AI assistants (Claude Desktop, etc.) with 18 tools covering conversations, messages, customers, articles, workspace, and agents; HTTP + stdio transports
+- **MCP server** — Model Context Protocol support for AI assistants (Claude Desktop, etc.) with 26 tools covering conversations, messages, customers, companies, segments, articles, workspace, and agents; HTTP + stdio transports
 - **Webhooks** — event subscriptions (message created, conversation created/closed/assigned), HMAC-SHA256 signed payloads
 - **Analytics** — daily snapshots, response time tracking, conversation volume
 - **Billing** — Stripe integration, Free + Pro plans
@@ -159,7 +159,7 @@ _Become the platform others build on._
 
 ### Developer Platform
 - [x] **REST API v1** — full CRUD for conversations, customers, articles, workspaces, agents; documented with examples
-- [x] **MCP server** — Model Context Protocol with 18 tools, HTTP + stdio transports, Claude Desktop integration
+- [x] **MCP server** — Model Context Protocol with 26 tools, HTTP + stdio transports, Claude Desktop integration
 - [x] **Agent framework** — install/uninstall agents via API with auto-provisioned webhooks and API keys
 - [x] **Webhooks v2** — retry logic, delivery logs, webhook debugging UI
 - [ ] **npm package / platform SDKs** — `@guddesk/widget` npm package, WordPress plugin, Shopify app

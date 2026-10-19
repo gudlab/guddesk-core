@@ -101,6 +101,11 @@ export const docsConfig: DocsConfig = {
           href: "/docs/api/webhooks",
           icon: "page",
         },
+        {
+          title: "MCP Server",
+          href: "/docs/api/mcp",
+          icon: "page",
+        },
       ],
     },
     {
