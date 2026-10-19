@@ -362,4 +362,20 @@ describe("getDayName (issue #8)", () => {
       "sunday",
     );
   });
+
+  it("does not depend on the server's own timezone", { timeout: 5_000 }, () => {
+    // Samoa skipped 30 Dec 2011 entirely. Reparsing a toLocaleString() result
+    // on a server running in Pacific/Apia pushed Friday into Saturday.
+    const prevTz = process.env.TZ;
+    process.env.TZ = "Pacific/Apia";
+    try {
+      assert.equal(
+        getDayName(new Date("2011-12-30T12:00:00Z"), "UTC"),
+        "friday",
+      );
+    } finally {
+      if (prevTz === undefined) delete process.env.TZ;
+      else process.env.TZ = prevTz;
+    }
+  });
 });
