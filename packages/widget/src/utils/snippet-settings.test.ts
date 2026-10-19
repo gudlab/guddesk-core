@@ -111,6 +111,37 @@ describe("applySnippetAppearance (issue #5)", () => {
     assert.equal(next.welcomeMessage, "Welcome");
   });
 
+  it("ignores an unsafe snippet accentColor and keeps the dashboard color", () => {
+    for (const accentColor of [
+      "red",
+      "#fff; } :host { display: none",
+      "url(https://evil.test/x)",
+    ]) {
+      const next = applySnippetAppearance(dashboard, { accentColor });
+      assert.equal(next.primaryColor, "#3ECF8E", accentColor);
+    }
+  });
+
+  it("accepts rgb() and short hex snippet colors", () => {
+    assert.equal(
+      applySnippetAppearance(dashboard, { accentColor: "rgb(99, 102, 241)" })
+        .primaryColor,
+      "rgb(99, 102, 241)",
+    );
+    assert.equal(
+      applySnippetAppearance(dashboard, { accentColor: "#60f" }).primaryColor,
+      "#60f",
+    );
+  });
+
+  it("falls back to the default when the dashboard color is unsafe too", () => {
+    const next = applySnippetAppearance(
+      { ...dashboard, primaryColor: "blue;}" },
+      { accentColor: "also bad" },
+    );
+    assert.equal(next.primaryColor, "#3ECF8E");
+  });
+
   it("allows an empty greeting", () => {
     const next = applySnippetAppearance(dashboard, { greeting: "" });
     assert.equal(next.welcomeMessage, "");

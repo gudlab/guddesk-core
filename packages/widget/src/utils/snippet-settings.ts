@@ -1,4 +1,5 @@
 import type { WidgetConfig } from "../stores/state";
+import { safeCssColor } from "./css-color";
 
 /** Same breakpoint as the widget layout CSS (`max-width: 440px`). */
 export const WIDGET_MOBILE_MAX_WIDTH = 440;
@@ -80,14 +81,19 @@ export function mergeSnippetSettings(
 
 /**
  * Snippet appearance overlays dashboard config after fetchConfig.
- * Omitted snippet keys leave the dashboard values in place.
+ * Omitted snippet keys leave the dashboard values in place. Colors are
+ * written into CSS, so an unsafe snippet color falls back to the dashboard
+ * color, and an unsafe dashboard color falls back to the default.
  */
 export function applySnippetAppearance(
   dashboard: Pick<WidgetConfig, "primaryColor" | "position" | "welcomeMessage">,
   snippet: WidgetSnippetSettings,
 ): Pick<WidgetConfig, "primaryColor" | "position" | "welcomeMessage"> {
   return {
-    primaryColor: snippet.accentColor ?? dashboard.primaryColor,
+    primaryColor: safeCssColor(
+      snippet.accentColor,
+      safeCssColor(dashboard.primaryColor),
+    ),
     position: snippet.position ?? dashboard.position,
     welcomeMessage:
       snippet.greeting !== undefined
