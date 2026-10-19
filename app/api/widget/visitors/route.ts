@@ -4,6 +4,7 @@ import { autoAssignCompany } from "@/lib/company-matching";
 import { trackCustomerEvent } from "@/lib/customer-events";
 import { prisma } from "@/lib/db";
 import { createVisitorToken, verifyVisitorToken } from "@/lib/visitor-auth";
+import { hasIdentityChanges } from "@/lib/widget-identify-changes";
 import { resolveWidgetIdentity } from "@/lib/widget-identity";
 
 // POST /api/widget/visitors
@@ -59,10 +60,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (!identity.ok) {
-        return NextResponse.json(
-          { error: identity.error },
-          { status: 403 },
-        );
+        return NextResponse.json({ error: identity.error }, { status: 403 });
       }
 
       verifiedExternalId = identity.externalId;
@@ -80,6 +78,11 @@ export async function POST(req: NextRequest) {
       });
 
       if (existingVisitor) {
+        // Only add a timeline event and rerun company matching when the
+        // identity actually changed. Repeat identify calls still refresh
+        // lastSeenAt and metadata.
+        const changed = hasIdentityChanges(existingVisitor, { name, email });
+
         // Update existing visitor
         await prisma.visitor.update({
           where: { id: existingVisitor.id },
@@ -91,20 +94,22 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Auto-assign company by email domain (fire-and-forget)
-        const visitorEmail = email ?? existingVisitor.email;
-        if (visitorEmail) {
-          autoAssignCompany(workspace.id, existingVisitor.id, visitorEmail);
-        }
+        if (changed) {
+          // Auto-assign company by email domain (fire-and-forget)
+          const visitorEmail = email ?? existingVisitor.email;
+          if (visitorEmail) {
+            autoAssignCompany(workspace.id, existingVisitor.id, visitorEmail);
+          }
 
-        // Track identify event
-        trackCustomerEvent(
-          workspace.id,
-          existingVisitor.id,
-          "customer.identified",
-          `Identified via widget${email ? ` as ${email}` : ""}`,
-          { externalId: verifiedExternalId, name, email },
-        );
+          // Track identify event
+          trackCustomerEvent(
+            workspace.id,
+            existingVisitor.id,
+            "customer.identified",
+            `Identified via widget${email ? ` as ${email}` : ""}`,
+            { externalId: verifiedExternalId, name, email },
+          );
+        }
 
         const token = createVisitorToken(existingVisitor.id, workspace.id);
         return NextResponse.json({
@@ -118,6 +123,16 @@ export async function POST(req: NextRequest) {
     if (visitorToken) {
       const payload = verifyVisitorToken(visitorToken);
       if (payload && payload.workspaceId === workspace.id) {
+        const current = await prisma.visitor.findUnique({
+          where: { id: payload.visitorId },
+          select: { externalId: true, name: true, email: true },
+        });
+        const changed = hasIdentityChanges(current, {
+          externalId: verifiedExternalId,
+          name,
+          email,
+        });
+
         await prisma.visitor.update({
           where: { id: payload.visitorId },
           data: {
@@ -130,12 +145,12 @@ export async function POST(req: NextRequest) {
         });
 
         // Auto-assign company by email domain (fire-and-forget)
-        if (email) {
+        if (changed && email) {
           autoAssignCompany(workspace.id, payload.visitorId, email);
         }
 
-        // Track identify event
-        if (verifiedExternalId || email || name) {
+        // Track identify event only when something changed
+        if (changed && (verifiedExternalId || email || name)) {
           trackCustomerEvent(
             workspace.id,
             payload.visitorId,
