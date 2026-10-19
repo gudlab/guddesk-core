@@ -6,7 +6,6 @@
  */
 
 import { prisma } from "@/lib/db";
-
 import {
   addBusinessMinutes,
   DEFAULT_SCHEDULE,
@@ -54,8 +53,7 @@ export async function computeSlaDeadlines(
     where: { workspaceId },
   });
 
-  const schedule =
-    (businessHours?.schedule as WeekSchedule) ?? DEFAULT_SCHEDULE;
+  const schedule = (businessHours?.schedule as WeekSchedule) ?? DEFAULT_SCHEDULE;
   const holidays = (businessHours?.holidays as string[]) ?? [];
   const timezone = businessHours?.timezone ?? "UTC";
 
