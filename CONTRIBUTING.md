@@ -24,6 +24,48 @@ pnpm dev
 
 Never commit `.env`, `.env.local`, or API keys.
 
+## Preview QA seed
+
+QA authenticated tests need two workspaces on a **dedicated Preview database**, not production. Preview may receive XSS test payloads. Never point the seed at production data.
+
+1. Create a separate Preview Postgres database (Neon branch or a distinct `PREVIEW_DATABASE_URL`). Do not reuse the production database.
+2. In the Vercel project, set Preview-only env vars listed in `.env.example` under "Preview QA seed", plus Preview `DATABASE_URL` (same dedicated database), Stripe **test** keys, `AUTH_SECRET`, and the other boot vars in that file. Do not copy Production Stripe live keys onto Preview.
+3. Apply schema, then seed from a machine that can reach that database:
+
+```bash
+export PREVIEW_DATABASE_URL='postgresql://…preview…'   # the only URL the seed connects to
+export PRODUCTION_DATABASE_URL='postgresql://…prod…'  # compared only, never connected to
+export PREVIEW_SEED=1
+export PREVIEW_OWNER_A_PASSWORD=        # from your secret store
+export PREVIEW_OWNER_B_PASSWORD=
+export PREVIEW_AGENT_A_PASSWORD=
+export PREVIEW_AGENT_B_PASSWORD=
+export PREVIEW_WORKSPACE_A_IDENTITY_SECRET=
+export STRIPE_SECRET_KEY=sk_test_…      # refused if sk_live_ / rk_live_
+pnpm prisma generate
+DATABASE_URL="$PREVIEW_DATABASE_URL" pnpm prisma db push
+pnpm db:seed:preview
+```
+
+The seed reads only `PREVIEW_DATABASE_URL`. It never falls back to `DATABASE_URL` and does not load `.env` or `.env.local`. `PRODUCTION_DATABASE_URL` (or `PROD_DATABASE_URL`) is required, and the script exits if it points at the same database as `PREVIEW_DATABASE_URL`. Both URLs are parsed with `pg-connection-string`, the same parser `pg` uses, and the comparison ignores credentials, host case, and a Neon `-pooler` host suffix, and treats a missing port as 5432. Either URL is refused outright if it has a `host`, `hostaddr`, `port`, `dbname`, `database`, `db`, `user`, or `options` query param, a `%` in the host, or no database name (always write the database, for example `/neondb`). Before any write the script also exits if the target database has any workspace whose slug does not start with `preview-`, so it only ever runs against an empty or Preview-only database.
+
+Account email overrides must end in `@guddesk.test` and workspace slug overrides must start with `preview-`. Anything else is refused, because the seed resets passwords and widget identity secrets.
+
+Default logins (passwords are the env values, never committed):
+
+| Email | Role | Workspace |
+|---|---|---|
+| `qa-owner-a@guddesk.test` | OWNER | `preview-a` (HMAC identity secret set) |
+| `qa-agent-a@guddesk.test` | AGENT | `preview-a` |
+| `qa-owner-b@guddesk.test` | OWNER | `preview-b` (HMAC identity secret unset) |
+| `qa-agent-b@guddesk.test` | AGENT | `preview-b` |
+
+Each workspace also gets the `getting-started` collection (3 published articles) and two sample conversations (one open, one closed). Re-running upserts users and articles; existing conversation threads are left in place so XSS payloads QA added are not wiped.
+
+The script refuses any `VERCEL_ENV` other than unset or `preview`, and live Stripe keys. It does not create Stripe customers; first checkout on Preview does that in test mode.
+
+Manual infra still needed: Preview `DATABASE_URL`, Stripe test webhook endpoint for the Preview URL if you test billing webhooks, Google OAuth redirect URIs for the Preview hostname if you test Google login, and Auth.js `AUTH_SECRET` on Preview.
+
 ## Checks
 
 ```bash
