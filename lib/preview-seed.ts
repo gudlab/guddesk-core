@@ -17,14 +17,22 @@
  *   match a real user or a real workspace.
  * - The database URL comes only from PREVIEW_DATABASE_URL. There is no
  *   DATABASE_URL fallback. PRODUCTION_DATABASE_URL (or PROD_DATABASE_URL)
- *   must also be set, and the seed refuses when both URLs point at the same
- *   database after normalising host (lowercased, Neon "-pooler" suffix
+ *   must also be set. Both URLs are parsed with pg-connection-string, the
+ *   parser pg itself uses, so the guard sees the host, port, and database
+ *   that pg will really connect to. The seed refuses when both point at the
+ *   same database after normalising host (lowercased, Neon "-pooler" suffix
  *   stripped from the first label), port (default 5432), and database name.
- * - In-DB guard: PRODUCTION_WORKSPACE_SLUG must be set (the repo has no
- *   fixed hosted workspace slug to default to). Before the first write the
- *   seed asks the store whether a workspace with that slug exists, and
- *   refuses if it does, because then the target is the production database.
+ *   It also refuses either URL outright when it has a query param that
+ *   overrides the target (host, hostaddr, port, dbname, database, db, user,
+ *   options), a "%" in the host part, or no explicit database name
+ *   (Postgres would default the database to the user name).
+ * - In-DB guard: before the first write the seed asks the store for any
+ *   workspace whose slug does not start with "preview-". If one exists, the
+ *   target holds real data, so the seed stops. A dedicated Preview database
+ *   only ever holds preview- workspaces.
  */
+
+import { parse as parsePgConnectionString } from "pg-connection-string";
 
 export const PREVIEW_SEED_DEFAULTS = {
   ownerAEmail: "qa-owner-a@guddesk.test",
@@ -135,8 +143,6 @@ export type PreviewSeedConfig = {
   };
   stripeSecretKey: string;
   stripePublishableKey?: string;
-  /** Slug of the real production workspace. Its presence means "not Preview". */
-  productionWorkspaceSlug: string;
 };
 
 export type PreviewSeedMessage = {
@@ -148,10 +154,10 @@ export type PreviewSeedMessage = {
 
 export type PreviewSeedStore = {
   /**
-   * Read-only lookup used by the in-DB guard before any write. Returns true
-   * when a workspace with this exact slug already exists.
+   * Read-only lookup used by the in-DB guard before any write. Returns the
+   * slug of any workspace that does not start with "preview-", or null.
    */
-  workspaceSlugExists(slug: string): Promise<boolean>;
+  findNonPreviewWorkspaceSlug(): Promise<string | null>;
   upsertUser(input: {
     email: string;
     name: string;
@@ -273,41 +279,94 @@ export type NormalisedDatabaseTarget = {
 };
 
 /**
- * Reduce a Postgres URL to the parts that identify the target database:
- * host (lowercased, with a Neon style "-pooler" suffix removed from the
- * first label), port (default 5432), and database name (lowercased, so a
- * case-only difference still counts as the same database). Throws on a URL
- * that cannot be parsed or has no host.
+ * Query params that pg-connection-string copies onto the pg config and that
+ * change which server, database, or role pg connects as. Any of them makes
+ * the URL refused outright, so the guard never has to reason about them.
+ */
+export const FORBIDDEN_DATABASE_URL_PARAMS = [
+  "host",
+  "hostaddr",
+  "port",
+  "dbname",
+  "database",
+  "db",
+  "user",
+  "options",
+] as const;
+
+/**
+ * Parse a Postgres URL the way pg does (pg-connection-string) and reduce it
+ * to the parts that identify the target database: host (lowercased, with a
+ * Neon style "-pooler" suffix removed from the first label), port (default
+ * 5432), and database name (lowercased, so a case-only difference still
+ * counts as the same database).
+ *
+ * Refuses: non postgres URLs, target-changing query params, a "%" in the
+ * host part, a missing host, a socket host, and a missing database name.
  */
 export function normaliseDatabaseUrl(
   raw: string,
   label: string,
 ): NormalisedDatabaseTarget {
-  let parsed: URL;
-  try {
-    parsed = new URL(raw.trim());
-  } catch {
-    throw new PreviewSeedError(`${label} is not a valid database URL.`);
-  }
-  if (parsed.protocol !== "postgresql:" && parsed.protocol !== "postgres:") {
+  const value = raw.trim();
+  const scheme = /^postgres(?:ql)?:\/\//i.exec(value);
+  if (!scheme) {
     throw new PreviewSeedError(
       `${label} must be a postgresql:// or postgres:// URL.`,
     );
   }
-  const rawHost = parsed.hostname.toLowerCase().replace(/\.$/, "");
-  if (!rawHost) {
-    throw new PreviewSeedError(`${label} has no host.`);
+
+  const rest = value.slice(scheme[0].length);
+  const authority = rest.split(/[/?#]/, 1)[0] ?? "";
+  const hostPart = authority.slice(authority.lastIndexOf("@") + 1);
+  if (hostPart.includes("%")) {
+    throw new PreviewSeedError(
+      `${label} has a percent-encoded host. Write the host in plain text.`,
+    );
+  }
+
+  const queryStart = value.indexOf("?");
+  if (queryStart !== -1) {
+    const query = value.slice(queryStart + 1).split("#", 1)[0] ?? "";
+    for (const key of new URLSearchParams(query).keys()) {
+      const lowered = key.toLowerCase();
+      if (
+        (FORBIDDEN_DATABASE_URL_PARAMS as readonly string[]).includes(lowered)
+      ) {
+        throw new PreviewSeedError(
+          `${label} has a "${key}" query param. Refusing URLs whose query string can change the host, port, database, or user.`,
+        );
+      }
+    }
+  }
+
+  let config: ReturnType<typeof parsePgConnectionString>;
+  try {
+    config = parsePgConnectionString(value);
+  } catch {
+    throw new PreviewSeedError(`${label} is not a valid database URL.`);
+  }
+
+  const rawHost = (config.host ?? "").trim().toLowerCase().replace(/\.$/, "");
+  if (!rawHost || rawHost.startsWith("/")) {
+    throw new PreviewSeedError(`${label} must name a network host.`);
   }
   const labels = rawHost.split(".");
   labels[0] = labels[0].replace(/-pooler$/, "");
   const host = labels.join(".");
-  const port = parsed.port || DEFAULT_POSTGRES_PORT;
-  let database: string;
-  try {
-    database = decodeURIComponent(parsed.pathname.replace(/^\/+/, ""));
-  } catch {
-    throw new PreviewSeedError(`${label} has an invalid database name.`);
+
+  const port = String(config.port || DEFAULT_POSTGRES_PORT);
+  if (!/^\d+$/.test(port)) {
+    throw new PreviewSeedError(`${label} has an invalid port.`);
   }
+
+  const database = (config.database ?? "").trim();
+  if (!database) {
+    throw new PreviewSeedError(
+      `${label} must name the database explicitly (for example /guddesk). Without it Postgres uses the user name as the database.`,
+    );
+  }
+
   return { host, port, database: database.toLowerCase() };
 }
 
@@ -386,17 +445,17 @@ export function assertPreviewVercelEnv(value: string | undefined): void {
 }
 
 /**
- * In-DB guard. Runs before any write. If the production workspace slug
- * exists in the target database, the target is production (or a copy of
- * it), so the seed stops.
+ * In-DB guard. Runs before any write. A dedicated Preview database only
+ * holds preview- workspaces, so any other workspace means the target holds
+ * real data (production or a copy of it) and the seed stops.
  */
 export async function assertPreviewDatabase(
-  store: Pick<PreviewSeedStore, "workspaceSlugExists">,
-  productionWorkspaceSlug: string,
+  store: Pick<PreviewSeedStore, "findNonPreviewWorkspaceSlug">,
 ): Promise<void> {
-  if (await store.workspaceSlugExists(productionWorkspaceSlug)) {
+  const slug = await store.findNonPreviewWorkspaceSlug();
+  if (slug !== null) {
     throw new PreviewSeedError(
-      `Refusing to seed: workspace "${productionWorkspaceSlug}" (PRODUCTION_WORKSPACE_SLUG) exists in this database, so it looks like production. Preview may receive XSS test payloads.`,
+      `Refusing to seed: this database has workspace "${slug}", which does not start with "${PREVIEW_SLUG_PREFIX}". A Preview database must only hold ${PREVIEW_SLUG_PREFIX} workspaces. Preview may receive XSS test payloads.`,
     );
   }
 }
@@ -481,13 +540,6 @@ export function parsePreviewSeedEnv(
   const agentA = requireAgentPassword(env, PREVIEW_PASSWORD_ENV.agentA);
   const agentB = requireAgentPassword(env, PREVIEW_PASSWORD_ENV.agentB);
   const identitySecret = requireEnv(env, "PREVIEW_WORKSPACE_A_IDENTITY_SECRET");
-
-  const productionWorkspaceSlug = requireEnv(env, "PRODUCTION_WORKSPACE_SLUG");
-  if (productionWorkspaceSlug.toLowerCase().startsWith(PREVIEW_SLUG_PREFIX)) {
-    throw new PreviewSeedError(
-      `PRODUCTION_WORKSPACE_SLUG must be the real production workspace slug, not a "${PREVIEW_SLUG_PREFIX}" slug.`,
-    );
-  }
 
   const publishable = env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim();
 
@@ -575,7 +627,6 @@ export function parsePreviewSeedEnv(
     },
     stripeSecretKey: env.STRIPE_SECRET_KEY!.trim(),
     stripePublishableKey: publishable || undefined,
-    productionWorkspaceSlug,
   };
 
   assertPreviewEmail(config.ownerA.email, "PREVIEW_OWNER_A_EMAIL");
@@ -671,7 +722,7 @@ export async function seedPreviewAccounts(
   assertPreviewEmail(config.agentB.email, "agentB.email");
   assertPreviewSlug(config.workspaceA.slug, "workspaceA.slug");
   assertPreviewSlug(config.workspaceB.slug, "workspaceB.slug");
-  await assertPreviewDatabase(store, config.productionWorkspaceSlug);
+  await assertPreviewDatabase(store);
 
   const [ownerAHash, ownerBHash, agentAHash, agentBHash] = await Promise.all([
     hashPassword(config.ownerA.password),

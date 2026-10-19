@@ -27,7 +27,6 @@ const VALID_ENV: NodeJS.Dict<string> = {
   PREVIEW_AGENT_B_PASSWORD: "agent-b-pass",
   PREVIEW_WORKSPACE_A_IDENTITY_SECRET: "hmac-secret-a",
   STRIPE_SECRET_KEY: "sk_test_preview_seed",
-  PRODUCTION_WORKSPACE_SLUG: "acme-prod",
 };
 
 function parse(overrides: NodeJS.Dict<string> = {}): PreviewSeedConfig {
@@ -223,6 +222,110 @@ describe("resolvePreviewDatabaseUrl", () => {
   });
 });
 
+describe("resolvePreviewDatabaseUrl bypasses (pg-connection-string parsing)", () => {
+  const PREVIEW_BASE =
+    "postgresql://app:secret@ep-preview.eu-west-2.aws.neon.tech:5432/guddesk";
+
+  function refuses(env: NodeJS.Dict<string>, pattern: RegExp) {
+    assert.throws(
+      () => resolvePreviewDatabaseUrl(env),
+      (err: unknown) =>
+        err instanceof PreviewSeedError && pattern.test(err.message),
+    );
+  }
+
+  for (const [param, value] of [
+    ["host", "ep-abc.eu-west-2.aws.neon.tech"],
+    ["hostaddr", "10.0.0.5"],
+    ["port", "5433"],
+    ["dbname", "guddesk"],
+    ["database", "guddesk"],
+    ["user", "neondb"],
+    ["options", "-c search_path=public"],
+    ["HOST", "ep-abc.eu-west-2.aws.neon.tech"],
+  ] as const) {
+    it(`refuses ?${param}= in PREVIEW_DATABASE_URL`, () => {
+      refuses(
+        {
+          PREVIEW_DATABASE_URL: `${PREVIEW_BASE}?sslmode=require&${param}=${encodeURIComponent(value)}`,
+          PRODUCTION_DATABASE_URL: PROD_URL,
+        },
+        new RegExp(`"${param}" query param`),
+      );
+    });
+  }
+
+  it("refuses ?host= in the production URL too", () => {
+    refuses(
+      {
+        PREVIEW_DATABASE_URL: PREVIEW_BASE,
+        PRODUCTION_DATABASE_URL: `${PROD_URL}?host=elsewhere.example`,
+      },
+      /PRODUCTION_DATABASE_URL has a "host" query param/,
+    );
+  });
+
+  it("refuses a percent-encoded host (%2D)", () => {
+    refuses(
+      {
+        PREVIEW_DATABASE_URL:
+          "postgresql://app:secret@ep%2Dabc.eu-west-2.aws.neon.tech:5432/guddesk",
+        PRODUCTION_DATABASE_URL: PROD_URL,
+      },
+      /percent-encoded host/,
+    );
+  });
+
+  it("allows a percent-encoded password, since only the host part is checked", () => {
+    assert.doesNotThrow(() =>
+      resolvePreviewDatabaseUrl({
+        PREVIEW_DATABASE_URL:
+          "postgresql://app:p%40ss%2Dword@ep-preview.eu-west-2.aws.neon.tech/guddesk",
+        PRODUCTION_DATABASE_URL: PROD_URL,
+      }),
+    );
+  });
+
+  it("refuses a preview URL with no database name (user neondb)", () => {
+    for (const url of [
+      "postgresql://neondb:secret@ep-abc.eu-west-2.aws.neon.tech",
+      "postgresql://neondb:secret@ep-abc.eu-west-2.aws.neon.tech/",
+      "postgresql://neondb:secret@ep-abc.eu-west-2.aws.neon.tech/?sslmode=require",
+    ]) {
+      refuses(
+        {
+          PREVIEW_DATABASE_URL: url,
+          PRODUCTION_DATABASE_URL:
+            "postgresql://neondb:secret@ep-abc.eu-west-2.aws.neon.tech/neondb",
+        },
+        /PREVIEW_DATABASE_URL must name the database explicitly/,
+      );
+    }
+  });
+
+  it("refuses a production URL with no database name", () => {
+    refuses(
+      {
+        PREVIEW_DATABASE_URL: PREVIEW_BASE,
+        PRODUCTION_DATABASE_URL:
+          "postgresql://neondb:secret@ep-abc.eu-west-2.aws.neon.tech",
+      },
+      /PRODUCTION_DATABASE_URL must name the database explicitly/,
+    );
+  });
+
+  it("refuses a socket host", () => {
+    refuses(
+      {
+        PREVIEW_DATABASE_URL:
+          "socket://app:secret@/var/run/postgresql?db=guddesk",
+        PRODUCTION_DATABASE_URL: PROD_URL,
+      },
+      /postgresql:\/\/ or postgres:\/\//,
+    );
+  });
+});
+
 describe("normaliseDatabaseUrl", () => {
   it("lowercases the host, strips -pooler from the first label, and defaults the port", () => {
     assert.deepEqual(
@@ -270,7 +373,6 @@ describe("parsePreviewSeedEnv", () => {
     assert.equal(config.ownerA.email, "owner.a@guddesk.test");
     assert.equal(config.agentB.email, "agent.b@guddesk.test");
     assert.equal(config.workspaceB.slug, "preview-qa-b");
-    assert.equal(config.productionWorkspaceSlug, "acme-prod");
   });
 
   for (const key of [
@@ -317,22 +419,6 @@ describe("parsePreviewSeedEnv", () => {
   it("refuses identical workspace A and B slugs", () => {
     assert.throws(
       () => parse({ PREVIEW_WORKSPACE_B_SLUG: "preview-a" }),
-      PreviewSeedError,
-    );
-  });
-
-  it("requires PRODUCTION_WORKSPACE_SLUG", () => {
-    assert.throws(
-      () => parse({ PRODUCTION_WORKSPACE_SLUG: undefined }),
-      (err: unknown) =>
-        err instanceof PreviewSeedError &&
-        /PRODUCTION_WORKSPACE_SLUG is required/.test(err.message),
-    );
-  });
-
-  it("refuses a preview- PRODUCTION_WORKSPACE_SLUG", () => {
-    assert.throws(
-      () => parse({ PRODUCTION_WORKSPACE_SLUG: "preview-a" }),
       PreviewSeedError,
     );
   });
@@ -453,8 +539,11 @@ function memoryStore(): PreviewSeedStore & {
   >();
 
   return {
-    async workspaceSlugExists(slug) {
-      return workspaces.has(slug);
+    async findNonPreviewWorkspaceSlug() {
+      for (const slug of workspaces.keys()) {
+        if (!slug.startsWith("preview-")) return slug;
+      }
+      return null;
     },
     users,
     workspaces,
@@ -640,28 +729,48 @@ describe("seedPreviewAccounts", () => {
 });
 
 describe("in-DB production guard", () => {
-  it("refuses before any write when the production workspace slug exists", async () => {
+  it("refuses before any write when a non-preview workspace exists", async () => {
     const store = memoryStore();
-    store.workspaces.set("acme-prod", { id: "ws_prod", name: "Acme" });
+    store.workspaces.set("preview-a", { id: "ws_a", name: "A" });
+    store.workspaces.set("acme", { id: "ws_prod", name: "Acme" });
     const config = parse();
 
     await assert.rejects(
       seedPreviewAccounts(store, config, async (p) => p),
       (err: unknown) =>
         err instanceof PreviewSeedError &&
-        /acme-prod/.test(err.message) &&
-        /PRODUCTION_WORKSPACE_SLUG/.test(err.message),
+        /"acme"/.test(err.message) &&
+        /preview-/.test(err.message),
     );
     assert.equal(store.users.size, 0);
-    assert.equal(store.workspaces.size, 1);
+    assert.equal(store.workspaces.size, 2);
+    assert.equal(store.workspaces.get("preview-a")?.name, "A");
     assert.equal(store.widgets.size, 0);
     assert.equal(store.members.size, 0);
+    assert.equal(store.collections.size, 0);
+    assert.equal(store.articles.size, 0);
+    assert.equal(store.visitors.size, 0);
+    assert.equal(store.conversations.size, 0);
   });
 
-  it("passes when the production workspace slug is absent", async () => {
+  it("passes on an empty database", async () => {
+    await assert.doesNotReject(assertPreviewDatabase(memoryStore()));
+  });
+
+  it("passes when only preview- workspaces exist, so re-runs work", async () => {
     const store = memoryStore();
-    store.workspaces.set("someone-else", { id: "ws_x", name: "X" });
-    await assert.doesNotReject(assertPreviewDatabase(store, "acme-prod"));
+    const config = parse();
+    await seedPreviewAccounts(store, config, async (p) => p);
+    await assert.doesNotReject(assertPreviewDatabase(store));
+    await assert.doesNotReject(
+      seedPreviewAccounts(store, config, async (p) => p),
+    );
+  });
+
+  it("treats a slug that only contains preview- as non-preview", async () => {
+    const store = memoryStore();
+    store.workspaces.set("my-preview-a", { id: "ws_x", name: "X" });
+    await assert.rejects(assertPreviewDatabase(store), PreviewSeedError);
   });
 
   it("refuses a hand-built config with a non-preview slug or email", async () => {

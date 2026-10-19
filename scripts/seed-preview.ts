@@ -10,10 +10,12 @@
  *
  * Refuses: live Stripe keys, any VERCEL_ENV other than unset or "preview",
  * a missing PRODUCTION_DATABASE_URL / PROD_DATABASE_URL, a preview URL that
- * normalises to the production database, non @guddesk.test emails, non
- * "preview-" slugs, and a database that already contains the workspace
- * named by PRODUCTION_WORKSPACE_SLUG. Preview may receive XSS test payloads;
- * never point this at production data.
+ * pg would connect to the production database through (parsed with
+ * pg-connection-string), URLs with target-changing query params, an
+ * encoded host, or no database name, non @guddesk.test emails, non
+ * "preview-" slugs, and a database that holds any workspace whose slug does
+ * not start with "preview-". Preview may receive XSS test payloads; never
+ * point this at production data.
  */
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
@@ -22,6 +24,7 @@ import bcrypt from "bcryptjs";
 import {
   formatPreviewSeedReport,
   parsePreviewSeedEnv,
+  PREVIEW_SLUG_PREFIX,
   PreviewSeedError,
   resolvePreviewDatabaseUrl,
   seedPreviewAccounts,
@@ -30,12 +33,12 @@ import {
 
 function createStore(prisma: PrismaClient): PreviewSeedStore {
   return {
-    async workspaceSlugExists(slug) {
-      const existing = await prisma.workspace.findUnique({
-        where: { slug },
-        select: { id: true },
+    async findNonPreviewWorkspaceSlug() {
+      const found = await prisma.workspace.findFirst({
+        where: { NOT: { slug: { startsWith: PREVIEW_SLUG_PREFIX } } },
+        select: { slug: true },
       });
-      return existing !== null;
+      return found?.slug ?? null;
     },
     async upsertUser({ email, name, passwordHash }) {
       return prisma.user.upsert({
