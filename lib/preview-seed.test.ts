@@ -314,6 +314,74 @@ describe("resolvePreviewDatabaseUrl bypasses (pg-connection-string parsing)", ()
     );
   });
 
+  it("refuses a comma-separated multi-host URL", () => {
+    for (const url of [
+      "postgresql://app:secret@ep-preview.eu-west-2.aws.neon.tech,ep-abc.eu-west-2.aws.neon.tech/guddesk",
+      "postgresql://app:secret@ep-preview.eu-west-2.aws.neon.tech:5432,ep-abc.eu-west-2.aws.neon.tech:5432/guddesk",
+    ]) {
+      refuses(
+        { PREVIEW_DATABASE_URL: url, PRODUCTION_DATABASE_URL: PROD_URL },
+        /PREVIEW_DATABASE_URL lists more than one host/,
+      );
+    }
+    refuses(
+      {
+        PREVIEW_DATABASE_URL: PREVIEW_BASE,
+        PRODUCTION_DATABASE_URL:
+          "postgresql://app:secret@ep-a.eu-west-2.aws.neon.tech,ep-b.eu-west-2.aws.neon.tech/guddesk",
+      },
+      /PRODUCTION_DATABASE_URL lists more than one host/,
+    );
+  });
+
+  it("uses PGPORT as the default port, like pg, when a URL has no port", () => {
+    const host = "postgresql://app:secret@db.example.test";
+    // Preview has no port, so pg would connect on PGPORT=5433, the same as prod.
+    refuses(
+      {
+        PGPORT: "5433",
+        PREVIEW_DATABASE_URL: `${host}/guddesk`,
+        PRODUCTION_DATABASE_URL: `${host}:5433/guddesk`,
+      },
+      /points at the same host, port, and database/,
+    );
+    // Without PGPORT the same pair is 5432 vs 5433, so they differ.
+    assert.doesNotThrow(() =>
+      resolvePreviewDatabaseUrl({
+        PREVIEW_DATABASE_URL: `${host}/guddesk`,
+        PRODUCTION_DATABASE_URL: `${host}:5433/guddesk`,
+      }),
+    );
+    // PGPORT also applies to the production URL.
+    refuses(
+      {
+        PGPORT: "6543",
+        PREVIEW_DATABASE_URL: `${host}:6543/guddesk`,
+        PRODUCTION_DATABASE_URL: `${host}/guddesk`,
+      },
+      /points at the same host, port, and database/,
+    );
+    // An explicit port in the URL wins over PGPORT.
+    assert.doesNotThrow(() =>
+      resolvePreviewDatabaseUrl({
+        PGPORT: "5433",
+        PREVIEW_DATABASE_URL: `${host}:5432/guddesk`,
+        PRODUCTION_DATABASE_URL: `${host}/guddesk`,
+      }),
+    );
+  });
+
+  it("refuses a PGPORT that is not a number", () => {
+    refuses(
+      {
+        PGPORT: "5432abc",
+        PREVIEW_DATABASE_URL: PREVIEW_BASE,
+        PRODUCTION_DATABASE_URL: PROD_URL,
+      },
+      /PGPORT must be a port number/,
+    );
+  });
+
   it("refuses a socket host", () => {
     refuses(
       {

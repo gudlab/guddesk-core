@@ -297,16 +297,19 @@ export const FORBIDDEN_DATABASE_URL_PARAMS = [
 /**
  * Parse a Postgres URL the way pg does (pg-connection-string) and reduce it
  * to the parts that identify the target database: host (lowercased, with a
- * Neon style "-pooler" suffix removed from the first label), port (default
- * 5432), and database name (lowercased, so a case-only difference still
+ * Neon style "-pooler" suffix removed from the first label), port (the URL's
+ * port, else `defaultPort`, which the caller sets from PGPORT the same way pg
+ * does, else 5432), and database name (lowercased, so a case-only difference still
  * counts as the same database).
  *
- * Refuses: non postgres URLs, target-changing query params, a "%" in the
- * host part, a missing host, a socket host, and a missing database name.
+ * Refuses: non postgres URLs, target-changing query params, a "%" or ","
+ * in the host part (a "," lists several hosts), a missing host, a socket
+ * host, and a missing database name.
  */
 export function normaliseDatabaseUrl(
   raw: string,
   label: string,
+  defaultPort: string = DEFAULT_POSTGRES_PORT,
 ): NormalisedDatabaseTarget {
   const value = raw.trim();
   const scheme = /^postgres(?:ql)?:\/\//i.exec(value);
@@ -322,6 +325,11 @@ export function normaliseDatabaseUrl(
   if (hostPart.includes("%")) {
     throw new PreviewSeedError(
       `${label} has a percent-encoded host. Write the host in plain text.`,
+    );
+  }
+  if (hostPart.includes(",")) {
+    throw new PreviewSeedError(
+      `${label} lists more than one host. Use a single host.`,
     );
   }
 
@@ -355,7 +363,7 @@ export function normaliseDatabaseUrl(
   labels[0] = labels[0].replace(/-pooler$/, "");
   const host = labels.join(".");
 
-  const port = String(config.port || DEFAULT_POSTGRES_PORT);
+  const port = String(config.port || defaultPort);
   if (!/^\d+$/.test(port)) {
     throw new PreviewSeedError(`${label} has an invalid port.`);
   }
@@ -403,9 +411,20 @@ export function resolvePreviewDatabaseUrl(env: NodeJS.Dict<string>): {
     );
   }
 
-  const previewTarget = normaliseDatabaseUrl(url, "PREVIEW_DATABASE_URL");
+  // pg falls back to PGPORT when a URL has no port, so compare with it too.
+  const pgPort = env.PGPORT?.trim();
+  if (pgPort && !/^\d+$/.test(pgPort)) {
+    throw new PreviewSeedError("PGPORT must be a port number when set.");
+  }
+  const defaultPort = pgPort || DEFAULT_POSTGRES_PORT;
+
+  const previewTarget = normaliseDatabaseUrl(
+    url,
+    "PREVIEW_DATABASE_URL",
+    defaultPort,
+  );
   for (const key of productionKeys) {
-    const productionTarget = normaliseDatabaseUrl(env[key]!, key);
+    const productionTarget = normaliseDatabaseUrl(env[key]!, key, defaultPort);
     if (isSameDatabaseTarget(previewTarget, productionTarget)) {
       throw new PreviewSeedError(
         `Refusing to seed: PREVIEW_DATABASE_URL points at the same host, port, and database as ${key}. Preview may receive XSS test payloads. Point PREVIEW_DATABASE_URL at a separate database.`,
