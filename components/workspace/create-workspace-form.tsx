@@ -23,7 +23,11 @@ import { Icons } from "@/components/shared/icons";
 
 type FormValues = z.infer<typeof createWorkspaceSchema>;
 
-export function CreateWorkspaceForm() {
+export function CreateWorkspaceForm({
+  canCreate = true,
+}: {
+  canCreate?: boolean;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -99,7 +103,7 @@ export function CreateWorkspaceForm() {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isPending}>
+        <Button type="submit" className="w-full" disabled={isPending || !canCreate}>
           {isPending && (
             <Icons.spinner className="mr-2 size-4 animate-spin" />
           )}

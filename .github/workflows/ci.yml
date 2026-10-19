@@ -4,7 +4,14 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+
+env:
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  AUTH_SECRET: ci-placeholder-auth-secret-value
+  GOOGLE_CLIENT_ID: ci-google-client-id
+  GOOGLE_CLIENT_SECRET: ci-google-client-secret
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/guddesk
+  RESEND_API_KEY: re_ci_placeholder
 
 jobs:
   test:
@@ -20,7 +27,9 @@ jobs:
           node-version-file: ".nvmrc"
           cache: pnpm
       - name: Install
-        run: pnpm install --ignore-scripts
+        run: pnpm install
+      - name: Prisma generate
+        run: pnpm exec prisma generate
       - name: Test
         run: |
           set -o pipefail
@@ -31,3 +40,11 @@ jobs:
             exit 1
           fi
           echo "Ran $count tests"
+      - name: Build content
+        run: pnpm build:content
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Build
+        run: pnpm build

@@ -103,76 +103,75 @@ export const features: Feature[] = [
   {
     slug: "ai-agents",
     name: "AI Agents",
-    tagline: "Autonomous support agents that resolve conversations",
-    headline: "AI agents that actually resolve tickets — included free.",
+    tagline: "Connect your own bot. Claude helps your team.",
+    headline: "Reply as BOT through the API. Claude suggests replies for your team.",
     description:
-      "GudDesk includes three built-in AI agents that handle L1 support, route conversations, and onboard new users. No per-resolution fees. No premium add-on. They search your knowledge base and act on behalf of your team.",
+      "Install your own agent to receive webhooks and reply as BOT. Claude can suggest replies, summarise threads and read sentiment. A first-party GudDesk agent is on the roadmap. There is no per-resolution fee.",
     icon: "sparkles",
     highlights: [
       {
-        title: "GudBot — L1 auto-resolver",
+        title: "Your own agent",
         description:
-          "Answers FAQs by searching your knowledge base. Suggests articles, provides step-by-step instructions, and escalates when it's stuck.",
-        icon: "bot",
-      },
-      {
-        title: "TriageBot — intelligent routing",
-        description:
-          "Classifies conversations by intent (bug, billing, feature request) and routes them to the right team member with tags and priority.",
-        icon: "automations",
-      },
-      {
-        title: "OnboardBot — visitor concierge",
-        description:
-          "Greets new visitors, collects context, and guides them through setup. Hands off to a human when the visitor is ready.",
-        icon: "users",
-      },
-      {
-        title: "Custom agents via API",
-        description:
-          "Build your own AI agent in any language. Use webhooks to receive events and the REST API to reply as a BOT in conversations.",
+          "Install an agent to get a webhook and an API key. It hears about new messages and replies as BOT in the widget and inbox.",
         icon: "code",
+      },
+      {
+        title: "REST API and MCP",
+        description:
+          "Conversations, customers, articles, companies, segments and workspaces. Build in any language.",
+        icon: "server",
+      },
+      {
+        title: "Claude assist",
+        description:
+          "Reply suggestions, summaries and sentiment. Cloud Pro includes this. Self-hosters set ANTHROPIC_API_KEY.",
+        icon: "sparkles",
+      },
+      {
+        title: "First-party agent",
+        description:
+          "A built-in GudDesk AI agent is on the roadmap. It is not shipped yet.",
+        icon: "bot",
       },
     ],
     capabilities: [
-      "Three built-in agents",
-      "Knowledge base search",
-      "Intent classification",
-      "Auto-tagging and routing",
+      "Custom agents via API",
+      "BOT message type",
+      "Webhook event triggers",
+      "REST API and MCP",
       "Conversation summarization",
       "Sentiment analysis",
       "Reply suggestions",
-      "Custom agent framework",
-      "Webhook event triggers",
       "No per-resolution fees",
+      "First-party agent on the roadmap",
     ],
     useCaseExamples: [
       {
-        title: "Overnight support coverage",
+        title: "Overnight coverage with your bot",
         description:
-          "AI agents handle conversations while your team sleeps. GudBot resolves common questions and TriageBot queues urgent issues for the morning.",
+          "Your agent receives webhooks while the team is offline and replies as BOT.",
       },
       {
         title: "Launch day traffic spikes",
         description:
-          "When conversation volume spikes 10x, AI agents absorb the wave. Your team handles only the conversations that need a human touch.",
+          "When volume spikes, your own bot can take the first reply. Humans step in on the conversations that need them.",
       },
     ],
     faqs: [
       {
-        question: "Are AI agents really free?",
+        question: "Is there a built-in AI agent?",
         answer:
-          "Yes. All three built-in agents (GudBot, TriageBot, OnboardBot) are included in every plan, including the free tier. There are no per-resolution or per-conversation fees.",
+          "Not yet. One is on the roadmap. Today you connect your own agent, or use Claude assist on Cloud Pro (self-hosters add an Anthropic key).",
       },
       {
         question: "Can I build my own AI agent?",
         answer:
-          "Yes. The agent framework lets you create custom agents using webhooks and the REST API. Your agent receives conversation events via webhook and replies via the API.",
+          "Yes. Installing an agent gives it a webhook and an API key. It receives conversation events and replies through the REST API or the MCP server.",
       },
       {
-        question: "What AI model powers the agents?",
+        question: "What AI model powers the built-in assist?",
         answer:
-          "Built-in AI features use Claude by Anthropic. For advanced AI reasoning in custom agents, you can bring your own API key from any provider.",
+          "Claude, by Anthropic. Custom agents can use any model you like. There is no per-resolution fee.",
       },
     ],
     relatedFeatures: ["live-chat", "shared-inbox", "automation-rules"],
@@ -276,9 +275,9 @@ export const features: Feature[] = [
         icon: "globe",
       },
       {
-        title: "AI-powered article suggestions",
+        title: "Help center search",
         description:
-          "The chat widget suggests relevant articles before visitors start a conversation. AI agents also search your knowledge base when answering questions.",
+          "Published articles are searchable in your help center. Your own agent can search the same articles through the API.",
         icon: "sparkles",
       },
       {
@@ -309,7 +308,7 @@ export const features: Feature[] = [
       {
         title: "Train AI agents with documentation",
         description:
-          "Every article you publish becomes knowledge that GudBot can search. The more you document, the more questions AI can resolve autonomously.",
+          "Your own agent can search the same help center through the API.",
       },
     ],
     faqs: [
@@ -319,9 +318,9 @@ export const features: Feature[] = [
           "Yes. Set your help center title, subtitle, primary color, and logo. The help center matches your brand and is available at a dedicated URL.",
       },
       {
-        question: "Do articles feed into the AI agents?",
+        question: "Do articles feed into the AI features?",
         answer:
-          "Yes. AI agents search your published articles when answering questions. This means every new article you write makes your AI support better.",
+          "Your own agent can search the same help center through the API.",
       },
       {
         question: "Can I import existing documentation?",
@@ -381,7 +380,7 @@ export const features: Feature[] = [
       {
         title: "Auto-route by topic",
         description:
-          "When TriageBot tags a conversation as 'billing', an automation assigns it to your billing specialist. When it's tagged 'bug', it goes to engineering.",
+          "When a conversation is tagged billing, an automation can assign it to your billing specialist. When it is tagged bug, it can go to engineering.",
       },
       {
         title: "Escalation on SLA breach",

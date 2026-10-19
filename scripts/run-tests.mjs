@@ -46,7 +46,7 @@ if (files.length === 0) {
 const tsxCli = join("node_modules", "tsx", "dist", "cli.mjs");
 const result = spawnSync(
   process.execPath,
-  [tsxCli, "--test", "--test-timeout=5000", ...files],
+  [tsxCli, "--test", "--test-reporter=tap", "--test-timeout=5000", ...files],
   { encoding: "utf8" },
 );
 

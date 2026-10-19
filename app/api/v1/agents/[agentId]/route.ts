@@ -54,7 +54,6 @@ export async function GET(
       return withHeaders(apiError("Agent not found", 404), rateLimitHeaders);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { workspaceId: _ws, ...data } = agent;
     return withHeaders(apiOk(data), rateLimitHeaders);
   } catch (error) {

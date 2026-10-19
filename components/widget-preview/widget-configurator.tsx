@@ -19,6 +19,7 @@ import { Icons } from "@/components/shared/icons";
 import { useState } from "react";
 interface WidgetConfiguratorProps {
   workspaceId: string;
+  plan?: string;
   settings: {
     primaryColor: string;
     position: "bottom-right" | "bottom-left";

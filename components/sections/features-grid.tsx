@@ -26,9 +26,9 @@ const features = [
   },
   {
     icon: Icons.sparkles,
-    title: "AI Agent Plugins",
+    title: "AI agent API",
     description:
-      "Plug in AI bots that resolve L1 tickets, triage issues, and escalate to humans. Build your own or use pre-built agents.",
+      "Connect your own bot. It receives webhooks and replies as BOT in the widget and inbox.",
     illustration: AIIllustration,
   },
   {
