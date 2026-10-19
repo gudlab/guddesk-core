@@ -6,29 +6,28 @@ import { buttonVariants } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
 
 const stats = [
-  { value: "8s", label: "Avg. AI resolution time" },
-  { value: "73%", label: "Tickets auto-resolved" },
+  { value: "$29", label: "Pro per month, any team size" },
   { value: "$0", label: "Per AI resolution" },
 ];
 
 const capabilities = [
   {
     icon: Icons.sparkles,
-    title: "Agentic Infrastructure",
+    title: "Built for AI agents",
     description:
-      "GudDesk gives autonomous agents the APIs, structured knowledge, and conversation context they need to actually resolve issues — not just respond to them.",
+      "Your own AI agent can read conversations and reply as BOT through the REST API, or connect through the GudDesk MCP server.",
   },
   {
     icon: Icons.messageCircle,
     title: "Shared Inbox & Live Chat",
     description:
-      "One inbox for your whole team — human and AI. Assignments, tags, snooze, shortcuts. Everyone sees the same context, nothing falls through the cracks.",
+      "One inbox for chat and email. Assign conversations, tag them, snooze them and leave internal notes. Bot replies show up in the same thread as your team's.",
   },
   {
     icon: Icons.code,
-    title: "Open source. Self-hostable. Free.",
+    title: "Open source and self-hostable",
     description:
-      "GPL-3.0 licensed and fully self-hostable. Audit every line, run it on your own servers, and never worry about vendor lock-in. Free for teams of 3 or fewer, with every feature included.",
+      "AGPL-3.0 licensed. Run it on your own Postgres with no caps. On GudDesk Cloud, the Free plan covers 2 members and 500 conversations a month.",
   },
 ];
 
@@ -102,7 +101,7 @@ export default function HeroAgents() {
         </div>
 
         {/* Stats bar */}
-        <div className="bg-card mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-6 rounded-2xl border p-6 shadow-sm">
+        <div className="bg-card mx-auto mt-14 grid max-w-2xl grid-cols-2 gap-6 rounded-2xl border p-6 shadow-sm">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
               <div className="font-satoshi text-2xl font-black text-emerald-600 sm:text-3xl dark:text-emerald-400">
@@ -142,9 +141,9 @@ export default function HeroAgents() {
                 <Icons.sparkles className="size-4 text-white" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-white">GudBot</div>
+                <div className="text-sm font-semibold text-white">Your AI agent</div>
                 <div className="text-xs text-white/70">
-                  AI Agent &middot; Resolves in seconds
+                  Example bot connected via the agent API
                 </div>
               </div>
               <div className="ml-auto flex size-2 items-center">
@@ -187,15 +186,14 @@ export default function HeroAgents() {
               <div className="flex justify-center">
                 <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
                   <Icons.check className="size-3" />
-                  Resolved by GudBot in 8 seconds
+                  Sent as BOT through the GudDesk API
                 </div>
               </div>
             </div>
           </div>
 
           <p className="text-muted-foreground mt-4 text-center text-xs">
-            No per-resolution fees &middot; No API key required for built-in
-            agents &middot; Free tier included
+            No per-resolution fees &middot; Free plan available
           </p>
         </div>
       </div>

@@ -83,7 +83,7 @@ Self-host: keep the same `appId` and load `https://your-domain/widget.js` instea
 
 ### Prerequisites
 
-- **Node.js 20+**
+- **Node.js 20.19+** (Prisma 7; 20.18 throws `ERR_REQUIRE_ESM` on `prisma generate`)
 - **pnpm**
 - **PostgreSQL** (e.g. [Neon](https://neon.tech) or local)
 

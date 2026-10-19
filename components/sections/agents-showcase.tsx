@@ -8,22 +8,10 @@ import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
 const agentExamples = [
   {
-    name: "GudBot",
-    desc: "AI support agent that resolves L1 tickets autonomously — answers FAQs, suggests articles, and escalates when stuck.",
-    tags: ["Auto-reply", "KB Search", "Escalation"],
+    name: "Bring your own agent",
+    desc: "Install an agent to get a webhook and an API key. It hears about new messages and replies as BOT.",
+    tags: ["Webhooks", "REST API + MCP"],
     color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  },
-  {
-    name: "TriageBot",
-    desc: "Routes conversations by intent. Detects billing, bugs, or feature requests and assigns to the right team instantly.",
-    tags: ["Categorize", "Auto-assign", "Tag"],
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  },
-  {
-    name: "OnboardBot",
-    desc: "Greets new visitors, collects context, and walks them through setup — like a concierge in your widget.",
-    tags: ["Welcome flow", "Data capture", "Guided setup"],
-    color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   },
 ];
 
@@ -31,22 +19,22 @@ const pluginCapabilities = [
   {
     icon: Icons.messageCircle,
     title: "Conversational",
-    desc: "Agents read messages and reply as BOT — indistinguishable from human agents to the visitor.",
+    desc: "Agents read messages and reply as BOT. Visitors see those replies in the widget like any other message.",
   },
   {
     icon: Icons.automations,
     title: "Event-Driven",
-    desc: "Hook into conversation events: created, message received, tag added, closed. React in real-time.",
+    desc: "Webhooks fire on new conversations, new messages, assignments and closed conversations.",
   },
   {
     icon: Icons.code,
     title: "API-First",
-    desc: "Full REST API for conversations, visitors, articles, and messages. Build agents in any language.",
+    desc: "A REST API covers conversations, customers, articles, companies, segments and workspaces. Build agents in any language.",
   },
   {
     icon: Icons.sparkles,
     title: "AI-Native",
-    desc: "Built-in Claude integration for NLU, sentiment analysis, summarization, and article suggestions.",
+    desc: "Claude reply suggestions, summaries and sentiment. Self-hosting needs your own ANTHROPIC_API_KEY.",
   },
 ];
 
@@ -62,9 +50,8 @@ export default function AgentsShowcase() {
             Plug in AI agents. Automate support.
           </h2>
           <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-            GudDesk is built for the agent era. Connect your own AI bots,
-            deploy pre-built agents, or build custom plugins that read, reply,
-            and resolve conversations autonomously.
+            Connect your own AI agent to GudDesk. It gets conversation events by
+            webhook and replies as BOT through the API or the MCP server.
           </p>
         </div>
 
@@ -126,7 +113,7 @@ export default function AgentsShowcase() {
                   AI Agent
                 </span>
                 <span className="mt-1 text-center text-xs font-medium">
-                  GudBot processes
+                  Your agent decides
                 </span>
               </div>
 
@@ -157,7 +144,7 @@ export default function AgentsShowcase() {
                   Actions
                 </span>
                 <span className="mt-1 text-center text-xs font-medium">
-                  Reply, tag, resolve
+                  Reply as BOT via API
                 </span>
               </div>
             </div>
@@ -165,7 +152,7 @@ export default function AgentsShowcase() {
         </div>
 
         {/* Agent examples */}
-        <div className="mt-12 grid gap-5 sm:grid-cols-3">
+        <div className="mx-auto mt-12 grid max-w-md gap-5">
           {agentExamples.map((agent) => (
             <div
               key={agent.name}
@@ -195,6 +182,9 @@ export default function AgentsShowcase() {
             </div>
           ))}
         </div>
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          A built-in GudDesk AI agent is on the roadmap.
+        </p>
 
         {/* Plugin capabilities */}
         <div className="mt-14">

@@ -4,7 +4,7 @@ import { autoAssignCompany } from "@/lib/company-matching";
 import { trackCustomerEvent } from "@/lib/customer-events";
 import { prisma } from "@/lib/db";
 import { createVisitorToken, verifyVisitorToken } from "@/lib/visitor-auth";
-import { verifyIdentityHash } from "@/lib/widget-identity";
+import { resolveWidgetIdentity } from "@/lib/widget-identity";
 
 // POST /api/widget/visitors
 // Identify a visitor (set name, email, externalId, metadata)
@@ -42,46 +42,40 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Identity verification (HMAC-SHA256) ─────────────────────────────
-    // When a workspace has an identitySecret set, any identify() call that
-    // includes an externalId (userId) must also provide a valid userHash.
-    // This prevents client-side impersonation.
+    // Never look up or merge an existing externalId visitor without a
+    // valid HMAC (BUG-001). No secret → treat as anonymous. Secret set
+    // → missing/invalid hash is still 403.
+    let verifiedExternalId: string | null = null;
     if (externalId) {
       const widgetSettings = await prisma.widgetSettings.findUnique({
         where: { workspaceId: workspace.id },
         select: { identitySecret: true },
       });
 
-      if (widgetSettings?.identitySecret) {
-        const identity = verifyIdentityHash(
-          userHash,
-          widgetSettings.identitySecret,
-          externalId,
+      const identity = resolveWidgetIdentity({
+        externalId,
+        userHash,
+        identitySecret: widgetSettings?.identitySecret,
+      });
+
+      if (!identity.ok) {
+        return NextResponse.json(
+          { error: identity.error },
+          { status: 403 },
         );
-
-        if (identity === "missing") {
-          return NextResponse.json(
-            {
-              error:
-                "Identity verification is enabled. Provide a userHash generated server-side with HMAC-SHA256(secret, userId).",
-            },
-            { status: 403 },
-          );
-        }
-
-        if (identity === "invalid") {
-          return NextResponse.json(
-            { error: "Invalid identity hash" },
-            { status: 403 },
-          );
-        }
       }
+
+      verifiedExternalId = identity.externalId;
     }
 
-    // If we have an externalId, try to find an existing visitor
-    if (externalId) {
+    // If we have a verified externalId, try to find an existing visitor
+    if (verifiedExternalId) {
       const existingVisitor = await prisma.visitor.findUnique({
         where: {
-          workspaceId_externalId: { workspaceId: workspace.id, externalId },
+          workspaceId_externalId: {
+            workspaceId: workspace.id,
+            externalId: verifiedExternalId,
+          },
         },
       });
 
@@ -109,7 +103,7 @@ export async function POST(req: NextRequest) {
           existingVisitor.id,
           "customer.identified",
           `Identified via widget${email ? ` as ${email}` : ""}`,
-          { externalId, name, email },
+          { externalId: verifiedExternalId, name, email },
         );
 
         const token = createVisitorToken(existingVisitor.id, workspace.id);
@@ -127,7 +121,7 @@ export async function POST(req: NextRequest) {
         await prisma.visitor.update({
           where: { id: payload.visitorId },
           data: {
-            ...(externalId && { externalId }),
+            ...(verifiedExternalId && { externalId: verifiedExternalId }),
             ...(name !== undefined && { name }),
             ...(email !== undefined && { email }),
             ...(metadata !== undefined && { metadata }),
@@ -141,13 +135,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Track identify event
-        if (externalId || email || name) {
+        if (verifiedExternalId || email || name) {
           trackCustomerEvent(
             workspace.id,
             payload.visitorId,
             "customer.identified",
             `Identified via widget${email ? ` as ${email}` : ""}`,
-            { externalId, name, email },
+            { externalId: verifiedExternalId, name, email },
           );
         }
 
@@ -162,7 +156,7 @@ export async function POST(req: NextRequest) {
     const visitor = await prisma.visitor.create({
       data: {
         workspaceId: workspace.id,
-        externalId: externalId ?? null,
+        externalId: verifiedExternalId,
         name: name ?? null,
         email: email ?? null,
         metadata: metadata ?? null,
@@ -181,7 +175,7 @@ export async function POST(req: NextRequest) {
       visitor.id,
       "customer.identified",
       `New customer identified${email ? ` as ${email}` : ""}`,
-      { externalId, name, email, isNew: true },
+      { externalId: verifiedExternalId, name, email, isNew: true },
     );
 
     const token = createVisitorToken(visitor.id, workspace.id);

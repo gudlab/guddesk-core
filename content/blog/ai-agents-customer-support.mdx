@@ -1,6 +1,6 @@
 ---
 title: "How AI Agents Are Changing Customer Support"
-description: AI agents can resolve tickets, not just deflect them. Here's how GudDesk's built-in agents work and why they're different.
+description: How AI agents fit into customer support. GudBot is planned. Today you connect your own agent through the API.
 image: /_static/blog/blog-post-3.jpg
 date: "2025-06-05"
 authors:
@@ -12,9 +12,11 @@ related:
   - self-hosting-guddesk
 ---
 
+Update, October 2026: GudBot is not shipped yet. It's on the roadmap. Today GudDesk works with your own AI agent through the API.
+
 Most "AI-powered" support tools do one thing: they show your customers a help article and hope for the best. If the article doesn't solve the problem, the customer ends up waiting in the same queue they would have been in anyway — just more frustrated.
 
-GudDesk takes a different approach. Our AI agents are designed to actually resolve conversations, not just deflect them.
+GudDesk is built for agents that resolve conversations. The first-party agent is planned. Today you connect your own through the API.
 
 ## The Difference Between Deflection and Resolution
 
@@ -22,27 +24,15 @@ GudDesk takes a different approach. Our AI agents are designed to actually resol
 
 **Resolution** is when an AI understands the context of the conversation, takes the right action, and confirms the issue is solved — or seamlessly hands off to a human when it can't.
 
-GudDesk's agents aim for resolution.
+The planned agents aim for resolution. You can already do this with your own agent through the API.
 
-## Meet the Built-In Agents
+## Planned agents
 
-GudDesk ships with three agents out of the box:
-
-### GudBot — The First Responder
-
-GudBot handles the initial customer interaction. It reads the message, searches your knowledge base, and responds with relevant information. But here's the key difference: GudBot tracks whether the customer's issue was actually resolved. If the customer says "that didn't work," GudBot either tries a different approach or escalates to a human.
-
-### TriageBot — The Router
-
-Not every conversation needs AI. Some need a specific team member. TriageBot analyzes incoming conversations and routes them to the right person or team based on content, customer history, and your configured rules. Billing question from an enterprise customer? Goes straight to your account manager. Bug report? Lands in the engineering queue.
-
-### OnboardBot — The Guide
-
-OnboardBot activates for new users. It proactively checks in, offers helpful resources based on where the user is in their onboarding journey, and flags users who might be struggling to your customer success team.
+Three first-party agents are planned. When it ships, GudBot will handle the first reply. It will read the message and answer from your knowledge base. If that does not work, it will try another approach or pass the conversation to a human. TriageBot will route conversations to the right person or team. When it ships, OnboardBot will check in with new users and flag people who look stuck.
 
 ## Building Your Own Agents
 
-The built-in agents cover common patterns, but every business is different. GudDesk's Agent API lets you build custom agents that integrate with your specific tools and workflows.
+Until the first-party agents ship, the Agent API lets you build custom agents that integrate with your tools and workflows.
 
 Here's what a basic custom agent looks like:
 
@@ -71,12 +61,12 @@ This agent listens for refund requests, checks if the order is eligible, process
 
 ## Why This Matters
 
-The average customer support interaction costs businesses $5-12 when handled by a human. AI agents that actually resolve issues — not just deflect them — can reduce that cost while improving customer satisfaction.
+The average customer support interaction costs businesses $5-12 when handled by a human. AI agents that actually resolve issues can reduce that cost while improving customer satisfaction.
 
-But the real win isn't cost savings. It's speed. When a customer gets their password reset in 8 seconds instead of waiting 4 hours for a reply, that's the kind of experience that builds loyalty.
+Speed matters too. A useful reply in seconds builds more loyalty than one that takes hours.
 
 ## Getting Started
 
-AI agents are included in every GudDesk installation — free tier included. No API keys required for the built-in agents (they use your knowledge base as their source of truth). For custom agents that call external APIs, you'll just need to bring your own API key.
+A first-party agent is not included yet. You can connect your own agent through the API on any plan. Claude assist needs an Anthropic key when you self-host, and comes with Cloud Pro.
 
 Check out our [agents documentation](/docs) to get started.

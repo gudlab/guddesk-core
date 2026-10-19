@@ -300,13 +300,22 @@ describe("addBusinessMinutes", () => {
     assert.equal(deadline.toISOString(), "2026-09-16T17:00:00.000Z");
   });
 
-  // advanceToNextDay compares candidateDay === day + 1, so 31 Oct
-  // looks for day 32 and never reaches Monday. Running this would
-  // walk the 365-day cap (~2 min). Tracked with the toLocaleString
-  // civil-day work in issue #8.
-  it.todo(
-    "rolls leftover minutes from 2026-10-30 16:00 PDT across fall-back (issue #8)",
-  );
+  it("rolls leftover minutes from 2026-10-30 16:00 PDT across fall-back (issue #8)", () => {
+    const started = Date.now();
+    const deadline = addBusinessMinutes(
+      new Date("2026-10-30T23:00:00Z"),
+      120,
+      WEEKDAYS_9_TO_5,
+      [],
+      "America/Los_Angeles",
+    );
+    assert.ok(
+      Date.now() - started < 1000,
+      "fall-back across 31 Oct must not walk the iteration cap",
+    );
+    // 60 min Friday + skip Sat 31 / Sun 1 Nov, Monday 10:00 PST = 18:00 UTC.
+    assert.equal(deadline.toISOString(), "2026-11-02T18:00:00.000Z");
+  });
 });
 
 describe("toLocaleString weekday (issue #8)", () => {

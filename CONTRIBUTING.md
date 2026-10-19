@@ -29,9 +29,11 @@ Never commit `.env`, `.env.local`, or API keys.
 ```bash
 pnpm lint
 pnpm test
-pnpm exec tsc --noEmit
+pnpm typecheck
 pnpm run build:widget
 ```
+
+`pnpm test` globs `**/*.test.ts` explicitly (Node 20 `tsx --test` with no files matches nothing) and fails if the TAP count is 0. Each test has a 10s timeout.
 
 ## Publishing private → `gudlab/guddesk-core`
 

@@ -27,6 +27,7 @@ export async function canUserCreateWorkspace(_userId: string): Promise<{
   allowed: boolean;
   currentCount: number;
   maxAllowed: number;
+  reason?: string;
 }> {
   return { allowed: true, currentCount: 0, maxAllowed: Infinity };
 }
