@@ -42,14 +42,17 @@ function parseTimeToMinutes(time: string): number {
 /**
  * Get the day-of-week name for a Date in a given timezone.
  */
-function getDayName(
+export function getDayName(
   date: Date,
   timezone: string,
 ): (typeof DAY_NAMES)[number] {
-  const dayIndex = new Date(
-    date.toLocaleString("en-US", { timeZone: timezone }),
-  ).getDay();
-  return DAY_NAMES[dayIndex];
+  // Read the weekday from Intl parts. Parsing a toLocaleString() result
+  // depends on the runtime and breaks around DST changes.
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "long",
+  }).format(date);
+  return weekday.toLowerCase() as (typeof DAY_NAMES)[number];
 }
 
 /**
@@ -258,8 +261,7 @@ function advanceToNextDay(date: Date, timezone: string): Date {
       10,
     );
 
-    const midnight =
-      candidateHour === 0 || candidateHour === 24;
+    const midnight = candidateHour === 0 || candidateHour === 24;
     if (
       candidateYear === nextYear &&
       candidateMonth === nextMonth &&
