@@ -33,7 +33,9 @@ QA authenticated tests need two workspaces on a **dedicated Preview database**, 
 3. Apply schema, then seed from a machine that can reach that database:
 
 ```bash
-export PREVIEW_DATABASE_URL='postgresql://…preview…'   # preferred over DATABASE_URL
+export PREVIEW_DATABASE_URL='postgresql://…preview…'   # the only URL the seed connects to
+export PRODUCTION_DATABASE_URL='postgresql://…prod…'  # compared only, never connected to
+export PRODUCTION_WORKSPACE_SLUG=                     # slug of the real production workspace
 export PREVIEW_SEED=1
 export PREVIEW_OWNER_A_PASSWORD=        # from your secret store
 export PREVIEW_OWNER_B_PASSWORD=
@@ -46,7 +48,9 @@ DATABASE_URL="$PREVIEW_DATABASE_URL" pnpm prisma db push
 pnpm db:seed:preview
 ```
 
-If `PRODUCTION_DATABASE_URL` or `PROD_DATABASE_URL` is set and matches the URL in use, the script exits.
+The seed reads only `PREVIEW_DATABASE_URL`. It never falls back to `DATABASE_URL` and does not load `.env` or `.env.local`. `PRODUCTION_DATABASE_URL` (or `PROD_DATABASE_URL`) is required, and the script exits if it points at the same database as `PREVIEW_DATABASE_URL`. The comparison ignores credentials, query string, host case, and a Neon `-pooler` host suffix, and treats a missing port as 5432. Before any write the script also exits if a workspace with the slug in `PRODUCTION_WORKSPACE_SLUG` exists in the target database.
+
+Account email overrides must end in `@guddesk.test` and workspace slug overrides must start with `preview-`. Anything else is refused, because the seed resets passwords and widget identity secrets.
 
 Default logins (passwords are the env values, never committed):
 
@@ -59,7 +63,7 @@ Default logins (passwords are the env values, never committed):
 
 Each workspace also gets the `getting-started` collection (3 published articles) and two sample conversations (one open, one closed). Re-running upserts users and articles; existing conversation threads are left in place so XSS payloads QA added are not wiped.
 
-The script refuses `VERCEL_ENV=production` and live Stripe keys. It does not create Stripe customers; first checkout on Preview does that in test mode.
+The script refuses any `VERCEL_ENV` other than unset or `preview`, and live Stripe keys. It does not create Stripe customers; first checkout on Preview does that in test mode.
 
 Manual infra still needed: Preview `DATABASE_URL`, Stripe test webhook endpoint for the Preview URL if you test billing webhooks, Google OAuth redirect URIs for the Preview hostname if you test Google login, and Auth.js `AUTH_SECRET` on Preview.
 
