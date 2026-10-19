@@ -6,6 +6,7 @@ import {
   assertStripeTestMode,
   formatPreviewSeedReport,
   normaliseDatabaseUrl,
+  normalisePort,
   parsePreviewSeedEnv,
   PREVIEW_COLLECTION_SLUG,
   PREVIEW_KB_ARTICLES,
@@ -378,8 +379,77 @@ describe("resolvePreviewDatabaseUrl bypasses (pg-connection-string parsing)", ()
         PREVIEW_DATABASE_URL: PREVIEW_BASE,
         PRODUCTION_DATABASE_URL: PROD_URL,
       },
-      /PGPORT must be a port number/,
+      /PGPORT must be a port number from 1 to 65535/,
     );
+  });
+
+  it("compares ports numerically, so a leading zero is the same port", () => {
+    const host = "postgresql://app:secret@db.example.test";
+    for (const [preview, production] of [
+      [`${host}:05432/guddesk`, `${host}:5432/guddesk`],
+      [`${host}:5432/guddesk`, `${host}:005432/guddesk`],
+      [`${host}:05432/guddesk`, `${host}/guddesk`],
+    ]) {
+      refuses(
+        { PREVIEW_DATABASE_URL: preview, PRODUCTION_DATABASE_URL: production },
+        /points at the same host, port, and database/,
+      );
+    }
+    // PGPORT is normalised the same way.
+    refuses(
+      {
+        PGPORT: "05433",
+        PREVIEW_DATABASE_URL: `${host}/guddesk`,
+        PRODUCTION_DATABASE_URL: `${host}:5433/guddesk`,
+      },
+      /points at the same host, port, and database/,
+    );
+    assert.equal(
+      normaliseDatabaseUrl(`${host}:0006543/guddesk`, "X").port,
+      "6543",
+    );
+  });
+
+  it("refuses junk or out-of-range ports in either URL", () => {
+    const host = "postgresql://app:secret@db.example.test";
+    // The URL parser already rejects ports above 65535. Port 0 parses, so the
+    // guard refuses it.
+    for (const port of ["0", "00000", "65536", "99999999999999999999"]) {
+      refuses(
+        {
+          PREVIEW_DATABASE_URL: `${host}:${port}/guddesk`,
+          PRODUCTION_DATABASE_URL: PROD_URL,
+        },
+        /PREVIEW_DATABASE_URL (has an invalid port|is not a valid database URL)/,
+      );
+      refuses(
+        {
+          PREVIEW_DATABASE_URL: PREVIEW_BASE,
+          PRODUCTION_DATABASE_URL: `${host}:${port}/guddesk`,
+        },
+        /PRODUCTION_DATABASE_URL (has an invalid port|is not a valid database URL)/,
+      );
+    }
+    refuses(
+      {
+        PREVIEW_DATABASE_URL: `${host}:0/guddesk`,
+        PRODUCTION_DATABASE_URL: PROD_URL,
+      },
+      /PREVIEW_DATABASE_URL has an invalid port/,
+    );
+  });
+
+  it("refuses a PGPORT that is zero, out of range or not a number", () => {
+    for (const value of ["0", "65536", "-1", "54 32", "0x1538", "5432.0"]) {
+      refuses(
+        {
+          PGPORT: value,
+          PREVIEW_DATABASE_URL: PREVIEW_BASE,
+          PRODUCTION_DATABASE_URL: PROD_URL,
+        },
+        /PGPORT must be a port number from 1 to 65535/,
+      );
+    }
   });
 
   it("refuses a socket host", () => {
@@ -391,6 +461,28 @@ describe("resolvePreviewDatabaseUrl bypasses (pg-connection-string parsing)", ()
       },
       /postgresql:\/\/ or postgres:\/\//,
     );
+  });
+});
+
+describe("normalisePort", () => {
+  it("strips leading zeros and refuses anything outside 1 to 65535", () => {
+    assert.equal(normalisePort("5432"), "5432");
+    assert.equal(normalisePort("05432"), "5432");
+    assert.equal(normalisePort(" 6543 "), "6543");
+    assert.equal(normalisePort("65535"), "65535");
+    assert.equal(normalisePort("1"), "1");
+    for (const junk of [
+      "",
+      "0",
+      "000",
+      "65536",
+      "-1",
+      "5432a",
+      "5e3",
+      "54.32",
+    ]) {
+      assert.equal(normalisePort(junk), null, junk);
+    }
   });
 });
 

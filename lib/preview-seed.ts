@@ -363,9 +363,11 @@ export function normaliseDatabaseUrl(
   labels[0] = labels[0].replace(/-pooler$/, "");
   const host = labels.join(".");
 
-  const port = String(config.port || defaultPort);
-  if (!/^\d+$/.test(port)) {
-    throw new PreviewSeedError(`${label} has an invalid port.`);
+  const port = normalisePort(String(config.port || defaultPort));
+  if (!port) {
+    throw new PreviewSeedError(
+      `${label} has an invalid port. Use a number from 1 to 65535.`,
+    );
   }
 
   const database = (config.database ?? "").trim();
@@ -376,6 +378,19 @@ export function normaliseDatabaseUrl(
   }
 
   return { host, port, database: database.toLowerCase() };
+}
+
+/**
+ * Reduce a port to its numeric form, so "05432" and "5432" compare equal
+ * (pg reads the port with parseInt). Returns null for anything that is not
+ * all digits or is outside 1 to 65535.
+ */
+export function normalisePort(raw: string): string | null {
+  const value = raw.trim();
+  if (!/^\d+$/.test(value)) return null;
+  const port = Number(value);
+  if (!Number.isSafeInteger(port) || port < 1 || port > 65535) return null;
+  return String(port);
 }
 
 export function isSameDatabaseTarget(
@@ -412,11 +427,14 @@ export function resolvePreviewDatabaseUrl(env: NodeJS.Dict<string>): {
   }
 
   // pg falls back to PGPORT when a URL has no port, so compare with it too.
-  const pgPort = env.PGPORT?.trim();
-  if (pgPort && !/^\d+$/.test(pgPort)) {
-    throw new PreviewSeedError("PGPORT must be a port number when set.");
+  const rawPgPort = env.PGPORT?.trim();
+  const pgPort = rawPgPort ? normalisePort(rawPgPort) : null;
+  if (rawPgPort && !pgPort) {
+    throw new PreviewSeedError(
+      "PGPORT must be a port number from 1 to 65535 when set.",
+    );
   }
-  const defaultPort = pgPort || DEFAULT_POSTGRES_PORT;
+  const defaultPort = pgPort ?? DEFAULT_POSTGRES_PORT;
 
   const previewTarget = normaliseDatabaseUrl(
     url,
