@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { SlaPolicy, BusinessHours } from "@prisma/client";
 
@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge";
 
 import { createSlaPolicy, updateSlaPolicy, deleteSlaPolicy } from "@/actions/manage-sla-policies";
 import { upsertBusinessHours } from "@/actions/manage-business-hours";
+import { normaliseTimeZone } from "@/lib/timezones";
+import { TimezonePicker } from "@/components/settings/timezone-picker";
 import type { WeekSchedule, DaySchedule } from "@/lib/sla/business-hours";
 
 const PRIORITY_LABELS: Record<string, string> = {
@@ -91,6 +93,19 @@ function BusinessHoursSection({
 }) {
   const [isPending, startTransition] = useTransition();
   const [timezone, setTimezone] = useState(businessHours?.timezone ?? "UTC");
+  const [usingBrowserZone, setUsingBrowserZone] = useState(false);
+
+  // First visit (nothing saved yet): start from the browser's timezone.
+  useEffect(() => {
+    if (businessHours) return;
+    const browserZone = normaliseTimeZone(
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
+    if (browserZone) {
+      setTimezone(browserZone);
+      setUsingBrowserZone(true);
+    }
+  }, [businessHours]);
   const [schedule, setSchedule] = useState<WeekSchedule>(
     (businessHours?.schedule as WeekSchedule) ?? DEFAULT_SCHEDULE,
   );
@@ -136,6 +151,8 @@ function BusinessHoursSection({
       if (result.status === "error") {
         toast.error(result.message);
       } else {
+        setTimezone(result.timezone);
+        setUsingBrowserZone(false);
         toast.success("Business hours saved");
       }
     });
@@ -153,31 +170,18 @@ function BusinessHoursSection({
         {/* Timezone */}
         <div className="space-y-2">
           <Label>Timezone</Label>
-          <Select value={timezone} onValueChange={setTimezone}>
-            <SelectTrigger className="w-[280px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[
-                "UTC",
-                "America/New_York",
-                "America/Chicago",
-                "America/Denver",
-                "America/Los_Angeles",
-                "Europe/London",
-                "Europe/Paris",
-                "Europe/Berlin",
-                "Asia/Tokyo",
-                "Asia/Shanghai",
-                "Asia/Kolkata",
-                "Australia/Sydney",
-              ].map((tz) => (
-                <SelectItem key={tz} value={tz}>
-                  {tz}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <TimezonePicker
+            value={timezone}
+            onChange={(value) => {
+              setTimezone(value);
+              setUsingBrowserZone(false);
+            }}
+          />
+          {usingBrowserZone && (
+            <p className="text-sm text-muted-foreground">
+              Set from your browser. Save to keep it.
+            </p>
+          )}
         </div>
 
         {/* Schedule */}
