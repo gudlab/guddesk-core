@@ -7,6 +7,7 @@ import { sendMessage } from "@/actions/send-message";
 import { deleteSharedDraft } from "@/actions/manage-shared-draft";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
+import { publishLocalMessage } from "@/lib/local-messages";
 
 interface Props {
   conversationId: string;
@@ -43,6 +44,11 @@ export function SharedDraftEditor({
       if (result.status === "error") {
         toast.error(result.message ?? "Failed to send");
         return;
+      }
+
+      // Show it in the thread now, same as ReplyBox.
+      if ("sentMessage" in result && result.sentMessage) {
+        publishLocalMessage(conversationId, result.sentMessage);
       }
 
       // Delete the draft after sending

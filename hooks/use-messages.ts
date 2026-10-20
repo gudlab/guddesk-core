@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { usePusher, usePusherReconnect } from "./use-pusher";
+import { usePollingFallback } from "./use-polling-fallback";
+import {
+  THREAD_POLL_MS,
+  mergeMessagesById,
+  messagesAfterParam,
+} from "@/lib/inbox-polling";
+import { subscribeLocalMessages } from "@/lib/local-messages";
 
 export interface MessageItem {
   id: string;
@@ -20,21 +27,35 @@ export function useMessages(conversationId: string | null) {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchMessages = useCallback(async () => {
-    if (!conversationId) return;
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/inbox/conversations/${conversationId}/messages`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.messages);
+  // Which conversation the messages in state belong to, and the latest
+  // messages, for the poller. Refs so the poll callback never goes stale.
+  const loadedForRef = useRef<string | null>(null);
+  const messagesRef = useRef<MessageItem[]>(messages);
+  messagesRef.current = messages;
+  const currentIdRef = useRef(conversationId);
+  currentIdRef.current = conversationId;
+
+  const loadMessages = useCallback(
+    async (silent: boolean) => {
+      if (!conversationId) return;
+      if (!silent) setIsLoading(true);
+      try {
+        const res = await fetch(`/api/inbox/conversations/${conversationId}/messages`);
+        if (res.ok && currentIdRef.current === conversationId) {
+          const data = await res.json();
+          setMessages(data.messages);
+          loadedForRef.current = conversationId;
+        }
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      } finally {
+        if (!silent) setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch messages:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [conversationId]);
+    },
+    [conversationId],
+  );
+
+  const fetchMessages = useCallback(() => loadMessages(false), [loadMessages]);
 
   useEffect(() => {
     fetchMessages();
@@ -46,10 +67,7 @@ export function useMessages(conversationId: string | null) {
     conversationId ? `private-conversation-${conversationId}` : null,
     "message:created",
     (data: MessageItem) => {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === data.id)) return prev;
-        return [...prev, data];
-      });
+      setMessages((prev) => mergeMessagesById(prev, [data]));
     },
   );
 
@@ -66,6 +84,43 @@ export function useMessages(conversationId: string | null) {
   // Resync after reconnect — any message:created fired while we were
   // disconnected is gone forever.
   usePusherReconnect(fetchMessages);
+
+  // The agent's own reply or note, published by ReplyBox once sendMessage
+  // succeeds. Merged by id, so a later Pusher or poll copy is ignored.
+  useEffect(() => {
+    if (!conversationId) return;
+    return subscribeLocalMessages<MessageItem>(conversationId, (message) => {
+      setMessages((prev) => mergeMessagesById(prev, [message]));
+    });
+  }, [conversationId]);
+
+  // Without Pusher, poll the open thread. Once the thread is loaded, ask
+  // only for messages since the newest one we hold (plus an overlap).
+  const pollMessages = useCallback(async () => {
+    if (!conversationId) return;
+    if (loadedForRef.current !== conversationId) {
+      await loadMessages(true);
+      return;
+    }
+    const after = messagesAfterParam(messagesRef.current);
+    if (!after) {
+      await loadMessages(true);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/inbox/conversations/${conversationId}/messages?after=${encodeURIComponent(after)}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok || currentIdRef.current !== conversationId) return;
+      const data = await res.json();
+      setMessages((prev) => mergeMessagesById(prev, data.messages ?? []));
+    } catch {
+      // Next poll retries.
+    }
+  }, [conversationId, loadMessages]);
+
+  usePollingFallback(pollMessages, THREAD_POLL_MS, conversationId !== null);
 
   return { messages, isLoading, refetch: fetchMessages };
 }

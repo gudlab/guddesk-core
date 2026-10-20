@@ -1,0 +1,292 @@
+import assert from "node:assert/strict";
+import { afterEach, beforeEach, describe, it, mock } from "node:test";
+
+import {
+  CONVERSATION_LIST_POLL_MS,
+  THREAD_POLL_MS,
+  THREAD_POLL_OVERLAP_MS,
+  mergeConversationPage,
+  mergeMessagesById,
+  messagesAfterParam,
+  startPollingFallback,
+  type VisibilitySource,
+} from "./inbox-polling";
+import { publishLocalMessage, subscribeLocalMessages } from "./local-messages";
+
+function fakeVisibility(initial = true) {
+  let visible = initial;
+  const listeners = new Set<() => void>();
+  const source: VisibilitySource = {
+    isVisible: () => visible,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+  return {
+    source,
+    listenerCount: () => listeners.size,
+    set(next: boolean) {
+      visible = next;
+      for (const listener of Array.from(listeners)) listener();
+    },
+  };
+}
+
+const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+describe("startPollingFallback", () => {
+  beforeEach(() => {
+    mock.timers.enable({ apis: ["setInterval"] });
+  });
+  afterEach(() => {
+    mock.timers.reset();
+  });
+
+  it("uses a 10s list interval and a 4s thread interval", () => {
+    assert.equal(CONVERSATION_LIST_POLL_MS, 10_000);
+    assert.equal(THREAD_POLL_MS, 4_000);
+  });
+
+  it("does nothing when Pusher is configured", () => {
+    const poll = mock.fn();
+    const visibility = fakeVisibility();
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      hasRealtime: () => true,
+      visibility: visibility.source,
+    });
+    assert.equal(handle, null);
+    mock.timers.tick(60_000);
+    assert.equal(poll.mock.callCount(), 0);
+    assert.equal(visibility.listenerCount(), 0);
+  });
+
+  it("polls on every interval when Pusher is missing", async () => {
+    const poll = mock.fn(async () => {});
+    const visibility = fakeVisibility();
+    const handle = startPollingFallback({
+      intervalMs: CONVERSATION_LIST_POLL_MS,
+      poll,
+      hasRealtime: () => false,
+      visibility: visibility.source,
+    });
+    assert.ok(handle?.active);
+    assert.equal(poll.mock.callCount(), 0, "no poll before the first interval");
+    for (let i = 1; i <= 3; i++) {
+      mock.timers.tick(CONVERSATION_LIST_POLL_MS);
+      await flush();
+      assert.equal(poll.mock.callCount(), i);
+    }
+    mock.timers.tick(CONVERSATION_LIST_POLL_MS - 1);
+    await flush();
+    assert.equal(poll.mock.callCount(), 3);
+    handle?.stop();
+  });
+
+  it("pauses while hidden and polls at once when visible again", async () => {
+    const poll = mock.fn(async () => {});
+    const visibility = fakeVisibility();
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      hasRealtime: () => false,
+      visibility: visibility.source,
+    });
+    mock.timers.tick(THREAD_POLL_MS);
+    await flush();
+    assert.equal(poll.mock.callCount(), 1);
+
+    visibility.set(false);
+    assert.equal(handle?.active, false);
+    mock.timers.tick(THREAD_POLL_MS * 10);
+    await flush();
+    assert.equal(poll.mock.callCount(), 1, "no polls while hidden");
+
+    visibility.set(true);
+    assert.equal(poll.mock.callCount(), 2, "catch-up poll on becoming visible");
+    assert.equal(handle?.active, true);
+    await flush();
+    mock.timers.tick(THREAD_POLL_MS);
+    await flush();
+    assert.equal(poll.mock.callCount(), 3);
+    handle?.stop();
+  });
+
+  it("waits for the page to be visible before arming", async () => {
+    const poll = mock.fn(async () => {});
+    const visibility = fakeVisibility(false);
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      hasRealtime: () => false,
+      visibility: visibility.source,
+    });
+    assert.equal(handle?.active, false);
+    mock.timers.tick(THREAD_POLL_MS * 5);
+    assert.equal(poll.mock.callCount(), 0);
+    visibility.set(true);
+    assert.equal(poll.mock.callCount(), 1);
+    handle?.stop();
+  });
+
+  it("stop() clears the timer and the visibility listener", async () => {
+    const poll = mock.fn(async () => {});
+    const visibility = fakeVisibility();
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      hasRealtime: () => false,
+      visibility: visibility.source,
+    });
+    assert.equal(visibility.listenerCount(), 1);
+    handle?.stop();
+    assert.equal(handle?.active, false);
+    assert.equal(visibility.listenerCount(), 0);
+    mock.timers.tick(THREAD_POLL_MS * 5);
+    visibility.set(true);
+    await flush();
+    assert.equal(poll.mock.callCount(), 0);
+  });
+
+  it("skips a tick while the previous poll is still running", async () => {
+    let release: () => void = () => {};
+    const poll = mock.fn(
+      () => new Promise<void>((resolve) => (release = resolve)),
+    );
+    const visibility = fakeVisibility();
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      hasRealtime: () => false,
+      visibility: visibility.source,
+    });
+    mock.timers.tick(THREAD_POLL_MS);
+    mock.timers.tick(THREAD_POLL_MS);
+    mock.timers.tick(THREAD_POLL_MS);
+    assert.equal(poll.mock.callCount(), 1);
+    release();
+    await flush();
+    mock.timers.tick(THREAD_POLL_MS);
+    assert.equal(poll.mock.callCount(), 2);
+    release();
+    handle?.stop();
+  });
+
+  it("keeps polling after a failed poll", async () => {
+    const poll = mock.fn(async () => {
+      throw new Error("network");
+    });
+    const visibility = fakeVisibility();
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      hasRealtime: () => false,
+      visibility: visibility.source,
+    });
+    mock.timers.tick(THREAD_POLL_MS);
+    await flush();
+    mock.timers.tick(THREAD_POLL_MS);
+    await flush();
+    assert.equal(poll.mock.callCount(), 2);
+    handle?.stop();
+  });
+});
+
+type Msg = { id: string; createdAt: string; body: string };
+const msg = (id: string, second: number, body = id): Msg => ({
+  id,
+  createdAt: new Date(Date.UTC(2026, 9, 20, 8, 0, second)).toISOString(),
+  body,
+});
+
+describe("mergeMessagesById", () => {
+  it("returns the same array when nothing is new, so the thread doesn't re-render", () => {
+    const prev = [msg("a", 1), msg("b", 2)];
+    assert.equal(mergeMessagesById(prev, []), prev);
+    assert.equal(mergeMessagesById(prev, [msg("a", 1), msg("b", 2)]), prev);
+  });
+
+  it("appends only unseen ids and keeps createdAt order", () => {
+    const prev = [msg("a", 1), msg("c", 3)];
+    const next = mergeMessagesById(prev, [msg("c", 3), msg("b", 2), msg("b", 2), msg("d", 4)]);
+    assert.deepEqual(
+      next.map((m) => m.id),
+      ["a", "b", "c", "d"],
+    );
+  });
+});
+
+describe("messagesAfterParam", () => {
+  it("is null for an empty thread", () => {
+    assert.equal(messagesAfterParam([]), null);
+  });
+
+  it("is the newest createdAt minus the overlap window", () => {
+    const after = messagesAfterParam([msg("a", 30), msg("b", 50), msg("c", 40)]);
+    assert.equal(
+      after,
+      new Date(Date.parse(msg("b", 50).createdAt) - THREAD_POLL_OVERLAP_MS).toISOString(),
+    );
+  });
+});
+
+describe("own reply append", () => {
+  it("shows the sent reply once, even when Pusher and a poll deliver it again", () => {
+    let thread: Msg[] = [msg("v1", 1)];
+    const unsubscribe = subscribeLocalMessages<Msg>("conv-1", (m) => {
+      thread = mergeMessagesById(thread, [m]);
+    });
+    const otherConversation = mock.fn();
+    const unsubscribeOther = subscribeLocalMessages("conv-2", otherConversation);
+
+    const reply = msg("a1", 5, "Thanks, looking now");
+    publishLocalMessage("conv-1", reply);
+    assert.deepEqual(
+      thread.map((m) => m.id),
+      ["v1", "a1"],
+    );
+    assert.equal(otherConversation.mock.callCount(), 0);
+
+    // Pusher message:created for the same message
+    thread = mergeMessagesById(thread, [{ ...reply }]);
+    // Incremental poll that overlaps it
+    thread = mergeMessagesById(thread, [msg("v1", 1), { ...reply }, msg("v2", 6)]);
+    assert.deepEqual(
+      thread.map((m) => m.id),
+      ["v1", "a1", "v2"],
+    );
+
+    unsubscribe();
+    publishLocalMessage("conv-1", msg("a2", 7));
+    assert.equal(thread.length, 3, "no delivery after unsubscribe");
+    unsubscribeOther();
+  });
+});
+
+describe("mergeConversationPage", () => {
+  type Conv = { id: string; preview: string };
+  const conv = (id: string, preview = id): Conv => ({ id, preview });
+
+  it("returns the same array when the first page is unchanged", () => {
+    const prev = [conv("a"), conv("b")];
+    assert.equal(mergeConversationPage(prev, [conv("a"), conv("b")], 25), prev);
+  });
+
+  it("applies new first-page data", () => {
+    const prev = [conv("a"), conv("b")];
+    const next = mergeConversationPage(prev, [conv("b", "new reply"), conv("a")], 25);
+    assert.notEqual(next, prev);
+    assert.deepEqual(next, [conv("b", "new reply"), conv("a")]);
+  });
+
+  it("keeps rows loaded beyond the first page", () => {
+    const prev = [conv("a"), conv("b"), conv("c"), conv("d")];
+    const next = mergeConversationPage(prev, [conv("d", "moved up"), conv("a")], 2);
+    assert.deepEqual(
+      next.map((c) => c.id),
+      ["d", "a", "c"],
+    );
+  });
+});

@@ -174,7 +174,24 @@ export async function sendMessage(
     }
 
     revalidatePath(`/workspace`);
-    return { status: "success", messageId: message.id };
+    return {
+      status: "success",
+      messageId: message.id,
+      // Same shape as GET /api/inbox/conversations/[id]/messages, so the
+      // thread can render it before any refetch.
+      sentMessage: {
+        id: message.id,
+        type: message.type,
+        body: message.body,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        createdAt: message.createdAt.toISOString(),
+        sender: {
+          name: session.user.name ?? null,
+          image: session.user.image ?? null,
+        },
+      },
+    };
   } catch (error) {
     if (error instanceof Error) {
       return { status: "error", message: error.message };

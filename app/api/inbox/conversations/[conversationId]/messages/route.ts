@@ -4,9 +4,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceMember } from "@/lib/workspace";
 
-// GET /api/inbox/conversations/[conversationId]/messages
+// GET /api/inbox/conversations/[conversationId]/messages[?after=ISO-8601]
+// `after` (optional) returns only messages created at or after that time.
+// The inbox polling fallback uses it so each poll reads a few rows, not the
+// whole thread. Without it the response is the full thread, as before.
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ conversationId: string }> },
 ) {
   try {
@@ -27,8 +30,15 @@ export async function GET(
 
     await requireWorkspaceMember(conversation.workspaceId, session.user.id);
 
+    const afterParam = req.nextUrl.searchParams.get("after");
+    const after = afterParam ? new Date(afterParam) : null;
+    const createdAtFilter =
+      after && !Number.isNaN(after.getTime())
+        ? { createdAt: { gte: after } }
+        : {};
+
     const messages = await prisma.message.findMany({
-      where: { conversationId },
+      where: { conversationId, ...createdAtFilter },
       include: {
         sender: {
           select: { name: true, image: true },
