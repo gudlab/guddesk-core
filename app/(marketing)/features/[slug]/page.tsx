@@ -26,10 +26,10 @@ export async function generateMetadata({
   if (!feature) return {};
 
   return {
-    title: `${feature.name} — ${feature.tagline} | GudDesk`,
+    title: `${feature.name} | ${feature.tagline} | GudDesk`,
     description: feature.description.slice(0, 155) + "…",
     openGraph: {
-      title: `${feature.name} — ${feature.tagline} | GudDesk`,
+      title: `${feature.name} | ${feature.tagline} | GudDesk`,
       description: feature.description.slice(0, 155) + "…",
       type: "website",
     },
@@ -150,7 +150,7 @@ export default async function FeaturePage({ params }: PageProps) {
               Full capability list
             </h2>
             <p className="text-muted-foreground mt-4">
-              All included — even on the free plan.
+              Free plan includes the core features. Pro lifts the member and conversation limits.
             </p>
           </div>
 

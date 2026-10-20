@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <strong>GudDesk</strong> — open-source customer messaging for humans and agents.<br />
+  <strong>GudDesk</strong> is open-source customer messaging for humans and agents.<br />
   Live chat, shared inbox, knowledge base and automations. Bring your own AI agent.
 </p>
 
@@ -46,13 +46,13 @@ Built by [GudLab](https://gudlab.org).
 
 ### Key Features
 
-- **Live Chat Widget** — two-line snippet via `cdn.guddesk.com`
+- **Live Chat Widget**: two-line snippet via `cdn.guddesk.com`
 - **Shared Inbox**: assignment and tagging, with live inbox updates and typing indicators when you add Pusher keys
-- **Knowledge Base** — collections, publish workflow, public help center
+- **Knowledge Base**: collections, publish workflow, public help center
 - **AI assist (planned)**: reply suggestions and summaries, shipping with GudBot v1
-- **AI Agent Plugins** — external bots via REST + webhooks (`BOT` messages)
-- **Automations** — rules on conversation events
-- **Self-Hosted** — your Postgres, your keys
+- **AI Agent Plugins**: external bots via REST + webhooks (`BOT` messages)
+- **Automations**: rules on conversation events
+- **Self-Hosted**: your Postgres, your keys
 
 ## Install the widget (hosted)
 

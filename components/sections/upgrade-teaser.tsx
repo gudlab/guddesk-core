@@ -20,7 +20,7 @@ export default function UpgradeTeaser() {
       <MaxWidthWrapper className="max-w-4xl">
         <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
           <div className="grid md:grid-cols-2">
-            {/* Left — messaging */}
+            {/* Left: messaging */}
             <div className="flex flex-col justify-center p-8 md:p-10">
               <div className="text-gradient_brand mb-3 text-sm font-semibold">
                 Need more power?
@@ -47,7 +47,7 @@ export default function UpgradeTeaser() {
               </div>
             </div>
 
-            {/* Right — feature list */}
+            {/* Right: feature list */}
             <div className="border-t bg-muted/20 p-8 md:border-l md:border-t-0 md:p-10">
               <div className="mb-4 flex items-baseline gap-2">
                 <span className="font-satoshi text-3xl font-black">$29</span>

@@ -27,7 +27,7 @@ export const features: Feature[] = [
     slug: "live-chat",
     name: "Live Chat",
     tagline: "Live chat with your customers",
-    headline: "Embed live chat in minutes. Resolve issues in seconds.",
+    headline: "Embed live chat with two lines of JavaScript.",
     description:
       "Add a customizable chat widget to your website or app with two lines of JavaScript. Customers reach your team without reloading the page, in the same thread as any BOT replies from an agent you connect.",
     icon: "messageCircle",
@@ -229,7 +229,7 @@ export const features: Feature[] = [
       {
         title: "Cross-team escalation",
         description:
-          "A support agent encounters a billing question. They start a side conversation with the finance team, get the answer, and reply to the customer — all without leaving the inbox.",
+          "A support agent encounters a billing question. They start a side conversation with the finance team, get the answer, and reply to the customer, all without leaving the inbox.",
       },
     ],
     faqs: [
@@ -257,7 +257,7 @@ export const features: Feature[] = [
     tagline: "Self-service help center for your customers",
     headline: "Build a help center that actually helps.",
     description:
-      "Create and publish help articles organized into collections. Your knowledge base powers both the customer-facing help center and the AI agents — so every article you write makes your entire support system smarter.",
+      "Create and publish help articles organized into collections. Your knowledge base powers the customer-facing help center.",
     icon: "bookOpen",
     highlights: [
       {
@@ -467,7 +467,7 @@ export const features: Feature[] = [
       {
         question: "Is analytics included in the free plan?",
         answer:
-          "Yes. All analytics features — conversation metrics, agent performance, CSAT surveys — are included in the free plan.",
+          "Yes. All analytics features (conversation metrics, agent performance, CSAT surveys) are included in the free plan.",
       },
       {
         question: "Can I export analytics data?",

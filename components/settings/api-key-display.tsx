@@ -225,7 +225,7 @@ export function ApiKeySettings({
               />
             </div>
 
-            {/* Workspace selector — only shown if user has multiple workspaces */}
+            {/* Workspace selector: only shown if user has multiple workspaces */}
             {workspaces.length > 1 && (
               <div className="w-48 space-y-1.5">
                 <label className="text-sm font-medium">Workspace</label>
@@ -402,7 +402,7 @@ export function ApiKeySettings({
         <CardHeader>
           <CardTitle className="text-base">Quick Start</CardTitle>
           <CardDescription>
-            Get an AI support agent running in minutes with{" "}
+            Set up an AI support agent with{" "}
             <code className="rounded bg-muted px-1 py-0.5 text-xs">
               gud-agent
             </code>

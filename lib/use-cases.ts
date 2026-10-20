@@ -35,7 +35,7 @@ export const useCases: UseCase[] = [
       {
         title: "Reduce churn with fast responses",
         description:
-          "Embed the chat widget in your app. AI agents handle L1 questions instantly while your team focuses on complex issues. Average first-response time drops from hours to seconds.",
+          "Embed the chat widget in your app. Your own AI agent can answer L1 questions through the agent API while your team focuses on complex issues.",
         icon: "zap",
       },
       {
@@ -311,7 +311,7 @@ export const useCases: UseCase[] = [
       {
         title: "Monthly client reporting",
         description:
-          "Pull analytics per workspace — conversations handled, average response time, CSAT scores, AI resolution rate. Present the data to prove your team's value.",
+          "Pull analytics per workspace: conversations handled, average response time, CSAT scores. Present the data to prove your team's value.",
       },
     ],
     features: [
@@ -350,7 +350,7 @@ export const useCases: UseCase[] = [
     tagline: "Community support for open-source maintainers",
     headline: "Support your community, not just your customers",
     description:
-      "Open-source projects need a way to help users, triage bugs, and answer questions — without a budget. GudDesk is free, open source, and self-hostable, making it ideal for maintainers who want structured support alongside GitHub Issues.",
+      "Open-source projects need a way to help users, triage bugs, and answer questions without a budget. GudDesk is free, open source, and self-hostable, making it ideal for maintainers who want structured support alongside GitHub Issues.",
     benefits: [
       {
         title: "Completely free and open source",

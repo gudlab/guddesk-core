@@ -41,7 +41,7 @@ const faqs = [
   {
     question: "How do I install the chat widget?",
     answer:
-      "Add two lines of JavaScript to your site. The widget loads asynchronously, is fully customizable — colors, position, welcome message — and works on any website or web app. Agent and bot messages appear natively in the widget.",
+      "Add two lines of JavaScript to your site. The widget loads asynchronously, is fully customizable (colors, position, welcome message) and works on any website or web app. Agent and bot messages appear natively in the widget.",
   },
   {
     question: "Can I migrate from Intercom?",

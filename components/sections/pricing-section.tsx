@@ -39,7 +39,7 @@ const proPlanFeatures = [
 
 const businessPlanFeatures = [
   "Everything in Pro",
-  "~$99/mo flat — still no per-seat",
+  "~$99/mo flat, still not per seat",
   "Priority email support",
   "Higher-volume hosted workspaces",
   "Business hours & SLA tooling",

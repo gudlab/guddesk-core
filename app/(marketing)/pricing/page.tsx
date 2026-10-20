@@ -214,7 +214,7 @@ export default function PricingPage() {
             </h1>
             <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
               Most workspaces never need to pay. Get live chat, shared inbox,
-              knowledge base, automations, SDK, and full API access — all for
+              knowledge base, automations, SDK, and full API access. All for
               $0, forever.
             </p>
           </div>

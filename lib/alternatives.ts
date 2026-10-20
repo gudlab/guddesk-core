@@ -26,12 +26,12 @@ export const alternatives: Alternative[] = [
     name: "Intercom",
     tagline: "The open-source Intercom alternative",
     description:
-      "Intercom is a powerful customer messaging platform, but its per-seat pricing and premium AI add-ons make it prohibitively expensive for most teams. GudDesk gives you the same live chat, inbox, and AI agent features — open source and free for small teams.",
+      "Intercom is a customer messaging platform, but its per-seat pricing and paid AI add-ons make it expensive for most teams. GudDesk gives you live chat, a shared inbox and an agent API. It's open source and free for small teams.",
     pricing: "Starts at $39/seat/month. AI features cost extra. Most teams pay $200-500+/month.",
     weaknesses: [
       "Per-seat pricing adds up fast as your team grows",
       "Fin is $0.99 per outcome on every plan",
-      "No self-hosting option — your data lives on their servers",
+      "No self-hosting option: your data lives on their servers",
       "Vendor lock-in makes migration difficult",
       "Complex pricing tiers with feature gates",
     ],
@@ -53,7 +53,7 @@ export const alternatives: Alternative[] = [
       {
         title: "Stop paying per seat",
         description:
-          "Intercom charges $39-139 per agent per month. GudDesk Cloud Free covers 2 members; Pro is $29/mo flat and Business is ~$99/mo flat — no per-seat surprises.",
+          "Intercom bills each seat, from $29 to $132 a month billed annually (intercom.com/pricing, 20 Oct 2026). GudDesk Cloud Free covers 2 members; Pro is $29/mo flat and Business is ~$99/mo flat, with no per-seat surprises.",
       },
       {
         title: "No per-resolution AI fee",
@@ -75,7 +75,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can GudDesk really replace Intercom?",
         answer:
-          "For most teams, yes. GudDesk covers live chat, shared inbox, knowledge base, AI agents, and automations. If you rely on Intercom's product tours or advanced marketing features, those aren't available yet — but for customer support and messaging, GudDesk is a capable replacement.",
+          "For most teams, yes. GudDesk covers live chat, a shared inbox, a knowledge base, automations and an agent API for your own bot. If you rely on Intercom's product tours or advanced marketing features, those aren't available yet. For customer support and messaging, GudDesk is a capable replacement.",
       },
       {
         question: "How do I migrate from Intercom to GudDesk?",
@@ -85,7 +85,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Is GudDesk really free?",
         answer:
-          "Yes. GudDesk is Cloud Free for 2 members and 500 conversations/month. No credit card required, no time-limited trial, no feature gates on the free tier. The open-source version is also completely free to self-host.",
+          "Yes. GudDesk Cloud Free covers 2 members and 500 conversations a month with no time limit. Self-hosting has no plan caps.",
       },
       {
         question: "What about Intercom's Fin AI?",
@@ -99,11 +99,11 @@ export const alternatives: Alternative[] = [
     name: "Zendesk",
     tagline: "The open-source Zendesk alternative",
     description:
-      "Zendesk is the enterprise standard for customer support, but its complexity and pricing make it overkill for most teams. GudDesk delivers the core features you actually need — live chat, shared inbox, AI agents — without the enterprise bloat or price tag.",
+      "Zendesk is the enterprise standard for customer support, but its complexity and pricing make it overkill for most teams. GudDesk delivers the core features you actually need: live chat, a shared inbox and an agent API, without the enterprise bloat or price tag.",
     pricing: "Starts at $55/agent/month (Suite Team). Enterprise plans run $115-150+/agent/month.",
     weaknesses: [
       "Expensive per-agent pricing even for basic features",
-      "Complex setup and configuration — steep learning curve",
+      "Complex setup and configuration, with a steep learning curve",
       "AI features locked behind premium plans",
       "Overwhelming UI with features most teams never use",
       "Long contract commitments for better pricing",
@@ -125,7 +125,7 @@ export const alternatives: Alternative[] = [
       {
         title: "Simplicity over complexity",
         description:
-          "Zendesk has hundreds of features most teams never touch. GudDesk focuses on the essentials — live chat, inbox, KB, AI agents — and does them well without a steep learning curve.",
+          "Zendesk has hundreds of features most teams never touch. GudDesk focuses on the essentials (live chat, inbox, knowledge base and an agent API) and does them well without a steep learning curve.",
       },
       {
         title: "Start on the free plan",
@@ -135,7 +135,7 @@ export const alternatives: Alternative[] = [
       {
         title: "No enterprise tax",
         description:
-          "Zendesk charges $55-150 per agent per month. GudDesk is free for small teams and uses flat pricing — not per-agent fees that punish you for growing.",
+          "Zendesk charges $55-150 per agent per month. GudDesk is free for small teams and uses flat pricing, not per-agent fees that punish you for growing.",
       },
       {
         title: "Modern, AI-first architecture",
@@ -152,7 +152,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Does GudDesk have a ticketing system?",
         answer:
-          "GudDesk uses a conversation-based model rather than traditional tickets. Every customer interaction (chat, email, bot) is a conversation in your shared inbox. You can assign, tag, prioritize, and track resolution — it's ticketing without the ticket jargon.",
+          "GudDesk uses a conversation-based model rather than traditional tickets. Every customer interaction (chat, email, bot) is a conversation in your shared inbox. You can assign, tag, prioritize, and track resolution. It's ticketing without the ticket jargon.",
       },
       {
         question: "How do I migrate from Zendesk to GudDesk?",
@@ -171,7 +171,7 @@ export const alternatives: Alternative[] = [
     name: "Freshdesk",
     tagline: "The open-source Freshdesk alternative",
     description:
-      "Freshdesk offers solid support tooling, but AI features and advanced automations are locked behind expensive plans. GudDesk gives you live chat, AI agents, and a modern shared inbox — free for small teams, with everything included.",
+      "Freshdesk offers solid support tooling, but AI features and advanced automations are locked behind expensive plans. GudDesk gives you live chat, an agent API and a modern shared inbox, free for small teams.",
     pricing: "Free tier available but limited. Paid plans start at $15/agent/month, AI features at $29+/agent/month.",
     weaknesses: [
       "Free tier is very limited (no automations, basic reporting)",
@@ -203,7 +203,7 @@ export const alternatives: Alternative[] = [
       {
         title: "Full features on the free tier",
         description:
-          "Freshdesk's free tier strips out automations, AI, and advanced reporting. GudDesk's free tier includes everything — AI agents, automations, knowledge base — for 2 members.",
+          "Freshdesk's free tier strips out automations, AI, and advanced reporting. GudDesk Cloud Free includes live chat, automations, knowledge base and the agent API for 2 members.",
       },
       {
         title: "AI that's actually accessible",

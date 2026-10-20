@@ -173,7 +173,7 @@ const integrations: Integration[] = [
   {
     name: "Webhooks",
     description:
-      "Send real-time HTTP callbacks on conversation events — message received, conversation created, tag added, and more.",
+      "Send HTTP callbacks on conversation events: message received, conversation created, tag added, and more.",
     category: "automation",
     icon: "webhook",
     tier: "free",
@@ -225,7 +225,7 @@ const integrations: Integration[] = [
   {
     name: "Built-in Analytics",
     description:
-      "Conversation volume, response times, resolution rates, agent performance, and CSAT scores — all built in.",
+      "Conversation volume, response times, resolution rates, agent performance, and CSAT scores, all built in.",
     category: "analytics",
     icon: "analytics",
     tier: "free",
@@ -494,7 +494,7 @@ export default function IntegrationsCatalog() {
               </div>
               <h4 className="mb-1 font-heading text-sm">Webhooks</h4>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Real-time HTTP callbacks on every conversation event. Message
+                HTTP callbacks on every conversation event. Message
                 received, created, tagged, resolved.
               </p>
             </div>

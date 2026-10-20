@@ -46,7 +46,7 @@ export default function OpenSourceSection() {
               Your data, your rules
             </h2>
             <p className="mt-6 text-muted-foreground">
-              GudDesk is fully open source under the GPL-3.0 license. Deploy on
+              GudDesk is fully open source under the AGPL-3.0 license. Deploy on
               your own infrastructure. Audit every line of code. No vendor
               lock-in, ever.
             </p>
@@ -78,7 +78,7 @@ export default function OpenSourceSection() {
             </div>
           </div>
 
-          {/* Right column — code snippet */}
+          {/* Right column: code snippet */}
           <div className="flex items-center">
             <div className="relative w-full overflow-hidden rounded-xl bg-gray-950 p-1">
               {/* Terminal header */}
