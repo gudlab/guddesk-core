@@ -98,12 +98,26 @@ describe("listTimeZones", () => {
   });
 });
 
+function intlAcceptsOffsets(): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: "+05:30" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 describe("resolveStoredTimeZone", () => {
   it("keeps every stored value Intl can resolve, including offsets", () => {
     assert.equal(resolveStoredTimeZone("UTC"), "UTC");
     assert.equal(resolveStoredTimeZone("Asia/Kolkata"), "Asia/Kolkata");
     assert.equal(resolveStoredTimeZone("US/Eastern"), "US/Eastern");
-    assert.equal(resolveStoredTimeZone("+05:30"), "+05:30");
+    // Offset zones need a newer Intl (Node 22+). Where Intl rejects them,
+    // they fall back to UTC instead of throwing.
+    assert.equal(
+      resolveStoredTimeZone("+05:30"),
+      intlAcceptsOffsets() ? "+05:30" : "UTC",
+    );
   });
 
   it("falls back to UTC for missing or broken values", () => {
