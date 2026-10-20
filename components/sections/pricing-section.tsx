@@ -196,7 +196,7 @@ export default function PricingSection() {
                 "mt-6 w-full",
               )}
             >
-              Start Free Trial
+              Get started
             </Link>
           </div>
 

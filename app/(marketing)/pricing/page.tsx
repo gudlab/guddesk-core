@@ -384,7 +384,7 @@ export default function PricingPage() {
                   "mt-6 w-full",
                 )}
               >
-                Start Free Trial
+                Get started
               </Link>
             </div>
             <div className="rounded-2xl border bg-card p-8 shadow-sm">

@@ -235,7 +235,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can I self-host GudDesk instead of using Freshdesk's cloud?",
         answer:
-          "Absolutely. GudDesk is fully open source under AGPL-3.0. Clone the repo, run Docker Compose, and you have a complete support platform on your own infrastructure. Freshdesk offers no self-hosting option.",
+          "Yes. GudDesk is open source under AGPL-3.0. Clone the gudlab/guddesk-core repo, install it with pnpm, point it at your own PostgreSQL database and run it on Node.js 20 or later. The README lists each step. Freshdesk offers no self-hosting option.",
       },
     ],
   },

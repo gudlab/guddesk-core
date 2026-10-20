@@ -237,7 +237,7 @@ export const useCases: UseCase[] = [
     features: [
       "Free for 2 members",
       "Agent API (reply as BOT)",
-      "5-minute setup",
+      "Two-line widget snippet",
       "Shared inbox",
       "Knowledge base",
       "Slack notifications",
@@ -301,7 +301,7 @@ export const useCases: UseCase[] = [
       {
         title: "Onboarding a new client",
         description:
-          "Create a new workspace, configure the widget to match their brand, import their knowledge base articles, and invite their team. Done in under 30 minutes.",
+          "Create a new workspace, configure the widget to match their brand, add their knowledge base articles, and invite their team.",
       },
       {
         title: "Handling cross-client escalations",
