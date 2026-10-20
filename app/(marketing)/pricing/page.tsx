@@ -229,7 +229,7 @@ export default function PricingPage() {
               </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              2 members and 500 conversations a month
+              2 members and 500 conversations a month. No credit card required.
             </p>
             <Link
               href="/register"

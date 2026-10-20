@@ -96,7 +96,7 @@ export default async function AlternativePage({ params }: PageProps) {
             </Link>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Free plan for 2 members &middot; Self-host the AGPL-3.0 code
+            Free plan for 2 members &middot; No credit card required &middot; Self-host the AGPL-3.0 code
           </p>
         </MaxWidthWrapper>
       </section>
@@ -109,7 +109,7 @@ export default async function AlternativePage({ params }: PageProps) {
             <p className="mt-2 text-muted-foreground">{alt.pricing}</p>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
               <Icons.check className="size-4" />
-              GudDesk: Free for 2 members and 500 conversations a month. Pro is $29 a month flat.
+              GudDesk: Free for 2 members and 500 conversations a month. No credit card required. Pro is $29 a month flat.
             </div>
           </div>
         </MaxWidthWrapper>
@@ -282,7 +282,7 @@ export default async function AlternativePage({ params }: PageProps) {
               Ready to switch from {alt.name}?
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Free for 2 members. Self-host the code if you prefer.
+              Free for 2 members. No credit card required. Self-host the code if you prefer.
             </p>
             <div className="mt-8 flex justify-center gap-3">
               <Link

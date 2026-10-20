@@ -180,7 +180,7 @@ export const useCases: UseCase[] = [
       {
         question: "Is there a free plan for small stores?",
         answer:
-          "Yes. GudDesk is free for 2 members with all features included. This covers most small ecommerce teams.",
+          "Yes. GudDesk is free for 2 members with all features included. No credit card required. This covers most small ecommerce teams.",
       },
     ],
   },
@@ -195,7 +195,7 @@ export const useCases: UseCase[] = [
       {
         title: "Cloud Free: 2 members",
         description:
-          "No trial period. Get live chat, knowledge base, automations and the agent API at zero cost while you're getting started.",
+          "No credit card, no trial period. Get live chat, knowledge base, automations and the agent API at zero cost while you're getting started.",
         icon: "sparkles",
       },
       {

@@ -99,7 +99,7 @@ export default async function UseCasePage({ params }: PageProps) {
             </Link>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Free forever for small teams
+            Free forever for small teams &middot; No credit card required
           </p>
         </MaxWidthWrapper>
       </section>
@@ -255,7 +255,7 @@ export default async function UseCasePage({ params }: PageProps) {
               Ready to get started?
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Free plan for 2 members.
+              Free plan for 2 members. No credit card required.
             </p>
             <div className="mt-8 flex justify-center gap-3">
               <Link

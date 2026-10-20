@@ -85,7 +85,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Is GudDesk really free?",
         answer:
-          "Yes. GudDesk Cloud Free covers 2 members and 500 conversations a month with no time limit. Self-hosting has no plan caps.",
+          "Yes. GudDesk Cloud Free covers 2 members and 500 conversations a month with no time limit and no credit card required. Self-hosting has no plan caps.",
       },
       {
         question: "What about Intercom's Fin AI?",

@@ -260,7 +260,7 @@ export default async function FeaturePage({ params }: PageProps) {
               Try {feature.name} for free
             </h2>
             <p className="text-muted-foreground mt-4">
-              Free plan for 2 members.
+              Free plan for 2 members. No credit card required.
             </p>
             <div className="mt-8 flex justify-center gap-3">
               <Link
