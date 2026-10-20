@@ -56,13 +56,13 @@ const integrations: Integration[] = [
     href: "/docs/agents/custom-agents",
   },
   {
-    name: "Claude AI",
+    name: "AI assist",
     description:
-      "Reply suggestions, summaries and sentiment. Cloud Pro includes this. Self-hosters set ANTHROPIC_API_KEY.",
+      "Reply suggestions and summaries for your team. Planned, shipping with GudBot v1.",
     category: "ai-agents",
     icon: "sparkles",
     tier: "pro",
-    status: "available",
+    status: "coming-soon",
   },
   {
     name: "GudDesk AI agent",

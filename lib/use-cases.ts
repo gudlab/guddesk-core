@@ -90,7 +90,7 @@ export const useCases: UseCase[] = [
       {
         question: "Can GudDesk handle our volume?",
         answer:
-          "GudDesk is designed for small to mid-size SaaS teams handling hundreds to thousands of conversations per month. AI agents handle routine questions automatically, so your team scales without linear headcount growth.",
+          "GudDesk is designed for small to mid-size SaaS teams handling hundreds to thousands of conversations per month. Connect your own agent to answer first. AI reply suggestions for your team are planned.",
       },
       {
         question: "Does it integrate with our billing system?",
@@ -110,12 +110,12 @@ export const useCases: UseCase[] = [
     tagline: "Customer support for online stores",
     headline: "Turn support conversations into sales",
     description:
-      "Ecommerce customers expect instant answers about orders, returns, and products. GudDesk gives your team a shared inbox with AI-powered responses, so you can resolve questions fast and keep customers buying.",
+      "Ecommerce customers expect fast answers about orders and returns. GudDesk gives your team a shared inbox and lets you connect your own AI agent, so you can resolve questions fast and keep customers buying.",
     benefits: [
       {
-        title: "Answer pre-sale questions instantly",
+        title: "Answer pre-sale questions on the page",
         description:
-          "Visitors browsing your store can ask about sizing, availability, or shipping without leaving the page. AI agents respond in seconds, keeping buyers in the purchase flow.",
+          "Visitors browsing your store can ask about sizing, availability, or shipping without leaving the page. Your own agent can reply as BOT if you connected one.",
         icon: "messageCircle",
       },
       {
@@ -180,7 +180,7 @@ export const useCases: UseCase[] = [
       {
         question: "Is there a free plan for small stores?",
         answer:
-          "Yes. GudDesk is free for 2 members with all features included. No credit card required. This covers most small ecommerce teams.",
+          "Yes. GudDesk is free for 2 members with all features included. This covers most small ecommerce teams.",
       },
     ],
   },
@@ -190,16 +190,16 @@ export const useCases: UseCase[] = [
     tagline: "Support that grows with your startup",
     headline: "World-class support on a startup budget",
     description:
-      "Startups need powerful support tools at a flat $29 a month. GudDesk Cloud Free covers 2 members. Connect your own agent, or use Claude assist on Pro. Self-host if you need no caps.",
+      "Startups need support tools at a flat $29 a month. GudDesk Cloud Free covers 2 members. Connect your own agent through the API. Self-host if you need no caps.",
     benefits: [
       {
         title: "Cloud Free: 2 members",
         description:
-          "No credit card, no trial period, no feature gates. Get live chat, AI agents, knowledge base, and automations at zero cost while you're getting started.",
+          "No trial period. Get live chat, knowledge base, automations and the agent API at zero cost while you're getting started.",
         icon: "sparkles",
       },
       {
-        title: "Set up in 5 minutes",
+        title: "Two lines of JavaScript",
         description:
           "Create an account, embed two lines of JavaScript, and you're live. No complex configuration, no implementation consultants, no onboarding calls.",
         icon: "zap",
@@ -207,7 +207,7 @@ export const useCases: UseCase[] = [
       {
         title: "AI handles the first wave",
         description:
-          "Connect your own agent to answer as BOT. Claude can suggest replies on Cloud Pro, or when you self-host with an Anthropic key. A first-party GudDesk agent is on the roadmap.",
+          "Connect your own agent to answer as BOT. A first-party GudDesk agent is on the roadmap.",
         icon: "bot",
       },
       {
@@ -226,7 +226,7 @@ export const useCases: UseCase[] = [
       {
         title: "Scaling to your first support hire",
         description:
-          "Add a second agent for free. The shared inbox, collision detection, and assignment rules ensure you don't duplicate work or step on each other's toes.",
+          "Add a second member for free. The shared inbox and assignment rules help you avoid duplicate work, and collision detection helps too when you add Pusher keys.",
       },
       {
         title: "Investor demo or launch day",

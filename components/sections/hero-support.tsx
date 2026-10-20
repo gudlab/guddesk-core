@@ -8,13 +8,13 @@ import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 const capabilities = [
   {
     icon: Icons.messageCircle,
-    title: "Real-time live chat",
-    desc: "Instantly connect with visitors. No more email ping-pong.",
+    title: "Live chat on your site",
+    desc: "Replies reach the open widget in real time when you add Pusher keys, and within seconds without them.",
   },
   {
     icon: Icons.sparkles,
-    title: "AI help for your team",
-    desc: "Claude drafts reply suggestions and summaries, and reads sentiment.",
+    title: "AI help for your team (planned)",
+    desc: "AI reply suggestions and summaries: planned. Today, connect your own bot through the agent API.",
   },
   {
     icon: Icons.inbox,
@@ -46,9 +46,9 @@ export default function HeroSupport() {
             </span>
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-            GudDesk puts live chat and a shared inbox in one app, with Claude
-            helping your team reply faster. Bring your own AI agent if you want
-            one answering first.
+            GudDesk puts live chat and a shared inbox in one app. Bring your own
+            AI agent if you want one answering first. AI reply suggestions for
+            your team are planned.
           </p>
         </div>
 

@@ -8,7 +8,7 @@ import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 const proFeatures = [
   "Unlimited members",
   "Unlimited conversations",
-  "AI-powered reply suggestions & summaries",
+  "AI reply suggestions and summaries: planned",
   "Remove GudDesk branding",
   "Slack integration",
   "Priority support",
@@ -29,9 +29,9 @@ export default function UpgradeTeaser() {
                 Upgrade when you&apos;re ready
               </h2>
               <p className="mt-4 text-muted-foreground">
-                The free plan covers most teams. When you need AI features,
-                unlimited seats, or custom branding — upgrade to Pro for a flat
-                $29/mo. No per-seat pricing.
+                The free plan covers most teams. When you need unlimited seats
+                or want GudDesk branding removed, upgrade to Pro for a flat $29
+                a month. No per-seat pricing.
               </p>
               <div className="mt-6 flex gap-3">
                 <Link

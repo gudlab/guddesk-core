@@ -165,7 +165,7 @@ function InboxPreview() {
                 />
               </svg>
               <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                AI Suggested Reply
+                AI Suggested Reply (planned)
               </span>
             </div>
             <p className="text-sm text-emerald-900 dark:text-emerald-100">

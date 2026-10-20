@@ -31,7 +31,7 @@ const proPlanFeatures = [
   "Unlimited workspaces",
   "Unlimited members",
   "Unlimited conversations",
-  "AI-powered features",
+  "AI assist: planned",
   "Remove GudDesk branding",
   "Slack integration",
   "Priority support",
@@ -90,11 +90,11 @@ const comparisonRows = [
     guddeskPro: "check",
   },
   {
-    feature: "AI features",
+    feature: "Built-in AI",
     intercomStarter: "$0.99/resolution",
     intercom: "Included ($)",
     guddeskFree: "cross",
-    guddeskPro: "check",
+    guddeskPro: "cross",
   },
   {
     feature: "Automations",

@@ -30,9 +30,9 @@ const tabs = [
   },
   {
     id: "ai",
-    label: "Built-in AI",
+    label: "AI assist (planned)",
     description:
-      "Claude suggests replies and summarises long threads. It can also read sentiment. Included on Cloud Pro. Self-hosters add their own ANTHROPIC_API_KEY.",
+      "AI reply suggestions and summaries are planned. They will ship with GudBot v1. Today you can connect your own agent through the API.",
     mock: AIMock,
   },
 ];
@@ -217,7 +217,7 @@ function AIMock() {
         <div className="mb-2 flex items-center gap-1.5">
           <div className="size-4 rounded bg-emerald-200 dark:bg-emerald-800" />
           <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
-            AI Suggested Reply
+            AI Suggested Reply (planned)
           </span>
         </div>
         <div className="space-y-1 rounded-md border border-emerald-200 bg-white p-2 dark:border-emerald-800 dark:bg-emerald-950/30">

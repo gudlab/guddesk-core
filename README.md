@@ -16,7 +16,7 @@
 
 <p align="center">
   <strong>GudDesk</strong> — open-source customer messaging for humans and agents.<br />
-  Live chat, shared inbox, knowledge base, AI-powered support, and automations.
+  Live chat, shared inbox, knowledge base and automations. Bring your own AI agent.
 </p>
 
 <p align="center">
@@ -37,7 +37,7 @@ GudDesk is an Intercom / Zendesk alternative without per-seat pricing. Self-host
 | Cloud plan | Price | Notes |
 |---|---|---|
 | Free | $0 | 2 members, 500 conversations/month |
-| Pro | **$29/mo** flat | Unlimited seats, built-in AI, branding off |
+| Pro | **$29/mo** flat | Unlimited seats, branding off |
 | Business | **~$99/mo** flat | Same no-per-seat rule; talk to us to enable |
 
 Self-host is uncapped. WhatsApp, SSO, and GudBot v1 are **not** in this release.
@@ -47,9 +47,9 @@ Built by [GudLab](https://gudlab.org).
 ### Key Features
 
 - **Live Chat Widget** — two-line snippet via `cdn.guddesk.com`
-- **Shared Inbox** — assignment, tagging, real-time via Pusher
+- **Shared Inbox**: assignment and tagging, with live inbox updates and typing indicators when you add Pusher keys
 - **Knowledge Base** — collections, publish workflow, public help center
-- **AI-Powered Support** — reply suggestions, summaries (Claude; Pro cloud)
+- **AI assist (planned)**: reply suggestions and summaries, shipping with GudBot v1
 - **AI Agent Plugins** — external bots via REST + webhooks (`BOT` messages)
 - **Automations** — rules on conversation events
 - **Self-Hosted** — your Postgres, your keys
@@ -73,8 +73,8 @@ Self-host: keep the same `appId` and load `https://your-domain/widget.js` instea
 | Language | [TypeScript](https://typescriptlang.org) |
 | Database | [PostgreSQL](https://postgresql.org) via [Prisma 7](https://prisma.io) |
 | Auth | [Auth.js v5](https://authjs.dev) |
-| Real-time | [Pusher](https://pusher.com) |
-| AI | [Anthropic Claude](https://anthropic.com) |
+| Real-time | [Pusher](https://pusher.com) (optional; the widget polls every 4 seconds without it) |
+| AI (planned) | [Anthropic Claude](https://anthropic.com) |
 | Email | [Resend](https://resend.com) + [React Email](https://react.email) |
 | UI | [Tailwind CSS](https://tailwindcss.com), [Radix UI](https://radix-ui.com), [shadcn/ui](https://ui.shadcn.com) |
 | Widget | [Preact](https://preactjs.com) + [Vite](https://vitejs.dev) (Shadow DOM) |

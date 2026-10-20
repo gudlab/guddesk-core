@@ -9,7 +9,7 @@ GudDesk gives you live chat, a shared inbox, a knowledge base, AI-powered agents
 
 ## What You Can Do
 
-- **Talk to customers in real time** with an embeddable chat widget
+- **Talk to customers** with an embeddable chat widget, in real time when you add Pusher keys
 - **Manage all conversations** from a unified shared inbox (chat, email, bots)
 - **Connect your own AI agent** to reply as BOT through the API
 - **Build a knowledge base** so customers can help themselves
@@ -21,7 +21,7 @@ GudDesk gives you live chat, a shared inbox, a knowledge base, AI-powered agents
 <div className="grid gap-4 sm:grid-cols-2 mt-6">
   <a href="/docs/quickstart" className="block rounded-lg border p-4 hover:bg-muted transition-colors">
     <strong>Quickstart</strong>
-    <p className="text-sm text-muted-foreground mt-1">Get up and running in 5 minutes</p>
+    <p className="text-sm text-muted-foreground mt-1">Use GudDesk Cloud or run it locally</p>
   </a>
   <a href="/docs/self-hosting" className="block rounded-lg border p-4 hover:bg-muted transition-colors">
     <strong>Self-Hosting</strong>
@@ -45,7 +45,7 @@ GudDesk is built with modern, battle-tested technologies:
 - **PostgreSQL** — Primary database (via Prisma ORM)
 - **Auth.js** — Authentication with Google OAuth and magic links
 - **Resend** — Transactional email delivery
-- **Pusher** — Real-time messaging for live chat
+- **Pusher**: optional real-time messaging for live chat. Without it the widget polls every 4 seconds
 - **Tailwind CSS** — Utility-first styling
 - **Shadcn/ui** — Accessible component library
 

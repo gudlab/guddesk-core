@@ -26,16 +26,16 @@ export const features: Feature[] = [
   {
     slug: "live-chat",
     name: "Live Chat",
-    tagline: "Real-time conversations with your customers",
+    tagline: "Live chat with your customers",
     headline: "Embed live chat in minutes. Resolve issues in seconds.",
     description:
-      "Add a customizable chat widget to your website or app with two lines of JavaScript. Customers get instant access to your team and AI agents — no page reloads, no email delays.",
+      "Add a customizable chat widget to your website or app with two lines of JavaScript. Customers reach your team without reloading the page, in the same thread as any BOT replies from an agent you connect.",
     icon: "messageCircle",
     highlights: [
       {
         title: "Two-line installation",
         description:
-          "Paste a JavaScript snippet into your site. The widget handles authentication, theming, and real-time messaging out of the box.",
+          "Paste a JavaScript snippet into your site. The widget handles authentication and theming. Messages arrive in real time when you add Pusher keys, and within seconds without them.",
         icon: "code",
       },
       {
@@ -64,8 +64,8 @@ export const features: Feature[] = [
       "Article suggestions",
       "Identity verification (HMAC)",
       "File attachments",
-      "Typing indicators",
-      "Real-time messaging via Pusher",
+      "Typing indicators (with Pusher keys)",
+      "Real-time messaging via Pusher (optional)",
       "Offline form fallback",
       "Mobile responsive",
     ],
@@ -73,12 +73,12 @@ export const features: Feature[] = [
       {
         title: "SaaS in-app support",
         description:
-          "Embed the widget inside your dashboard. Users ask questions without leaving the app. AI agents respond instantly with help articles.",
+          "Embed the widget inside your dashboard. Users ask questions without leaving the app. Your own agent can reply as BOT.",
       },
       {
         title: "Ecommerce pre-sale chat",
         description:
-          "Show the widget on product pages. Answer sizing, shipping, and availability questions in real time to keep buyers in the purchase flow.",
+          "Show the widget on product pages. Answer sizing and shipping questions while buyers are still on the page.",
       },
     ],
     faqs: [
@@ -103,10 +103,10 @@ export const features: Feature[] = [
   {
     slug: "ai-agents",
     name: "AI Agents",
-    tagline: "Connect your own bot. Claude helps your team.",
-    headline: "Reply as BOT through the API. Claude suggests replies for your team.",
+    tagline: "Connect your own bot. AI assist for your team is planned.",
+    headline: "Your agent replies as BOT through the API.",
     description:
-      "Install your own agent to receive webhooks and reply as BOT. Claude can suggest replies, summarise threads and read sentiment. A first-party GudDesk agent is on the roadmap. There is no per-resolution fee.",
+      "Install your own agent to receive webhooks and reply as BOT. AI reply suggestions and summaries are planned, as is a first-party GudDesk agent. There is no per-resolution fee.",
     icon: "sparkles",
     highlights: [
       {
@@ -122,9 +122,9 @@ export const features: Feature[] = [
         icon: "server",
       },
       {
-        title: "Claude assist",
+        title: "AI assist (planned)",
         description:
-          "Reply suggestions, summaries and sentiment. Cloud Pro includes this. Self-hosters set ANTHROPIC_API_KEY.",
+          "Reply suggestions and summaries for your team. Planned, shipping with GudBot v1.",
         icon: "sparkles",
       },
       {
@@ -139,9 +139,7 @@ export const features: Feature[] = [
       "BOT message type",
       "Webhook event triggers",
       "REST API and MCP",
-      "Conversation summarization",
-      "Sentiment analysis",
-      "Reply suggestions",
+      "AI reply suggestions and summaries: planned",
       "No per-resolution fees",
       "First-party agent on the roadmap",
     ],
@@ -161,7 +159,7 @@ export const features: Feature[] = [
       {
         question: "Is there a built-in AI agent?",
         answer:
-          "Not yet. One is on the roadmap. Today you connect your own agent, or use Claude assist on Cloud Pro (self-hosters add an Anthropic key).",
+          "Not yet. One is on the roadmap. Today you connect your own agent through the API.",
       },
       {
         question: "Can I build my own AI agent?",
@@ -169,9 +167,9 @@ export const features: Feature[] = [
           "Yes. Installing an agent gives it a webhook and an API key. It receives conversation events and replies through the REST API or the MCP server.",
       },
       {
-        question: "What AI model powers the built-in assist?",
+        question: "Will GudDesk add AI assist for agents?",
         answer:
-          "Claude, by Anthropic. Custom agents can use any model you like. There is no per-resolution fee.",
+          "Yes. Reply suggestions and summaries are planned and will ship with GudBot v1. Custom agents you connect today can use any model you like.",
       },
     ],
     relatedFeatures: ["live-chat", "shared-inbox", "automation-rules"],
@@ -182,7 +180,7 @@ export const features: Feature[] = [
     tagline: "One inbox for your entire support team",
     headline: "Every conversation, every channel, one inbox.",
     description:
-      "Live chat, email, and bot conversations all flow into a single shared inbox. Assign, tag, prioritize, and resolve conversations as a team — with collision detection so two agents never reply to the same customer.",
+      "Live chat, email and bot conversations all flow into a single shared inbox. Assign, tag, prioritize and resolve conversations as a team, with collision detection when you add Pusher keys.",
     icon: "inbox",
     highlights: [
       {
@@ -194,7 +192,7 @@ export const features: Feature[] = [
       {
         title: "Collision detection",
         description:
-          "Real-time indicators show when another agent is viewing or replying to a conversation. Never send duplicate responses again.",
+          "With Pusher keys set, indicators show when another agent is viewing or replying to a conversation.",
         icon: "eye",
       },
       {
@@ -212,7 +210,7 @@ export const features: Feature[] = [
     ],
     capabilities: [
       "Multi-channel inbox",
-      "Collision detection",
+      "Collision detection (with Pusher keys)",
       "Assignment rules",
       "Tags and priority levels",
       "Internal notes",
@@ -226,7 +224,7 @@ export const features: Feature[] = [
       {
         title: "Small team, big volume",
         description:
-          "Three agents manage hundreds of conversations. Assignment rules distribute workload evenly. Collision detection prevents embarrassing double-replies.",
+          "A small team manages hundreds of conversations. Assignment rules distribute workload evenly. With Pusher keys, collision detection prevents double replies.",
       },
       {
         title: "Cross-team escalation",
@@ -243,7 +241,7 @@ export const features: Feature[] = [
       {
         question: "Can I see who else is looking at a conversation?",
         answer:
-          "Yes. Collision detection shows real-time avatars of agents viewing or typing in a conversation. You'll see a banner warning before you accidentally duplicate a reply.",
+          "Yes, when you add Pusher keys. Agents viewing or typing in a conversation show as avatars, and a banner warns you before you duplicate a reply.",
       },
       {
         question: "How do shared drafts work?",
@@ -437,7 +435,7 @@ export const features: Feature[] = [
       {
         title: "Workload monitoring",
         description:
-          "See real-time agent availability, active conversation counts, and workload distribution. Balance the load before anyone burns out.",
+          "See agent availability and workload per agent, updating live when you add Pusher keys. Balance the load before anyone burns out.",
         icon: "eye",
       },
     ],

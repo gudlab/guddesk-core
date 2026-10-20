@@ -34,7 +34,7 @@ const freeHighlights = [
   {
     icon: Icons.inbox,
     title: "Shared Workspace Inbox",
-    desc: "All conversations in one place. Assign, tag, snooze, and add internal notes with real-time updates.",
+    desc: "All conversations in one place. Assign, tag, snooze and add internal notes. Live updates when you add Pusher keys.",
   },
   {
     icon: Icons.sparkles,
@@ -75,8 +75,7 @@ const proFeatures = [
   "Everything in Free",
   "Unlimited workspace members",
   "Unlimited conversations",
-  "AI reply suggestions & summaries",
-  "Sentiment detection",
+  "AI reply suggestions and summaries: planned",
   "Advanced agent analytics",
   "Remove GudDesk branding",
   "Slack integration",
@@ -230,7 +229,7 @@ export default function PricingPage() {
               </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              No credit card required
+              2 members and 500 conversations a month
             </p>
             <Link
               href="/register"
@@ -348,9 +347,8 @@ export default function PricingPage() {
               Upgrade when you&apos;re ready
             </h2>
             <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-              Pro is $29 a month flat and adds Claude AI and lifts the member and
-              conversation limits. Business is about $99 a month. No plan
-              charges per seat.
+              Pro is $29 a month flat and lifts the member and conversation
+              limits. Business is about $99 a month. No plan charges per seat.
             </p>
           </div>
 
@@ -426,10 +424,10 @@ export default function PricingPage() {
               <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-lg bg-muted">
                 <Icons.sparkles className="size-5" />
               </div>
-              <h4 className="mb-1 font-heading text-sm">AI-Powered</h4>
+              <h4 className="mb-1 font-heading text-sm">AI assist (planned)</h4>
               <p className="text-xs text-muted-foreground">
-                Reply suggestions, summaries and sentiment analysis powered by
-                Claude.
+                Reply suggestions and summaries are planned. They will ship
+                with GudBot v1.
               </p>
             </div>
             <div className="text-center">

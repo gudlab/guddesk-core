@@ -34,9 +34,9 @@ const faqs = [
       "Yes. Clone the repo, point it at your own Postgres and run it on any Node host, or use GudDesk Cloud. When you self-host, your data stays on your servers.",
   },
   {
-    question: "What built-in AI features are included?",
+    question: "Does GudDesk have built-in AI?",
     answer:
-      "Claude can suggest replies, summarise conversations and read sentiment. On Cloud these come with Pro. When you self-host, set your own ANTHROPIC_API_KEY to turn them on.",
+      "Not yet. AI reply suggestions and summaries are planned and will ship with GudBot v1. Today you can connect your own AI agent, which replies as BOT through the API.",
   },
   {
     question: "How do I install the chat widget?",

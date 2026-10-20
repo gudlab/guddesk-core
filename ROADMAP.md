@@ -12,11 +12,10 @@ Most support platforms charge per-agent, lock AI behind expensive add-ons, and t
 
 ## What's Built Today
 
-- **Live chat widget** — embeddable, customizable, real-time via Pusher, page visibility controls (include/exclude URL patterns)
+- **Live chat widget**: embeddable and customizable, with page visibility controls (include/exclude URL patterns). Real-time via Pusher when keys are set, polling every 4 seconds otherwise
 - **Customer identity verification** — HMAC-SHA256 identity verification (same standard as Intercom/Zendesk), `GudDesk.identify()` API with `userHash` support
 - **Shared inbox** — conversations from chat + email, assignment, status management, internal notes
 - **Knowledge base** — articles, collections, public help center
-- **AI features** — reply suggestions, summarization, sentiment analysis, categorization, article suggestions (Claude)
 - **Automation rules** — trigger-based workflows (auto-assign, auto-tag, bot messages)
 - **Integrations** — Slack notifications, email (Resend), webhooks, REST API
 - **REST API v1** — full CRUD for conversations, customers (including PATCH updates), articles, workspaces, agents; cursor-based pagination, rate limiting
@@ -69,9 +68,10 @@ _Fill the gaps that every competitor already covers._
 
 ## Phase 2: AI-Native Support
 
-_Go beyond suggestions — build autonomous resolution that actually works._
+_Build autonomous resolution that actually works._
 
 ### GudBot (Autonomous AI Agent)
+- [ ] **AI assist for agents**: reply suggestions and summaries for the inbox (Claude). Planned, ships as part of GudBot v1
 - [ ] **KB-powered resolution** — answer questions directly from knowledge base articles
 - [ ] **Conversation handoff** — seamlessly escalate to human when AI can't resolve
 - [ ] **Confidence scoring** — only answer when confidence is high, ask clarifying questions otherwise
@@ -133,7 +133,7 @@ _Scale from a small team to a full support organization._
 - [ ] **Team inboxes** — separate inboxes per team (Sales, Support, Billing)
 
 ### Collaboration
-- [x] **Collision detection** — show when another agent is viewing/replying to a conversation
+- [x] **Collision detection**: show when another agent is viewing or replying to a conversation (needs Pusher keys)
 - [x] **@mentions** — tag teammates in internal notes
 - [x] **Shared drafts** — collaborate on a reply before sending
 - [x] **Side conversations** — discuss a ticket with another team without the customer seeing
@@ -142,7 +142,7 @@ _Scale from a small team to a full support organization._
 - [x] **Agent availability** — online/away/offline status with auto-routing
 - [ ] **Shift scheduling** — define agent schedules and auto-assign based on availability
 - [x] **Performance dashboards** — per-agent metrics (response time, resolution time, CSAT, volume)
-- [x] **Workload monitoring** — real-time view of team capacity
+- [x] **Workload monitoring**: live view of team capacity (needs Pusher keys)
 
 ### Advanced Reporting
 - [ ] **Custom dashboards** — drag-and-drop dashboard builder

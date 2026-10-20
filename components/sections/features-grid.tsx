@@ -7,14 +7,14 @@ const features = [
     icon: Icons.messageCircle,
     title: "Live Chat Widget",
     description:
-      "Embeddable chat widget with real-time messaging, custom colors, and visitor tracking. Install with one script tag.",
+      "Embeddable chat widget with custom colors and visitor tracking. Real-time messaging when you add Pusher keys. Install with one script tag.",
     illustration: WidgetIllustration,
   },
   {
     icon: Icons.inbox,
     title: "Shared Inbox",
     description:
-      "All conversations in one place. Assign, snooze, tag, and add internal notes. Real-time updates across your team.",
+      "All conversations in one place. Assign, snooze, tag and add internal notes. Live team updates when you add Pusher keys.",
     illustration: InboxIllustration,
   },
   {

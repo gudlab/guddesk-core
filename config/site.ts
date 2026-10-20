@@ -6,7 +6,7 @@ const site_url = env.NEXT_PUBLIC_APP_URL;
 export const siteConfig: SiteConfig = {
   name: "GudDesk",
   description:
-    "Open-source customer messaging platform. Live chat, shared inbox, knowledge base, and AI-powered support — all in one place.",
+    "Open-source customer messaging platform. Live chat, a shared inbox and a knowledge base in one place.",
   url: site_url,
   ogImage: `${site_url}/_static/og.jpg`,
   links: {
