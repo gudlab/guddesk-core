@@ -5,10 +5,17 @@ import {
   CONVERSATION_LIST_POLL_MS,
   THREAD_POLL_MS,
   THREAD_POLL_OVERLAP_MS,
+  MESSAGES_AFTER_TAKE,
+  REALTIME_CONNECT_TIMEOUT_MS,
+  appendConversationPage,
+  createRequestGeneration,
   mergeConversationPage,
   mergeMessagesById,
   messagesAfterParam,
+  messagesQueryArgs,
+  parseMessagesAfter,
   startPollingFallback,
+  type RealtimeConnection,
   type VisibilitySource,
 } from "./inbox-polling";
 import { publishLocalMessage, subscribeLocalMessages } from "./local-messages";
@@ -33,11 +40,37 @@ function fakeVisibility(initial = true) {
   };
 }
 
+/** A stand-in for pusher-js `client.connection`. */
+function fakeConnection(initial = "connecting") {
+  let state = initial;
+  const listeners = new Set<(s: { previous: string; current: string }) => void>();
+  const connection: RealtimeConnection = {
+    get state() {
+      return state;
+    },
+    bind(_event, callback) {
+      listeners.add(callback);
+    },
+    unbind(_event, callback) {
+      listeners.delete(callback);
+    },
+  };
+  return {
+    connection,
+    listenerCount: () => listeners.size,
+    set(next: string) {
+      const previous = state;
+      state = next;
+      for (const listener of Array.from(listeners)) listener({ previous, current: next });
+    },
+  };
+}
+
 const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
 
 describe("startPollingFallback", () => {
   beforeEach(() => {
-    mock.timers.enable({ apis: ["setInterval"] });
+    mock.timers.enable({ apis: ["setInterval", "setTimeout"] });
   });
   afterEach(() => {
     mock.timers.reset();
@@ -48,19 +81,24 @@ describe("startPollingFallback", () => {
     assert.equal(THREAD_POLL_MS, 4_000);
   });
 
-  it("does nothing when Pusher is configured", () => {
+  it("does nothing while Pusher is connected", () => {
     const poll = mock.fn();
     const visibility = fakeVisibility();
+    const pusher = fakeConnection("connected");
     const handle = startPollingFallback({
       intervalMs: THREAD_POLL_MS,
       poll,
-      hasRealtime: () => true,
+      realtime: pusher.connection,
       visibility: visibility.source,
     });
-    assert.equal(handle, null);
+    assert.equal(handle.polling, false);
     mock.timers.tick(60_000);
     assert.equal(poll.mock.callCount(), 0);
-    assert.equal(visibility.listenerCount(), 0);
+    visibility.set(false);
+    visibility.set(true);
+    assert.equal(poll.mock.callCount(), 0, "visibility changes don't poll either");
+    handle.stop();
+    assert.equal(pusher.listenerCount(), 0);
   });
 
   it("polls on every interval when Pusher is missing", async () => {
@@ -69,7 +107,7 @@ describe("startPollingFallback", () => {
     const handle = startPollingFallback({
       intervalMs: CONVERSATION_LIST_POLL_MS,
       poll,
-      hasRealtime: () => false,
+      realtime: null,
       visibility: visibility.source,
     });
     assert.ok(handle?.active);
@@ -91,7 +129,7 @@ describe("startPollingFallback", () => {
     const handle = startPollingFallback({
       intervalMs: THREAD_POLL_MS,
       poll,
-      hasRealtime: () => false,
+      realtime: null,
       visibility: visibility.source,
     });
     mock.timers.tick(THREAD_POLL_MS);
@@ -120,7 +158,7 @@ describe("startPollingFallback", () => {
     const handle = startPollingFallback({
       intervalMs: THREAD_POLL_MS,
       poll,
-      hasRealtime: () => false,
+      realtime: null,
       visibility: visibility.source,
     });
     assert.equal(handle?.active, false);
@@ -137,7 +175,7 @@ describe("startPollingFallback", () => {
     const handle = startPollingFallback({
       intervalMs: THREAD_POLL_MS,
       poll,
-      hasRealtime: () => false,
+      realtime: null,
       visibility: visibility.source,
     });
     assert.equal(visibility.listenerCount(), 1);
@@ -159,7 +197,7 @@ describe("startPollingFallback", () => {
     const handle = startPollingFallback({
       intervalMs: THREAD_POLL_MS,
       poll,
-      hasRealtime: () => false,
+      realtime: null,
       visibility: visibility.source,
     });
     mock.timers.tick(THREAD_POLL_MS);
@@ -182,7 +220,7 @@ describe("startPollingFallback", () => {
     const handle = startPollingFallback({
       intervalMs: THREAD_POLL_MS,
       poll,
-      hasRealtime: () => false,
+      realtime: null,
       visibility: visibility.source,
     });
     mock.timers.tick(THREAD_POLL_MS);
@@ -284,9 +322,263 @@ describe("mergeConversationPage", () => {
   it("keeps rows loaded beyond the first page", () => {
     const prev = [conv("a"), conv("b"), conv("c"), conv("d")];
     const next = mergeConversationPage(prev, [conv("d", "moved up"), conv("a")], 2);
+    // b fell off the first page because d moved up. It stays, now on page 2.
     assert.deepEqual(
       next.map((c) => c.id),
-      ["d", "a", "c"],
+      ["d", "a", "b", "c"],
     );
+  });
+});
+
+describe("mergeConversationPage after load more", () => {
+  type Conv = { id: string; preview: string };
+  const conv = (id: string, preview = id): Conv => ({ id, preview });
+  const ids = (list: Conv[]) => list.map((c) => c.id);
+
+  it("keeps every row when new conversations arrive at the top", () => {
+    // Page size 3, agent loaded two pages: c1..c6.
+    const prev = ["c1", "c2", "c3", "c4", "c5", "c6"].map((id) => conv(id));
+    // Two new conversations arrive. The server's first page is now n1, n2, c1.
+    const next = mergeConversationPage(prev, [conv("n1"), conv("n2"), conv("c1")], 3);
+    assert.deepEqual(ids(next), ["n1", "n2", "c1", "c2", "c3", "c4", "c5", "c6"]);
+  });
+
+  it("then skips the rows a stale load-more cursor returns again", () => {
+    const list = ["n1", "n2", "c1", "c2", "c3", "c4"].map((id) => conv(id));
+    const next = appendConversationPage(list, [conv("c4"), conv("c5"), conv("c6")]);
+    assert.deepEqual(ids(next), ["n1", "n2", "c1", "c2", "c3", "c4", "c5", "c6"]);
+    assert.equal(appendConversationPage(list, [conv("c3")]), list);
+  });
+
+  it("drops a first-page row that left the filter when nothing new arrived", () => {
+    const prev = ["c1", "c2", "c3", "c4"].map((id) => conv(id));
+    // c2 was closed: the server's first page is c1, c3, c4.
+    const next = mergeConversationPage(prev, [conv("c1"), conv("c3"), conv("c4")], 3);
+    assert.deepEqual(ids(next), ["c1", "c3", "c4"]);
+  });
+
+  it("only uses the first page when nothing past it was loaded", () => {
+    const prev = ["c1", "c2", "c3"].map((id) => conv(id));
+    const next = mergeConversationPage(prev, [conv("n1"), conv("c1"), conv("c2")], 3);
+    assert.deepEqual(ids(next), ["n1", "c1", "c2"]);
+  });
+});
+
+describe("polling when Pusher is configured but not connected", () => {
+  beforeEach(() => {
+    mock.timers.enable({ apis: ["setInterval", "setTimeout"] });
+  });
+  afterEach(() => {
+    mock.timers.reset();
+  });
+
+  it("waits 8s like the widget", () => {
+    assert.equal(REALTIME_CONNECT_TIMEOUT_MS, 8_000);
+  });
+
+  it("starts polling after 8s with no connection, and stops once it connects", async () => {
+    const poll = mock.fn(async () => {});
+    const visibility = fakeVisibility();
+    const pusher = fakeConnection("connecting");
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      realtime: pusher.connection,
+      visibility: visibility.source,
+    });
+    mock.timers.tick(REALTIME_CONNECT_TIMEOUT_MS - 1);
+    assert.equal(poll.mock.callCount(), 0);
+    assert.equal(handle.polling, false);
+
+    mock.timers.tick(1);
+    assert.equal(poll.mock.callCount(), 1, "polls at once when giving up on Pusher");
+    assert.equal(handle.active, true);
+    await flush();
+    mock.timers.tick(THREAD_POLL_MS);
+    await flush();
+    assert.equal(poll.mock.callCount(), 2);
+
+    pusher.set("connected");
+    assert.equal(handle.polling, false);
+    assert.equal(handle.active, false);
+    mock.timers.tick(THREAD_POLL_MS * 10);
+    await flush();
+    assert.equal(poll.mock.callCount(), 2, "no polls after Pusher connects");
+    handle.stop();
+  });
+
+  it("never polls when Pusher connects within 8s", () => {
+    const poll = mock.fn(async () => {});
+    const pusher = fakeConnection("connecting");
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      realtime: pusher.connection,
+      visibility: fakeVisibility().source,
+    });
+    mock.timers.tick(3_000);
+    pusher.set("connected");
+    mock.timers.tick(60_000);
+    assert.equal(poll.mock.callCount(), 0);
+    handle.stop();
+  });
+
+  for (const state of ["failed", "unavailable"]) {
+    it(`polls at once on "${state}" without waiting for the timeout`, async () => {
+      const poll = mock.fn(async () => {});
+      const pusher = fakeConnection("connecting");
+      const handle = startPollingFallback({
+        intervalMs: THREAD_POLL_MS,
+        poll,
+        realtime: pusher.connection,
+        visibility: fakeVisibility().source,
+      });
+      mock.timers.tick(1_000);
+      pusher.set(state);
+      assert.equal(poll.mock.callCount(), 1);
+      await flush();
+      mock.timers.tick(THREAD_POLL_MS);
+      assert.equal(poll.mock.callCount(), 2);
+      handle.stop();
+    });
+  }
+
+  it("polls straight away when the connection is already unavailable", () => {
+    const poll = mock.fn(async () => {});
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      realtime: fakeConnection("unavailable").connection,
+      visibility: fakeVisibility().source,
+    });
+    assert.equal(poll.mock.callCount(), 1);
+    handle.stop();
+  });
+
+  it("goes back to polling if a connected Pusher drops to unavailable", () => {
+    const poll = mock.fn(async () => {});
+    const pusher = fakeConnection("connected");
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      realtime: pusher.connection,
+      visibility: fakeVisibility().source,
+    });
+    pusher.set("connecting");
+    assert.equal(handle.polling, false, "a brief reconnect alone doesn't poll");
+    pusher.set("unavailable");
+    assert.equal(handle.polling, true);
+    assert.equal(poll.mock.callCount(), 1);
+    handle.stop();
+  });
+
+  it("stop() clears the connect timer and the state listener", () => {
+    const poll = mock.fn(async () => {});
+    const pusher = fakeConnection("connecting");
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      realtime: pusher.connection,
+      visibility: fakeVisibility().source,
+    });
+    assert.equal(pusher.listenerCount(), 1);
+    handle.stop();
+    assert.equal(pusher.listenerCount(), 0);
+    mock.timers.tick(60_000);
+    pusher.set("failed");
+    assert.equal(poll.mock.callCount(), 0);
+  });
+
+  it("doesn't poll a hidden tab when Pusher fails, and catches up when shown", () => {
+    const poll = mock.fn(async () => {});
+    const visibility = fakeVisibility(false);
+    const pusher = fakeConnection("connecting");
+    const handle = startPollingFallback({
+      intervalMs: THREAD_POLL_MS,
+      poll,
+      realtime: pusher.connection,
+      visibility: visibility.source,
+    });
+    pusher.set("failed");
+    assert.equal(poll.mock.callCount(), 0);
+    visibility.set(true);
+    assert.equal(poll.mock.callCount(), 1);
+    handle.stop();
+  });
+});
+
+describe("thread request generations", () => {
+  it("drops a slow response from an earlier visit to the same conversation", () => {
+    const generation = createRequestGeneration();
+    let open = "A";
+    let thread: string[] = [];
+    // Each request remembers the conversation and generation it started in.
+    const start = () => ({ id: open, gen: generation.current() });
+    const apply = (req: { id: string; gen: number }, data: string[]) => {
+      if (req.id === open && generation.isCurrent(req.gen)) thread = data;
+    };
+
+    generation.next(); // open A
+    const slowPollFromFirstVisit = start();
+    open = "B";
+    generation.next();
+    apply(start(), ["b1"]);
+    open = "A";
+    generation.next();
+    apply(start(), ["a1", "a2", "a3"]);
+
+    // The first visit's poll finally returns with older data.
+    apply(slowPollFromFirstVisit, ["a1"]);
+    assert.deepEqual(thread, ["a1", "a2", "a3"]);
+    assert.equal(generation.isCurrent(slowPollFromFirstVisit.gen), false);
+  });
+});
+
+describe("messages route ?after=", () => {
+  // Postgres timestamp range: 4713 BC to 294276 AD.
+  const PG_MIN = Date.UTC(-4713, 0, 1);
+  // 294276 AD is past the largest JavaScript date, so use that instead.
+  const PG_MAX = 8.64e15;
+
+  for (const value of ["-271821-04-20T00:00:00.000Z", "-010000-01-01T00:00:00Z"]) {
+    it(`clamps ${value} into a range Postgres accepts`, () => {
+      assert.ok(!Number.isNaN(new Date(value).getTime()), "valid in JavaScript");
+      const after = parseMessagesAfter(value);
+      assert.ok(after);
+      assert.equal(after.toISOString(), "1970-01-01T00:00:00.000Z");
+      const args = messagesQueryArgs("conv_1", value);
+      assert.deepEqual(args.where, { conversationId: "conv_1", createdAt: { gte: after } });
+      const gte = (args.where as { createdAt: { gte: Date } }).createdAt.gte.getTime();
+      assert.ok(gte >= PG_MIN && gte <= PG_MAX);
+      assert.equal(args.take, MESSAGES_AFTER_TAKE);
+    });
+  }
+
+  it("clamps the far future too", () => {
+    assert.equal(
+      parseMessagesAfter("+275760-09-13T00:00:00.000Z")?.toISOString(),
+      "9999-12-31T23:59:59.999Z",
+    );
+  });
+
+  it("passes a normal poll value through unchanged", () => {
+    const value = "2026-10-20T08:00:00.000Z";
+    assert.equal(parseMessagesAfter(value)?.toISOString(), value);
+  });
+
+  it("returns the full, uncapped thread without a usable after", () => {
+    for (const value of [null, "", "not-a-date", "+300000-01-01T00:00:00Z"]) {
+      assert.equal(parseMessagesAfter(value), null, String(value));
+      const args = messagesQueryArgs("conv_1", value);
+      assert.deepEqual(args.where, { conversationId: "conv_1" });
+      assert.equal("take" in args, false);
+    }
+  });
+
+  it("caps an incremental poll at a sane size", () => {
+    assert.equal(MESSAGES_AFTER_TAKE, 200);
+    assert.deepEqual(messagesQueryArgs("conv_1", "2026-10-20T08:00:00.000Z").orderBy, {
+      createdAt: "asc",
+    });
   });
 });

@@ -5,6 +5,7 @@ import { usePusher, usePusherReconnect } from "./use-pusher";
 import { usePollingFallback } from "./use-polling-fallback";
 import {
   CONVERSATION_LIST_POLL_MS,
+  appendConversationPage,
   mergeConversationPage,
 } from "@/lib/inbox-polling";
 
@@ -70,8 +71,9 @@ export function useConversations({
         const data = await res.json();
 
         if (cursor) {
-          // Appending more results
-          setConversations((prev) => [...prev, ...data.conversations]);
+          // Appending more results. A poll may already have pulled some of
+          // these rows up, so skip duplicates.
+          setConversations((prev) => appendConversationPage(prev, data.conversations));
           extraPagesRef.current = true;
         } else {
           // Fresh fetch (filter change or refresh)

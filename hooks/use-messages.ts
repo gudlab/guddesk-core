@@ -5,6 +5,7 @@ import { usePusher, usePusherReconnect } from "./use-pusher";
 import { usePollingFallback } from "./use-polling-fallback";
 import {
   THREAD_POLL_MS,
+  createRequestGeneration,
   mergeMessagesById,
   messagesAfterParam,
 } from "@/lib/inbox-polling";
@@ -34,15 +35,22 @@ export function useMessages(conversationId: string | null) {
   messagesRef.current = messages;
   const currentIdRef = useRef(conversationId);
   currentIdRef.current = conversationId;
+  // Bumped each time the open conversation changes. Responses from an
+  // earlier visit (A, then B, then back to A) are dropped.
+  const generationRef = useRef<ReturnType<typeof createRequestGeneration> | null>(null);
+  if (generationRef.current === null) generationRef.current = createRequestGeneration();
+  const generation = generationRef.current;
 
   const loadMessages = useCallback(
     async (silent: boolean) => {
       if (!conversationId) return;
+      const gen = generation.current();
       if (!silent) setIsLoading(true);
       try {
         const res = await fetch(`/api/inbox/conversations/${conversationId}/messages`);
-        if (res.ok && currentIdRef.current === conversationId) {
+        if (res.ok && currentIdRef.current === conversationId && generation.isCurrent(gen)) {
           const data = await res.json();
+          if (!generation.isCurrent(gen)) return;
           setMessages(data.messages);
           loadedForRef.current = conversationId;
         }
@@ -52,14 +60,16 @@ export function useMessages(conversationId: string | null) {
         if (!silent) setIsLoading(false);
       }
     },
-    [conversationId],
+    [conversationId, generation],
   );
 
   const fetchMessages = useCallback(() => loadMessages(false), [loadMessages]);
 
   useEffect(() => {
+    generation.next();
+    loadedForRef.current = null;
     fetchMessages();
-  }, [fetchMessages]);
+  }, [fetchMessages, generation]);
 
   // Real-time new messages
   // Pusher payload is the message object directly (not wrapped in { message })
@@ -98,6 +108,7 @@ export function useMessages(conversationId: string | null) {
   // only for messages since the newest one we hold (plus an overlap).
   const pollMessages = useCallback(async () => {
     if (!conversationId) return;
+    const gen = generation.current();
     if (loadedForRef.current !== conversationId) {
       await loadMessages(true);
       return;
@@ -112,13 +123,14 @@ export function useMessages(conversationId: string | null) {
         `/api/inbox/conversations/${conversationId}/messages?after=${encodeURIComponent(after)}`,
         { cache: "no-store" },
       );
-      if (!res.ok || currentIdRef.current !== conversationId) return;
+      if (!res.ok || currentIdRef.current !== conversationId || !generation.isCurrent(gen)) return;
       const data = await res.json();
+      if (!generation.isCurrent(gen)) return;
       setMessages((prev) => mergeMessagesById(prev, data.messages ?? []));
     } catch {
       // Next poll retries.
     }
-  }, [conversationId, loadMessages]);
+  }, [conversationId, loadMessages, generation]);
 
   usePollingFallback(pollMessages, THREAD_POLL_MS, conversationId !== null);
 

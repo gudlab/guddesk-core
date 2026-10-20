@@ -1,29 +1,24 @@
 "use client";
 
-import { useConversations } from "@/hooks/use-conversations";
+import type { ConversationListItem } from "@/hooks/use-conversations";
 import { ConversationListItemComponent } from "./conversation-list-item";
 import { Icons } from "@/components/shared/icons";
 
 interface ConversationListProps {
-  workspaceId: string;
+  conversations: ConversationListItem[];
+  isLoading: boolean;
   status: "OPEN" | "SNOOZED" | "CLOSED";
-  assigneeFilter?: string;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }
 
 export function ConversationList({
-  workspaceId,
+  conversations,
+  isLoading,
   status,
-  assigneeFilter,
   selectedId,
   onSelect,
 }: ConversationListProps) {
-  const { conversations, isLoading } = useConversations({
-    workspaceId,
-    status,
-    assigneeId: assigneeFilter,
-  });
 
   if (isLoading) {
     return (

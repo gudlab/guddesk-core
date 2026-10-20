@@ -39,7 +39,10 @@ export function InboxLayout({
   const [status, setStatus] = useState<"OPEN" | "SNOOZED" | "CLOSED">("OPEN");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
 
-  const { conversations } = useConversations({
+  // The only useConversations instance in the inbox. ConversationList gets
+  // the list as props, so there is one list poller and one set of Pusher
+  // bindings.
+  const { conversations, isLoading } = useConversations({
     workspaceId,
     status,
     assigneeId: assigneeFilter === "all" || assigneeFilter === "unassigned"
@@ -64,11 +67,9 @@ export function InboxLayout({
         />
         <div className="flex-1 overflow-hidden">
           <ConversationList
-            workspaceId={workspaceId}
+            conversations={conversations}
+            isLoading={isLoading}
             status={status}
-            assigneeFilter={
-              assigneeFilter === "all" ? undefined : assigneeFilter === "unassigned" ? undefined : assigneeFilter
-            }
             selectedId={selectedId}
             onSelect={setSelectedId}
           />

@@ -1,9 +1,11 @@
 /**
- * Polling fallback for the agent inbox when Pusher isn't configured.
+ * Polling fallback for the agent inbox when Pusher isn't configured or
+ * can't connect.
  *
  * getPusherClient() returns null when NEXT_PUBLIC_PUSHER_KEY or
  * NEXT_PUBLIC_PUSHER_CLUSTER is missing, and every usePusher() binding then
- * does nothing. Without this fallback the inbox only changed on a reload.
+ * does nothing. A configured client can also fail to connect (bad key,
+ * blocked network). Without this fallback the inbox only changed on a reload.
  *
  * This file has no React in it so the timer logic can be tested with
  * node:test fake timers. hooks/use-polling-fallback.ts wraps it.
@@ -27,40 +29,62 @@ export interface VisibilitySource {
   subscribe(listener: () => void): () => void;
 }
 
+/** How long to wait for Pusher to connect before polling anyway. Matches the widget. */
+export const REALTIME_CONNECT_TIMEOUT_MS = 8_000;
+
+/**
+ * The bits of a pusher-js connection the fallback needs. Pusher's
+ * `client.connection` fits this shape.
+ */
+export interface RealtimeConnection {
+  readonly state: string;
+  bind(event: "state_change", callback: (states: { previous: string; current: string }) => void): unknown;
+  unbind(event: "state_change", callback: (states: { previous: string; current: string }) => void): unknown;
+}
+
 export interface PollingFallbackOptions {
   intervalMs: number;
   poll: () => unknown;
-  /** True when a realtime client exists. Polling never starts then. */
-  hasRealtime: () => boolean;
+  /**
+   * The Pusher connection, or null when Pusher isn't configured. With a
+   * connection, polling only runs while it isn't connected: after
+   * connectTimeoutMs without a connection, or once it reports "failed" or
+   * "unavailable". It stops again as soon as the connection is up.
+   */
+  realtime: RealtimeConnection | null;
   visibility: VisibilitySource;
+  connectTimeoutMs?: number;
 }
 
 export interface PollingHandle {
   stop(): void;
   /** True while the interval timer is armed. */
   readonly active: boolean;
+  /** True while polling is wanted (no realtime, or realtime is down). */
+  readonly polling: boolean;
 }
 
+const REALTIME_DOWN_STATES = new Set(["failed", "unavailable"]);
+
 /**
- * Starts polling unless realtime is available, in which case it returns null
- * and does nothing. While running:
+ * Polls as a stand-in for realtime. While polling is wanted:
  * - polls every intervalMs, but only while the page is visible
  * - clears the timer when the page is hidden, and polls once straight away
  *   when it becomes visible again
  * - never starts a poll while the previous one is still in flight
+ * With a realtime connection that is (or becomes) connected, nothing runs.
  */
-export function startPollingFallback(
-  options: PollingFallbackOptions,
-): PollingHandle | null {
-  if (options.hasRealtime()) return null;
-
-  const { intervalMs, poll, visibility } = options;
+export function startPollingFallback(options: PollingFallbackOptions): PollingHandle {
+  const { intervalMs, poll, visibility, realtime } = options;
+  const connectTimeoutMs = options.connectTimeoutMs ?? REALTIME_CONNECT_TIMEOUT_MS;
   let timer: ReturnType<typeof setInterval> | null = null;
+  let connectTimer: ReturnType<typeof setTimeout> | null = null;
   let inFlight = false;
   let stopped = false;
+  let wanted = false;
 
   const tick = () => {
-    if (stopped || inFlight || !visibility.isVisible()) return;
+    if (stopped || !wanted || inFlight || !visibility.isVisible()) return;
     inFlight = true;
     let result: unknown;
     try {
@@ -85,9 +109,29 @@ export function startPollingFallback(
       timer = null;
     }
   };
+  const clearConnectTimer = () => {
+    if (connectTimer !== null) {
+      clearTimeout(connectTimer);
+      connectTimer = null;
+    }
+  };
+
+  // immediate: poll at once, used when realtime drops so the agent doesn't
+  // wait a full interval for data it may have missed.
+  const setWanted = (next: boolean, immediate: boolean) => {
+    if (stopped || wanted === next) return;
+    wanted = next;
+    if (!next) {
+      disarm();
+      return;
+    }
+    if (!visibility.isVisible()) return;
+    if (immediate) tick();
+    arm();
+  };
 
   const unsubscribe = visibility.subscribe(() => {
-    if (stopped) return;
+    if (stopped || !wanted) return;
     if (visibility.isVisible()) {
       tick();
       arm();
@@ -96,16 +140,43 @@ export function startPollingFallback(
     }
   });
 
-  if (visibility.isVisible()) arm();
+  const onStateChange = ({ current }: { previous: string; current: string }) => {
+    if (current === "connected") {
+      clearConnectTimer();
+      setWanted(false, false);
+    } else if (REALTIME_DOWN_STATES.has(current)) {
+      clearConnectTimer();
+      setWanted(true, true);
+    }
+  };
+
+  if (!realtime) {
+    setWanted(true, false);
+  } else {
+    realtime.bind("state_change", onStateChange);
+    if (REALTIME_DOWN_STATES.has(realtime.state)) {
+      setWanted(true, true);
+    } else if (realtime.state !== "connected") {
+      connectTimer = setTimeout(() => {
+        connectTimer = null;
+        if (realtime.state !== "connected") setWanted(true, true);
+      }, connectTimeoutMs);
+    }
+  }
 
   return {
     stop() {
       stopped = true;
+      clearConnectTimer();
       disarm();
       unsubscribe();
+      realtime?.unbind("state_change", onStateChange);
     },
     get active() {
       return timer !== null;
+    },
+    get polling() {
+      return wanted && !stopped;
     },
   };
 }
@@ -177,6 +248,11 @@ export function messagesAfterParam(
  * Applies a fresh first page of the conversation list. Items the agent
  * already loaded past the first page stay, so polling doesn't undo
  * "load more". Returns prev itself when nothing changed.
+ *
+ * When rows arrive at the top (new conversations, or older ones with a new
+ * message), the same number of rows fall off the bottom of the server's
+ * first page onto page 2. If the agent has loaded more, those rows are kept
+ * right after the first page instead of disappearing.
  */
 export function mergeConversationPage<T extends { id: string }>(
   prev: T[],
@@ -184,7 +260,19 @@ export function mergeConversationPage<T extends { id: string }>(
   pageSize: number,
 ): T[] {
   const pageIds = new Set(firstPage.map((c) => c.id));
-  const tail = prev.slice(pageSize).filter((c) => !pageIds.has(c.id));
+  const oldHead = prev.slice(0, pageSize);
+  const oldTail = prev.slice(pageSize);
+  let displaced: T[] = [];
+  if (oldTail.length > 0 && firstPage.length >= pageSize) {
+    const oldHeadIds = new Set(oldHead.map((c) => c.id));
+    const arrivals = firstPage.filter((c) => !oldHeadIds.has(c.id)).length;
+    if (arrivals > 0) {
+      displaced = oldHead
+        .slice(Math.max(0, oldHead.length - arrivals))
+        .filter((c) => !pageIds.has(c.id));
+    }
+  }
+  const tail = [...displaced, ...oldTail.filter((c) => !pageIds.has(c.id))];
   const next = [...firstPage, ...tail];
   if (next.length === prev.length) {
     let same = true;
@@ -197,4 +285,71 @@ export function mergeConversationPage<T extends { id: string }>(
     if (same) return prev;
   }
   return next;
+}
+
+/** Appends a "load more" page, skipping rows already in the list. */
+export function appendConversationPage<T extends { id: string }>(
+  prev: T[],
+  page: T[],
+): T[] {
+  const seen = new Set(prev.map((c) => c.id));
+  const fresh = page.filter((c) => !seen.has(c.id));
+  return fresh.length === 0 ? prev : [...prev, ...fresh];
+}
+
+/**
+ * Request generations. Each time the open conversation changes, next()
+ * returns a new number. A response is applied only if isCurrent() is still
+ * true for the number taken when its request started, so a slow poll from
+ * an earlier visit to the same conversation (A, then B, then A again)
+ * can't overwrite fresher data.
+ */
+export function createRequestGeneration() {
+  let current = 0;
+  return {
+    next(): number {
+      current += 1;
+      return current;
+    },
+    current(): number {
+      return current;
+    },
+    isCurrent(generation: number): boolean {
+      return generation === current;
+    },
+  };
+}
+
+/** Most messages one `?after=` request returns. */
+export const MESSAGES_AFTER_TAKE = 200;
+
+// Postgres timestamps go far past these, but a real `after` from the
+// poller is always a recent time. Anything outside is clamped.
+const AFTER_MIN_MS = Date.UTC(1970, 0, 1);
+const AFTER_MAX_MS = Date.UTC(9999, 11, 31, 23, 59, 59, 999);
+
+/**
+ * Parses the messages route `?after=` value. Returns null when it's missing
+ * or not a date (the route then returns the full thread, as before). A
+ * valid JavaScript date outside 1970-01-01 to 9999-12-31 is clamped to that
+ * range, so the query never sends Postgres a timestamp it rejects.
+ */
+export function parseMessagesAfter(value: string | null): Date | null {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return null;
+  return new Date(Math.min(Math.max(time, AFTER_MIN_MS), AFTER_MAX_MS));
+}
+
+/**
+ * The findMany arguments (minus `include`) for the messages route. Full
+ * thread without a usable `after`; otherwise messages since then, capped.
+ */
+export function messagesQueryArgs(conversationId: string, afterParam: string | null) {
+  const after = parseMessagesAfter(afterParam);
+  return {
+    where: after ? { conversationId, createdAt: { gte: after } } : { conversationId },
+    orderBy: { createdAt: "asc" as const },
+    ...(after ? { take: MESSAGES_AFTER_TAKE } : {}),
+  };
 }
