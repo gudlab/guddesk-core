@@ -37,7 +37,7 @@ export async function generateMetadata({
 
   return {
     title: `Free ${alt.name} Alternative | Open Source | GudDesk`,
-    description: `Looking for a free ${alt.name} alternative? GudDesk is an open-source customer messaging platform with live chat, AI agents, and a shared inbox. Free for small workspaces. Self-hostable.`,
+    description: `Looking for a free ${alt.name} alternative? GudDesk is open-source customer support software with live chat and a shared inbox. Free plan for 2 members. Self-hostable.`,
   };
 }
 
@@ -195,7 +195,7 @@ export default async function AlternativePage({ params }: PageProps) {
               {
                 icon: Icons.code,
                 title: "Open Source",
-                desc: "AGPL-3.0 licensed. Audit, extend, and contribute.",
+                desc: "AGPL-3.0 licensed. Read the code and change it.",
               },
               {
                 icon: Icons.laptop,
@@ -204,13 +204,13 @@ export default async function AlternativePage({ params }: PageProps) {
               },
               {
                 icon: Icons.sparkles,
-                title: "AI Agents Included",
-                desc: "Three built-in agents. No per-resolution fees.",
+                title: "Bring your own AI agent",
+                desc: "Connect your bot through the agent API. No per-resolution fees.",
               },
               {
                 icon: Icons.users,
                 title: "No Per-Seat Pricing",
-                desc: "Free for 2 members. Flat pricing for workspaces.",
+                desc: "Free for 2 members. Pro is $29 a month for unlimited seats.",
               },
             ].map((item) => (
               <div key={item.title} className="text-center">

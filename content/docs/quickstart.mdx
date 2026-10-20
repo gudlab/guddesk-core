@@ -12,15 +12,15 @@ This guide gets you from zero to a working GudDesk instance.
 3. **Install the chat widget** on your site (see [Widget Installation](/docs/widget/installation))
 4. **Start chatting**: open your site and send a test message
 
-That's it. Your shared inbox, knowledge base, and AI agents are ready to go.
+That's it. Your shared inbox and knowledge base are ready to go.
 
 ## Option B: Local Development
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm (recommended) or npm
-- PostgreSQL 15+
+- Node.js 20.19 or later
+- pnpm
+- PostgreSQL (local or hosted, for example Neon)
 
 ### Steps
 
@@ -49,9 +49,12 @@ RESEND_API_KEY="your-resend-api-key"
 
 ```bash
 # 4. Push the database schema
-pnpm db:push
+pnpm prisma db push
 
-# 5. Start the development server
+# 5. Build the chat widget
+pnpm run build:widget
+
+# 6. Start the development server
 pnpm dev
 ```
 
@@ -61,5 +64,5 @@ Open [http://localhost:3000](http://localhost:3000). You should see the GudDesk 
 
 - [Install the chat widget](/docs/widget/installation) on your website
 - [Set up your shared inbox](/docs/inbox/overview) to manage conversations
-- [Configure AI agents](/docs/agents/overview) for automated support
+- [Connect your own AI agent](/docs/agents/overview) through the agent API
 - [Create knowledge base articles](/docs/knowledge-base/overview) for self-service

@@ -5,7 +5,7 @@ import IntegrationsCatalog from "@/components/sections/integrations-catalog";
 export const metadata: Metadata = {
   title: "Integrations – GudDesk",
   description:
-    "Connect AI agents, channels, CRMs, and automation tools. Browse the GudDesk integration marketplace — most are free.",
+    "Connect your own AI agent, Slack, email and webhooks to GudDesk through the REST API and MCP server.",
 };
 
 export default function IntegrationsPage() {

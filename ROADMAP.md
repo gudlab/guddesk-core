@@ -73,7 +73,7 @@ _Build autonomous resolution that actually works._
 ### GudBot (Autonomous AI Agent)
 - [ ] **AI assist for agents**: reply suggestions and summaries for the inbox (Claude). Planned, ships as part of GudBot v1
 - [ ] **KB-powered resolution**: answer questions directly from knowledge base articles
-- [ ] **Conversation handoff**: seamlessly escalate to human when AI can't resolve
+- [ ] **Conversation handoff**: escalate to a human when AI can't resolve
 - [ ] **Confidence scoring**: only answer when confidence is high, ask clarifying questions otherwise
 - [ ] **Multi-turn conversations**: maintain context across messages
 - [ ] **Action execution**: AI can check order status, update records, trigger workflows

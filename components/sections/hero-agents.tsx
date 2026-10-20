@@ -63,8 +63,8 @@ export default function HeroAgents() {
 
           <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-lg text-balance lg:max-w-3xl lg:text-xl">
             Most support tools weren't built for AI agents. GudDesk was. It's
-            the open-source platform where your AI and human team share context,
-            collaborate on tickets, and close issues faster — together.
+            the open-source support desk where your own AI agent and your team
+            work in the same inbox.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -169,9 +169,8 @@ export default function HeroAgents() {
                   <Icons.sparkles className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="bg-muted max-w-[75%] rounded-2xl rounded-bl-md px-4 py-2.5 text-sm">
-                  I&apos;ve triggered a new password reset email to your
-                  address. It should arrive within 60 seconds — check your spam
-                  folder too. Let me know if it doesn&apos;t come through!
+                  I&apos;ve sent you our password reset guide. If the email still
+                  doesn&apos;t arrive, a teammate will check your account.
                 </div>
               </div>
 

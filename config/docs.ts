@@ -77,7 +77,7 @@ export const docsConfig: DocsConfig = {
           icon: "page",
         },
         {
-          title: "Built-in AI",
+          title: "AI assist (planned)",
           href: "/docs/agents/built-in",
           icon: "page",
         },

@@ -225,7 +225,7 @@ const integrations: Integration[] = [
   {
     name: "Built-in Analytics",
     description:
-      "Conversation volume, response times, resolution rates, agent performance, and CSAT scores, all built in.",
+      "Conversation volume, response times, resolution times, agent performance, and CSAT scores, all built in.",
     category: "analytics",
     icon: "analytics",
     tier: "free",
@@ -472,7 +472,7 @@ export default function IntegrationsCatalog() {
             </h2>
             <p className="mt-4 max-w-xl text-balance text-muted-foreground">
               GudDesk is API-first and fully open source. Build custom
-              integrations, contribute to the marketplace, or fork and extend
+              integrations, contribute to the project, or fork and extend
               anything.
             </p>
           </div>

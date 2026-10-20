@@ -42,7 +42,7 @@ const features = [
     icon: Icons.analytics,
     title: "Analytics",
     description:
-      "Daily snapshots of conversations, response times, resolution rates, and visitor tracking. Know what matters.",
+      "Daily snapshots of conversations, response times, resolution times, and visitor tracking. Know what matters.",
     illustration: AnalyticsIllustration,
   },
 ];

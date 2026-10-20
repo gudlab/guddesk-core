@@ -3,31 +3,31 @@ title: AI Agents Overview
 description: Understand how GudDesk agents work and how they automate your customer support.
 ---
 
-Agents in GudDesk are external services that receive webhook events and interact with your workspace via the REST API. Each agent brings its own logic, LLM, and billing — GudDesk provides the conversation data and actions.
+Agents in GudDesk are external services that receive webhook events and interact with your workspace via the REST API. Each agent brings its own logic, LLM, and billing. GudDesk provides the conversation data and actions.
 
 ## How Agents Work
 
 1. An event happens in your workspace (new message, new conversation, etc.)
 2. GudDesk sends a webhook to every installed agent that subscribes to that event
-3. The agent processes the event — searches knowledge bases, calls LLMs, checks your systems
-4. The agent acts via the GudDesk API — replying, tagging, assigning, or resolving conversations
+3. The agent processes the event: it searches knowledge bases, calls LLMs, checks your systems
+4. The agent acts via the GudDesk API: replying, tagging, assigning, or resolving conversations
 5. The entire interaction is logged in your inbox
 
 ## Agent Architecture
 
 Agents are **not** hosted by GudDesk. They're external web services at HTTPS URLs, similar to how apps work on Shopify or Slack. This means:
 
-- **You choose your LLM** — use Claude, GPT, Llama, or no LLM at all
-- **You own your billing** — charge users however you want; GudDesk doesn't take a cut
-- **You control the logic** — agents can integrate with your internal systems, CRMs, order databases, etc.
-- **Any language** — write agents in TypeScript, Python, Go, Rust, or anything that can serve HTTP
+- **You choose your LLM**: use Claude, GPT, Llama, or no LLM at all
+- **You own your billing**: charge users however you want; GudDesk doesn't take a cut
+- **You control the logic**: agents can integrate with your internal systems, CRMs, order databases, etc.
+- **Any language**: write agents in TypeScript, Python, Go, Rust, or anything that can serve HTTP
 
 ## Installing Agents
 
 Install agents in **Settings > AI Agents**. When you install an agent, GudDesk creates:
 
-1. A **webhook endpoint** — GudDesk sends events to your agent's URL, signed with HMAC SHA-256
-2. A **dedicated API key** — your agent uses this to call the GudDesk API (READ_WRITE permission, scoped to the workspace)
+1. A **webhook endpoint**: GudDesk sends events to your agent's URL, signed with HMAC SHA-256
+2. A **dedicated API key**: your agent uses this to call the GudDesk API (READ_WRITE permission, scoped to the workspace)
 
 Both credentials are shown once at install time and must be stored securely.
 
@@ -70,6 +70,6 @@ RefundBot calls PATCH /api/v1/conversations/:id
 
 ## Next Steps
 
-- [Build a custom agent](/docs/agents/custom-agents) — step-by-step guide with code examples
-- [API Overview](/docs/api/overview) — full REST API documentation
-- [Webhooks](/docs/api/webhooks) — webhook event reference and payload format
+- [Build a custom agent](/docs/agents/custom-agents): step-by-step guide with code examples
+- [API Overview](/docs/api/overview): full REST API documentation
+- [Webhooks](/docs/api/webhooks): webhook event reference and payload format

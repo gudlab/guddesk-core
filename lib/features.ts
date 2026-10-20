@@ -290,8 +290,6 @@ export const features: Feature[] = [
       "Collections and ordering",
       "Public help center",
       "Search functionality",
-      "Article suggestions in widget",
-      "AI agent integration",
       "Helpful/not-helpful voting",
       "View count tracking",
       "Draft and published states",
@@ -304,7 +302,7 @@ export const features: Feature[] = [
           "Publish articles about your most common questions. The widget suggests them automatically, deflecting up to 30% of conversations before they start.",
       },
       {
-        title: "Train AI agents with documentation",
+        title: "Feed your own agent",
         description:
           "Your own agent can search the same help center through the API.",
       },
@@ -316,7 +314,7 @@ export const features: Feature[] = [
           "Yes. Set your help center title, subtitle, primary color, and logo. The help center matches your brand and is available at a dedicated URL.",
       },
       {
-        question: "Do articles feed into the AI features?",
+        question: "Can agents read my articles?",
         answer:
           "Your own agent can search the same help center through the API.",
       },
@@ -411,7 +409,7 @@ export const features: Feature[] = [
     tagline: "Data-driven support decisions",
     headline: "Measure everything. Improve what matters.",
     description:
-      "Built-in analytics give you conversation volume trends, response time breakdowns, resolution rates, agent performance scores, and CSAT results. No third-party analytics tool required.",
+      "Built-in analytics give you conversation volume trends, response time breakdowns, resolution times, agent performance scores, and CSAT results. No third-party analytics tool required.",
     icon: "analytics",
     highlights: [
       {
@@ -460,7 +458,7 @@ export const features: Feature[] = [
       {
         title: "Identify documentation gaps",
         description:
-          "High-volume topics with low AI resolution rates indicate missing knowledge base articles. Write those articles and watch the numbers improve.",
+          "Topics that come up often in conversations point to missing knowledge base articles. Write those articles and watch the numbers improve.",
       },
     ],
     faqs: [

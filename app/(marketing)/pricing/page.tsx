@@ -367,12 +367,23 @@ export default function PricingPage() {
                 Unlimited seats. No per-user fees.
               </p>
               <ul className="mt-6 space-y-2.5">
-                {proFeatures.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <Icons.check className="mt-0.5 size-4 shrink-0 text-green-600 dark:text-green-400" />
-                    {f}
-                  </li>
-                ))}
+                {proFeatures.map((f) => {
+                  const muted = f.endsWith(": planned");
+                  return (
+                    <li
+                      key={f}
+                      className={cn(
+                        "flex items-start gap-2 text-sm",
+                        muted && "text-muted-foreground",
+                      )}
+                    >
+                      {!muted && (
+                        <Icons.check className="mt-0.5 size-4 shrink-0 text-green-600 dark:text-green-400" />
+                      )}
+                      {f}
+                    </li>
+                  );
+                })}
                 <li className="text-sm text-muted-foreground">
                   AI agent: on the roadmap
                 </li>

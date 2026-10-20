@@ -28,8 +28,8 @@ export default async function RoadmapPage() {
             Where we&apos;re headed
           </h1>
           <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-            GudDesk is built in the open. Track our progress across every phase
-            — from foundation features to enterprise scale.
+            GudDesk is built in the open. Track our progress across every phase,
+            from foundation features to enterprise scale.
           </p>
         </div>
 
