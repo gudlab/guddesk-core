@@ -11,6 +11,7 @@ import {
   DEFAULT_SCHEDULE,
   type WeekSchedule,
 } from "./business-hours";
+import { resolveStoredTimeZone } from "../timezones";
 
 export interface SlaDeadlines {
   slaPolicyId: string;
@@ -55,7 +56,9 @@ export async function computeSlaDeadlines(
 
   const schedule = (businessHours?.schedule as WeekSchedule) ?? DEFAULT_SCHEDULE;
   const holidays = (businessHours?.holidays as string[]) ?? [];
-  const timezone = businessHours?.timezone ?? "UTC";
+  // Stored values from before validation keep working; a broken one
+  // falls back to UTC instead of failing the SLA computation.
+  const timezone = resolveStoredTimeZone(businessHours?.timezone);
 
   const firstResponseDueAt = addBusinessMinutes(
     startTime,

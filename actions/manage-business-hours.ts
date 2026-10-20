@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { requireWorkspaceRole } from "@/lib/workspace";
 import { revalidatePath } from "next/cache";
 import type { WeekSchedule } from "@/lib/sla/business-hours";
+import { saveBusinessHours } from "@/lib/sla/save-business-hours";
 
 export async function upsertBusinessHours(
   workspaceId: string,
@@ -22,42 +23,27 @@ export async function upsertBusinessHours(
     }
     await requireWorkspaceRole(workspaceId, session.user.id, ["OWNER", "ADMIN"]);
 
-    if (!data.timezone) {
-      return { status: "error" as const, message: "Timezone is required" };
-    }
-
-    // Validate schedule: at least one working day
-    const hasWorkingDay = Object.values(data.schedule).some(
-      (day) => day && day.start && day.end,
+    const result = await saveBusinessHours(
+      {
+        async upsert(id, value) {
+          const fields = {
+            timezone: value.timezone,
+            schedule: value.schedule as unknown as Prisma.InputJsonValue,
+            holidays: value.holidays as unknown as Prisma.InputJsonValue,
+          };
+          await prisma.businessHours.upsert({
+            where: { workspaceId: id },
+            create: { workspaceId: id, ...fields },
+            update: fields,
+          });
+        },
+      },
+      workspaceId,
+      data,
     );
-    if (!hasWorkingDay) {
-      return { status: "error" as const, message: "At least one working day is required" };
-    }
 
-    // Validate holiday date format
-    for (const holiday of data.holidays) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(holiday)) {
-        return { status: "error" as const, message: `Invalid holiday date format: ${holiday}` };
-      }
-    }
-
-    await prisma.businessHours.upsert({
-      where: { workspaceId },
-      create: {
-        workspaceId,
-        timezone: data.timezone,
-        schedule: data.schedule as unknown as Prisma.InputJsonValue,
-        holidays: data.holidays as unknown as Prisma.InputJsonValue,
-      },
-      update: {
-        timezone: data.timezone,
-        schedule: data.schedule as unknown as Prisma.InputJsonValue,
-        holidays: data.holidays as unknown as Prisma.InputJsonValue,
-      },
-    });
-
-    revalidatePath("/workspace");
-    return { status: "success" as const };
+    if (result.status === "success") revalidatePath("/workspace");
+    return result;
   } catch (error) {
     console.error("Upsert business hours error:", error);
     return { status: "error" as const, message: "Failed to save business hours" };
