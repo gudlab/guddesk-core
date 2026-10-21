@@ -1,6 +1,6 @@
 ---
 title: "Self-Hosting GudDesk: A Complete Guide"
-description: Everything you need to know about running GudDesk on your own infrastructure — from Docker to bare metal.
+description: Everything you need to know about running GudDesk on your own infrastructure with Node.js and PostgreSQL.
 image: /_static/blog/blog-post-4.jpg
 date: "2025-05-28"
 authors:
@@ -18,31 +18,41 @@ One of GudDesk's core principles is that you should own your data. Self-hosting 
 
 Before you start, you'll need:
 
-- **Docker and Docker Compose** (recommended) or Node.js 20+
-- **PostgreSQL 15+** (or use the bundled Docker container)
+- **Node.js 20.19 or later** and **pnpm**
+- **PostgreSQL 15+**, on your own server or a managed service such as Neon, Supabase or AWS RDS
 - **A domain name** (for the chat widget and dashboard)
-- **An SMTP service** (Resend, SendGrid, or any SMTP provider for transactional emails)
+- **A Resend API key** for transactional emails
 
-## Quick Start with Docker
+GudDesk runs from source. There is no Docker image or Compose file.
 
-The fastest way to get GudDesk running is with Docker Compose:
+## Install and Run
 
 ```bash
 # Clone the repository
 git clone https://github.com/gudlab/guddesk-core.git
 cd guddesk-core
 
+# Install dependencies (this also generates the Prisma client)
+pnpm install
+
 # Copy the environment template
 cp .env.example .env
 
 # Edit .env with your configuration
-# At minimum, set DATABASE_URL, AUTH_SECRET, and RESEND_API_KEY
+# At minimum, set DATABASE_URL, AUTH_SECRET, NEXT_PUBLIC_APP_URL,
+# RESEND_API_KEY, GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
 
-# Start everything
-docker compose up -d
+# Create the database tables
+pnpm prisma db push
+
+# Build the app (this also builds the chat widget)
+pnpm build
+
+# Start the production server
+pnpm start
 ```
 
-That's it. GudDesk will be running at `http://localhost:3000` with a PostgreSQL database.
+GudDesk is now running at `http://localhost:3000`, using the PostgreSQL database in `DATABASE_URL`.
 
 ## Environment Variables
 
@@ -56,26 +66,15 @@ Here are the key environment variables you'll need to configure:
 | `NEXT_PUBLIC_APP_URL` | Yes | Your public-facing URL |
 | `GOOGLE_CLIENT_ID` | Yes | For Google OAuth sign-in |
 | `GOOGLE_CLIENT_SECRET` | Yes | For Google OAuth sign-in |
-| `PUSHER_APP_ID` | No | For real-time messaging |
+| `PUSHER_APP_ID` | No | Pusher app ID, for live updates |
+| `PUSHER_SECRET` | No | Pusher secret, for live updates |
+| `NEXT_PUBLIC_PUSHER_KEY` | No | Pusher key, for live updates |
+| `NEXT_PUBLIC_PUSHER_CLUSTER` | No | Pusher cluster, for live updates |
 | `ANTHROPIC_API_KEY` | No | For AI agent features |
 
-## Running Without Docker
+The four Pusher variables are optional. Without them the inbox and the chat widget fall back to polling: the conversation list refreshes every 10 seconds, and the open thread and the widget every 4 seconds. Typing indicators and agent presence need Pusher. `NEXT_PUBLIC_` values are built into the browser code, so run `pnpm build` again after you set or change them.
 
-If you prefer running directly on your server:
-
-```bash
-# Install dependencies
-pnpm install
-
-# Run database migrations
-pnpm db:push
-
-# Build the application
-pnpm build
-
-# Start production server
-pnpm start
-```
+## Keeping It Running
 
 We recommend using a process manager like PM2 to keep GudDesk running:
 
@@ -97,7 +96,7 @@ Once your instance is running, embed the chat widget on your site:
 <script src="https://your-guddesk-domain.com/widget.js" async></script>
 ```
 
-You can find your App ID (prefixed `gd_pub_`) in the dashboard under **Settings > Widget**. This value is safe to include in client-side code — it only identifies your workspace.
+You can find your App ID (prefixed `gd_pub_`) in the dashboard under **Settings > Widget**. This value is safe to include in client-side code. It only identifies your workspace.
 
 ## Database Backups
 
@@ -122,7 +121,7 @@ git pull origin main
 pnpm install
 
 # Run migrations
-pnpm db:push
+pnpm prisma db push
 
 # Rebuild and restart
 pnpm build
