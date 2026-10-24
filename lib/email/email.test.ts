@@ -216,7 +216,23 @@ describe("sendEmail errors", () => {
   });
 
   it("the email-channel reply sends as the workspace", () => {
-    assert.match(read("lib/channels/email/provider.ts"), /\}, \{ sender: "workspace" \}\);/);
+    assert.match(read("lib/channels/email/provider.ts"), /\}, \{ sender: "workspace", idempotencyKey: `email-channel-reply\/\$\{message\.id\}` \}\);/);
+  });
+
+  it("passes an idempotency key to Resend only when one is given", async () => {
+    const calls: unknown[][] = [];
+    const client = {
+      emails: {
+        send: async (...args: unknown[]) => {
+          calls.push(args);
+          return { data: { id: "e1" }, error: null, headers: null };
+        },
+      },
+    } as unknown as Parameters<typeof sendEmail>[2] extends infer O ? O extends { client?: infer C } ? C : never : never;
+    await sendEmail("email-channel-reply", MESSAGE, { client, idempotencyKey: "email-channel-reply/m1" });
+    await sendEmail("inbox-notification", MESSAGE, { client });
+    assert.deepEqual(calls[0][1], { idempotencyKey: "email-channel-reply/m1" });
+    assert.equal(calls[1][1], undefined);
   });
 
   it("other errors (422, 429, 500) don't fire the health warning", async () => {

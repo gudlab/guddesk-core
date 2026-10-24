@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
-import { toast } from "sonner";
 
-import { sendMessage } from "@/actions/send-message";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Icons } from "@/components/shared/icons";
-import { publishLocalMessage } from "@/lib/local-messages";
 import { claimSubmit, releaseSubmit } from "@/lib/submit-guard";
 import { CannedResponsePicker } from "./canned-response-picker";
+import { deliverReply } from "./deliver-reply";
 
 interface CannedResponse {
   id: string;
@@ -55,26 +53,14 @@ export function ReplyBox({
   }
 
   async function submit(trimmed: string) {
-    const result = await sendMessage(conversationId, {
+    // deliverReply keeps the reply's idempotency key in sessionStorage, so
+    // sending the same text again after a failure can't post it twice.
+    const outcome = await deliverReply({
+      conversationId,
       body: trimmed,
       type: mode === "note" ? "NOTE" : "AGENT",
     });
-
-    if (result.status === "error") {
-      toast.error(result.message || "Failed to send message");
-      return;
-    }
-
-    // Show the reply in the thread now. With Pusher on, the matching
-    // message:created event is merged by id and doesn't add a second copy.
-    if ("sentMessage" in result && result.sentMessage) {
-      publishLocalMessage(conversationId, result.sentMessage);
-    }
-
-    // Saved, but the email to the customer didn't go out.
-    if ("emailError" in result && result.emailError) {
-      toast.error(result.emailError, { duration: 10000 });
-    }
+    if (outcome !== "posted") return;
 
     setBody("");
     textareaRef.current?.focus();
