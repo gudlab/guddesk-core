@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { updateAvailability } from "@/actions/update-agent-availability";
@@ -15,7 +15,10 @@ import type { AgentAvailability } from "@prisma/client";
 
 interface Props {
   workspaceId: string;
+  /** The member's stored availability, read on the server. */
   initialStatus?: AgentAvailability;
+  /** Latest known status (stored value overridden by Pusher events). */
+  status?: AgentAvailability;
 }
 
 const statusConfig: Record<AgentAvailability, { label: string; color: string }> = {
@@ -24,9 +27,14 @@ const statusConfig: Record<AgentAvailability, { label: string; color: string }> 
   OFFLINE: { label: "Offline", color: "bg-gray-400" },
 };
 
-export function AvailabilitySelector({ workspaceId, initialStatus = "OFFLINE" }: Props) {
-  const [currentStatus, setCurrentStatus] = useState<AgentAvailability>(initialStatus);
+export function AvailabilitySelector({ workspaceId, initialStatus = "OFFLINE", status }: Props) {
+  const [currentStatus, setCurrentStatus] = useState<AgentAvailability>(status ?? initialStatus);
   const [isPending, startTransition] = useTransition();
+
+  // Follow changes made elsewhere, e.g. in another tab.
+  useEffect(() => {
+    if (status) setCurrentStatus(status);
+  }, [status]);
 
   function handleChange(value: string) {
     const status = value as AgentAvailability;
