@@ -41,11 +41,11 @@ export const alternatives: Alternative[] = [
       { name: "Shared inbox", competitor: true, guddesk: true },
       { name: "Email channel", competitor: true, guddesk: true },
       { name: "Public help center", competitor: true, guddesk: true },
-      { name: "Workflow automations", competitor: "Advanced plan and up", guddesk: true },
+      { name: "Workflow automations", competitor: "Advanced plan and up", guddesk: "Rules can be saved but don't run yet" },
       { name: "Built-in autonomous AI agent", competitor: "Fin, $0.99 per outcome", guddesk: "Not yet. On the roadmap" },
       { name: "Bring your own AI agent", competitor: "Not compared", guddesk: "Agent API, replies as BOT" },
       { name: "REST API and MCP server", competitor: "Not compared", guddesk: "Both check API key permission levels" },
-      { name: "Slack notifications", competitor: "Not compared", guddesk: true },
+      { name: "Slack notifications", competitor: "Not compared", guddesk: "Not sent yet" },
       { name: "WhatsApp, SMS and phone", competitor: "Pay as you go", guddesk: false },
       { name: "SSO", competitor: "Expert plan", guddesk: false },
       { name: "Self-hosting", competitor: false, guddesk: true },
@@ -119,12 +119,12 @@ export const alternatives: Alternative[] = [
       { name: "Shared inbox / ticketing", competitor: true, guddesk: true },
       { name: "AI agents", competitor: "Suite Professional ($115 per agent a month billed annually, $149 monthly)", guddesk: "Bring your own via API" },
       { name: "Knowledge base", competitor: true, guddesk: true },
-      { name: "Workflow automations", competitor: true, guddesk: true },
+      { name: "Workflow automations", competitor: true, guddesk: "Rules can be saved but don't run yet" },
       { name: "Self-hosting", competitor: false, guddesk: true },
       { name: "Open source", competitor: false, guddesk: "AGPL-3.0" },
       { name: "Free tier", competitor: "14-day trial", guddesk: "Free forever (2 members)" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
-      { name: "Slack integration", competitor: true, guddesk: true },
+      { name: "Slack integration", competitor: true, guddesk: "Notifications not sent yet" },
       { name: "Email integration", competitor: true, guddesk: true },
     ],
     switchReasons: [
@@ -191,13 +191,13 @@ export const alternatives: Alternative[] = [
       { name: "Shared inbox", competitor: true, guddesk: true },
       { name: "AI agents", competitor: "Freddy AI Agent (Growth+; extra sessions $49/100, as of 14 Oct 2026)", guddesk: "Bring your own via API" },
       { name: "Knowledge base", competitor: true, guddesk: true },
-      { name: "Workflow automations", competitor: "Growth plan+ ($19/agent/mo billed annually)", guddesk: "Included free" },
+      { name: "Workflow automations", competitor: "Growth plan+ ($19/agent/mo billed annually)", guddesk: "Rules can be saved but don't run yet" },
       { name: "Self-hosting", competitor: false, guddesk: true },
       { name: "Open source", competitor: false, guddesk: "AGPL-3.0" },
       { name: "Free plan", competitor: "Free Program: 2 agents for 6 months", guddesk: "Core features (2 members, 500 conversations a month, no time limit)" },
       { name: "Unified platform", competitor: "Multiple products", guddesk: "All-in-one" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
-      { name: "Slack integration", competitor: true, guddesk: true },
+      { name: "Slack integration", competitor: true, guddesk: "Notifications not sent yet" },
       { name: "Email integration", competitor: true, guddesk: true },
     ],
     switchReasons: [
@@ -209,7 +209,7 @@ export const alternatives: Alternative[] = [
       {
         title: "Free with no time limit",
         description:
-          "Freshdesk's Free Program ends after 6 months. GudDesk Cloud Free includes live chat, automations, knowledge base and the agent API for 2 members, with no time limit. Pro removes branding and lifts the member and conversation limits.",
+          "Freshdesk's Free Program ends after 6 months. GudDesk Cloud Free includes live chat, the shared inbox, knowledge base and the agent API for 2 members, with no time limit. Pro removes branding and lifts the member and conversation limits.",
       },
       {
         title: "Your own bot on every plan",
@@ -226,7 +226,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Is GudDesk's free tier better than Freshdesk's?",
         answer:
-          "For small teams, yes. Freshdesk's Free Program covers 2 agents for 6 months, then you move to a paid plan. GudDesk Cloud Free covers 2 members and 500 conversations a month with no time limit, with live chat, inbox, knowledge base, automations and the agent API.",
+          "For small teams, yes. Freshdesk's Free Program covers 2 agents for 6 months, then you move to a paid plan. GudDesk Cloud Free covers 2 members and 500 conversations a month with no time limit, with live chat, inbox, knowledge base and the agent API.",
       },
       {
         question: "Do I need Freshchat too, or does GudDesk cover chat?",

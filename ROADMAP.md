@@ -16,8 +16,8 @@ Most support platforms charge per-agent, and lock AI behind expensive add-ons. G
 - **Customer identity verification**: HMAC-SHA256 identity verification (same standard as Intercom/Zendesk), `GudDesk.identify()` API with `userHash` support
 - **Shared inbox**: conversations from chat + email, assignment, status management, internal notes
 - **Knowledge base**: articles, collections, public help center
-- **Automation rules**: trigger-based workflows (auto-assign, auto-tag, bot messages)
-- **Integrations**: Slack notifications, email (Resend), webhooks, REST API
+- **Automation rules**: rule builder with 5 triggers and 6 actions. Rules are saved but not run yet
+- **Integrations**: email (Resend), webhooks, REST API. Slack webhook settings are saved, but notifications are not sent yet
 - **REST API v1**: full CRUD for conversations, customers (including PATCH updates), articles, workspaces, agents; cursor-based pagination, rate limiting
 - **API keys**: account-level keys with optional workspace scoping ("All Workspaces" or single workspace), permission levels (Read Only / Read & Write / Full Access)
 - **Agent framework**: install/uninstall agents via API with auto-provisioned webhook endpoints and dedicated API keys
@@ -44,7 +44,7 @@ _Fill the gaps that every competitor already covers._
 
 ### Ticketing & SLAs
 - [x] **SLA policies**: define response/resolution time targets per priority
-- [x] **SLA breach alerts**: notify agents and managers when SLAs are at risk
+- [x] **SLA breach alerts**: email the assignee and add a note when an SLA is breached. The check runs once a day for now
 - [x] **Business hours**: configure working hours, exclude holidays from SLA calculations
 - [x] **Ticket fields**: custom fields (dropdowns, text, date) per workspace
 - [x] **Ticket forms**: different intake forms for different request types
@@ -59,9 +59,10 @@ _Fill the gaps that every competitor already covers._
 - [x] **Customer segments**: filter and group customers by attributes
 
 ### CSAT & Feedback
-- [x] **CSAT surveys**: post-conversation satisfaction rating
-- [x] **NPS surveys**: periodic net promoter score collection
-- [x] **Survey triggers**: auto-send on conversation close or after X days
+- [x] **CSAT surveys**: survey settings and the Feedback dashboard. Visitors can't rate in the widget yet
+- [ ] **Widget CSAT rating**: let visitors rate a closed conversation in the widget
+- [x] **NPS surveys**: survey settings and score reporting. Sending NPS surveys to visitors is not built yet
+- [x] **Survey triggers**: a CSAT survey message is created on close or after a delay. The widget can't show the rating yet
 - [x] **Feedback dashboard**: aggregate scores, trends, per-agent breakdown
 
 ---
@@ -142,7 +143,7 @@ _Scale from a small team to a full support organization._
 - [x] **Agent availability**: manual online/away/offline status (live presence needs Pusher keys)
 - [ ] **Availability routing**: route new conversations by agent status
 - [ ] **Shift scheduling**: define agent schedules and auto-assign based on availability
-- [x] **Performance dashboards**: per-agent metrics (response time, resolution time, CSAT, volume)
+- [x] **Performance dashboards**: per-agent metrics (response time, resolution time, volume). Per-agent CSAT needs widget rating first
 - [x] **Workload monitoring**: live view of team capacity (needs Pusher keys)
 
 ### Advanced Reporting

@@ -29,7 +29,7 @@ export default function HeroLanding() {
         </h1>
 
         <p className="max-w-2xl text-balance text-muted-foreground sm:text-lg lg:text-xl">
-          Live chat, a shared inbox, a knowledge base and automations in one
+          Live chat, a shared inbox and a knowledge base in one
           platform. Plug in your own AI bot through the agent API. Free for
           small teams. Self-hostable.
         </p>

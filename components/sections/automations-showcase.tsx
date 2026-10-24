@@ -25,8 +25,8 @@ export default function AutomationsShowcase() {
       <MaxWidthWrapper>
         <HeaderSection
           label="Work smarter"
-          title="Automate the repetitive stuff"
-          subtitle="Set up rules that trigger automatically. Route conversations, apply tags, notify your team on Slack, and more, without writing code."
+          title="Build rules for the repetitive stuff"
+          subtitle="Pick a trigger and an action without writing code. Rules are saved today but don't run yet."
         />
 
         {/* Flow diagram */}

@@ -33,9 +33,9 @@ const features = [
   },
   {
     icon: Icons.automations,
-    title: "Automations & Webhooks",
+    title: "Webhooks & Automation Rules",
     description:
-      "Event-driven rules that auto-assign, tag, route, and notify. Hook agents into conversation lifecycle events.",
+      "Webhooks fire on conversation events so your agents can act. A rule builder saves automation rules, which don't run yet.",
     illustration: AutomationIllustration,
   },
   {
@@ -184,7 +184,7 @@ export default function FeaturesGrid() {
         <HeaderSection
           label="Everything you need"
           title="One platform, not six subscriptions"
-          subtitle="Stop stitching together live chat, help desk, knowledge base, and automation tools. GudDesk handles it all."
+          subtitle="Stop stitching together separate live chat, help desk and knowledge base tools. GudDesk puts them in one app."
         />
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

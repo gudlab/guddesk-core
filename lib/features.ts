@@ -45,9 +45,9 @@ export const features: Feature[] = [
         icon: "palette",
       },
       {
-        title: "Article suggestions",
+        title: "Offline form",
         description:
-          "The widget automatically suggests knowledge base articles based on the page the visitor is on, deflecting up to 30% of conversations.",
+          "When your team is away, the widget can show a short form that collects the visitor's email and message.",
         icon: "bookOpen",
       },
       {
@@ -61,9 +61,7 @@ export const features: Feature[] = [
       "Embeddable chat widget",
       "Custom branding and colors",
       "Page-based visibility rules",
-      "Article suggestions",
       "Identity verification (HMAC)",
-      "File attachments",
       "Typing indicators (with Pusher keys)",
       "Real-time messaging via Pusher (optional)",
       "Offline form fallback",
@@ -73,7 +71,7 @@ export const features: Feature[] = [
       {
         title: "SaaS in-app support",
         description:
-          "Embed the widget inside your dashboard. Users ask questions without leaving the app. Your own agent can reply as BOT.",
+          "Embed the widget inside your dashboard. Users ask questions without leaving the app. Your own agent can reply as BOT if you connected one.",
       },
       {
         title: "Ecommerce pre-sale chat",
@@ -85,12 +83,12 @@ export const features: Feature[] = [
       {
         question: "Does the widget slow down my website?",
         answer:
-          "No. The widget loads asynchronously and weighs under 30KB gzipped. It has zero impact on your Core Web Vitals scores.",
+          "The snippet loads the script with the async attribute, so it does not block your page from rendering. The script is about 35 kB gzipped.",
       },
       {
         question: "Can I control which pages show the widget?",
         answer:
-          "Yes. Use page visibility rules with glob patterns to include or exclude specific URLs. You can also show/hide the widget programmatically via the JavaScript API.",
+          "Yes. Use page visibility rules with glob patterns to include or exclude specific URLs. You can also open and close the chat window from your own code with GudDesk.open() and GudDesk.close().",
       },
       {
         question: "Does it work on mobile?",
@@ -106,20 +104,20 @@ export const features: Feature[] = [
     tagline: "Connect your own bot. AI assist for your team is planned.",
     headline: "Your agent replies as BOT through the API.",
     description:
-      "Install your own agent to receive webhooks and reply as BOT. AI reply suggestions and summaries are planned, as is a first-party GudDesk agent. There is no per-resolution fee.",
+      "Reply as BOT through the API. AI reply suggestions and summaries for your team are planned.",
     icon: "sparkles",
     highlights: [
       {
-        title: "Your own agent",
+        title: "Bring your own agent",
         description:
-          "Install an agent to get a webhook and an API key. It hears about new messages and replies as BOT in the widget and inbox.",
+          "Install an agent to get a webhook and an API key. It hears about new messages and replies as BOT.",
         icon: "code",
       },
       {
-        title: "REST API and MCP",
+        title: "BOT replies in the inbox",
         description:
-          "Conversations, customers, articles, companies, segments and workspaces. Build in any language.",
-        icon: "server",
+          "Visitors see those replies in the widget like any other message. They sit in the same thread as your team's.",
+        icon: "bot",
       },
       {
         title: "AI assist (planned)",
@@ -128,20 +126,19 @@ export const features: Feature[] = [
         icon: "sparkles",
       },
       {
-        title: "First-party agent",
+        title: "No per-resolution fee",
         description:
-          "A built-in GudDesk AI agent is on the roadmap. It is not shipped yet.",
-        icon: "bot",
+          "GudDesk does not charge per AI outcome. A built-in GudDesk AI agent that answers on its own is on the roadmap.",
+        icon: "users",
       },
     ],
     capabilities: [
-      "Custom agents via API",
-      "BOT message type",
-      "Webhook event triggers",
+      "Agent webhooks",
       "REST API and MCP",
+      "BOT message type",
       "AI reply suggestions and summaries: planned",
       "No per-resolution fees",
-      "First-party agent on the roadmap",
+      "Built-in agent on the roadmap",
     ],
     useCaseExamples: [
       {
@@ -150,9 +147,9 @@ export const features: Feature[] = [
           "Your agent receives webhooks while the team is offline and replies as BOT.",
       },
       {
-        title: "Launch day traffic spikes",
+        title: "Launch day traffic",
         description:
-          "When volume spikes, your own bot can take the first reply. Humans step in on the conversations that need them.",
+          "Your own agent can answer first if you have one connected. Humans pick up the conversations that need them.",
       },
     ],
     faqs: [
@@ -164,7 +161,7 @@ export const features: Feature[] = [
       {
         question: "Can I build my own AI agent?",
         answer:
-          "Yes. Installing an agent gives it a webhook and an API key. It receives conversation events and replies through the REST API or the MCP server.",
+          "Yes. Installing an agent gives it a webhook and an API key. It hears about new messages and replies as BOT through the REST API or the MCP server.",
       },
       {
         question: "Will GudDesk add AI assist for agents?",
@@ -180,25 +177,25 @@ export const features: Feature[] = [
     tagline: "One inbox for your entire support team",
     headline: "Every conversation, every channel, one inbox.",
     description:
-      "Chat and email conversations land in one shared inbox, next to any BOT replies. Assign, tag, prioritize and resolve conversations as a team, with collision detection when you add Pusher keys.",
+      "Chat and email conversations land in one shared inbox, next to any BOT replies. Assign, tag, prioritize and resolve conversations as a team.",
     icon: "inbox",
     highlights: [
       {
         title: "Unified conversation view",
         description:
-          "See all conversations in one list regardless of channel. Filter by status (open, snoozed, closed), assignee, tag, or priority.",
+          "See all conversations in one list regardless of channel. Filter by status (open, snoozed, closed) and by assignee.",
         icon: "inbox",
       },
       {
-        title: "Collision detection",
+        title: "Assignment and notes",
         description:
-          "With Pusher keys set, indicators show when another agent is viewing or replying to a conversation.",
+          "Assign a conversation to a teammate and leave internal notes the customer can't see.",
         icon: "eye",
       },
       {
-        title: "Assignment and routing",
+        title: "Manual assignment",
         description:
-          "Manually assign conversations or let automation rules route them by tag, priority, or customer segment. Round-robin assignment keeps workload balanced.",
+          "Assign a conversation to a teammate from the inbox or through the API. The conversation list shows who each one belongs to.",
         icon: "users",
       },
       {
@@ -210,21 +207,20 @@ export const features: Feature[] = [
     ],
     capabilities: [
       "Multi-channel inbox",
-      "Collision detection (with Pusher keys)",
-      "Assignment rules",
+      "Manual assignment",
       "Tags and priority levels",
       "Internal notes",
       "Side conversations",
       "Shared drafts",
       "Canned responses",
       "@mentions",
-      "Conversation search and filters",
+      "Status and assignee filters",
     ],
     useCaseExamples: [
       {
         title: "Small team, big volume",
         description:
-          "A small team manages hundreds of conversations. Assignment rules distribute workload evenly. With Pusher keys, collision detection prevents double replies.",
+          "A small support team works through hundreds of conversations. Each one shows who it is assigned to, and internal notes keep everyone up to date.",
       },
       {
         title: "Cross-team escalation",
@@ -236,12 +232,12 @@ export const features: Feature[] = [
       {
         question: "What channels does the inbox support?",
         answer:
-          "Currently: live chat (widget), email, and API-created conversations. WhatsApp and Telegram channels are coming soon.",
+          "Currently: live chat (widget), email, and API-created conversations. WhatsApp is on the roadmap.",
       },
       {
         question: "Can I see who else is looking at a conversation?",
         answer:
-          "Yes, when you add Pusher keys. Agents viewing or typing in a conversation show as avatars, and a banner warns you before you duplicate a reply.",
+          "Not yet. A collision banner is built, but the inbox does not show it yet. Until then, assign a conversation before you reply so teammates know it's yours.",
       },
       {
         question: "How do shared drafts work?",
@@ -263,19 +259,19 @@ export const features: Feature[] = [
       {
         title: "Rich article editor",
         description:
-          "Write articles with a clean editor. Add code blocks, images, and formatting. Organize articles into collections with custom ordering.",
+          "Write articles, save them as drafts, and publish them when they are ready. Organize articles into collections in the order you choose.",
         icon: "fileEdit",
       },
       {
         title: "Public help center",
         description:
-          "Published articles are available at your custom help center URL. Customers can search and browse without logging in.",
+          "Published articles are available at your help center URL. Customers can search and browse without logging in.",
         icon: "globe",
       },
       {
-        title: "Help center search",
+        title: "Searchable help center",
         description:
-          "Published articles are searchable in your help center. Your own agent can search the same articles through the API.",
+          "Your own agent can search published articles with the search_articles tool on the GudDesk MCP server.",
         icon: "sparkles",
       },
       {
@@ -299,12 +295,12 @@ export const features: Feature[] = [
       {
         title: "Deflect tickets with self-service",
         description:
-          "Publish articles about your most common questions. The widget suggests them automatically, deflecting up to 30% of conversations before they start.",
+          "Publish articles about your most common questions so customers can find the answer in your help center before they write in.",
       },
       {
         title: "Feed your own agent",
         description:
-          "Your own agent can search the same help center through the API.",
+          "Connect your agent to the GudDesk MCP server and it can look up answers with the search_articles tool.",
       },
     ],
     faqs: [
@@ -316,7 +312,7 @@ export const features: Feature[] = [
       {
         question: "Can agents read my articles?",
         answer:
-          "Your own agent can search the same help center through the API.",
+          "Yes, through the GudDesk MCP server. Its search_articles tool searches your published articles. The REST API can list articles but has no search.",
       },
       {
         question: "Can I import existing documentation?",
@@ -329,76 +325,73 @@ export const features: Feature[] = [
   {
     slug: "automation-rules",
     name: "Automation Rules",
-    tagline: "Automate repetitive support tasks",
-    headline: "Let rules handle the repetitive work.",
+    tagline: "Rule builder and SLA policies",
+    headline: "Set up rules and SLA deadlines.",
     description:
-      "Create trigger-based rules that automatically assign, tag, route, and respond to conversations. Free up your team to focus on complex issues while automations handle the routine.",
+      "Build rules with a trigger, conditions and one action. Rules are saved today, but GudDesk does not run them yet. SLA policies with first-response and resolution deadlines work today.",
     icon: "automations",
     highlights: [
       {
-        title: "Event-driven triggers",
+        title: "Triggers",
         description:
-          "Fire rules on conversation created, message received, conversation closed, tag added, or when a conversation goes unassigned for a set time.",
+          "Pick a trigger for each rule: conversation created, message received, conversation closed, tag added, or unassigned for a set time. Rules do not run yet.",
         icon: "zap",
       },
       {
-        title: "Flexible actions",
+        title: "Actions",
         description:
-          "Assign to a specific agent, add or remove tags, change status, send a canned response, or notify Slack. Chain actions for complex workflows.",
+          "Each rule has one action: assign to an agent, add or remove a tag, change status, send a message, or post to Slack.",
         icon: "automations",
       },
       {
-        title: "Conditional logic",
+        title: "Conditions",
         description:
-          "Apply conditions based on tags, status, channel, or custom fields. Route billing questions to finance and bug reports to engineering automatically.",
+          "Match on tags, the visitor's email address, or words in the message.",
         icon: "settings",
       },
       {
         title: "SLA enforcement",
         description:
-          "Define SLA policies with first-response and resolution deadlines. Get notified when SLAs are about to breach so your team can prioritize.",
+          "Define SLA policies with first-response and resolution deadlines. A check runs once a day, adds a note to breached conversations and emails the assignee, so a breach can take up to a day to be flagged.",
         icon: "clock",
       },
     ],
     capabilities: [
+      "Rule builder (rules do not run yet)",
       "5 trigger types",
       "6 action types",
-      "Conditional matching",
-      "SLA policies with timers",
-      "Business hours awareness",
-      "Slack notifications",
-      "Auto-assignment",
-      "Auto-tagging",
-      "Canned response sending",
-      "Priority rules",
+      "Tag, email and message conditions",
+      "SLA policies with deadlines",
+      "Business hours for SLA deadlines",
+      "Daily SLA breach check and email",
     ],
     useCaseExamples: [
       {
-        title: "Auto-route by topic",
+        title: "Catch missed first replies",
         description:
-          "When a conversation is tagged billing, an automation can assign it to your billing specialist. When it is tagged bug, it can go to engineering.",
+          "Set a first-response deadline. The daily SLA check adds a breach note to late conversations and emails the assignee.",
       },
       {
-        title: "Escalation on SLA breach",
+        title: "Deadlines that respect business hours",
         description:
-          "If a conversation isn't responded to within 15 minutes, an automation notifies the team lead in Slack and bumps the priority to urgent.",
+          "SLA deadlines count only your business hours, so a message sent late at night is not due until the next working morning.",
       },
     ],
     faqs: [
       {
         question: "How many automation rules can I create?",
         answer:
-          "There's no limit on the number of rules. Rules execute in priority order, so you can layer them for complex routing logic.",
+          "There is no limit on the number of rules. Rules are saved with an order, but GudDesk does not run them yet.",
       },
       {
         question: "Can automations send messages to customers?",
         answer:
-          "Yes. The SEND_MESSAGE action can send a canned response to the customer. This is useful for auto-acknowledgments or common follow-up instructions.",
+          "Not yet. You can save a rule with a send-message action, but rules do not run yet. Agents can send canned responses from the reply box today.",
       },
       {
         question: "Do SLA timers account for business hours?",
         answer:
-          "Yes. Configure your business hours and timezone. SLA timers pause outside business hours so your team isn't penalized for overnight gaps.",
+          "Yes. Configure your business hours and timezone. SLA deadlines only count time inside business hours.",
       },
     ],
     relatedFeatures: ["shared-inbox", "ai-agents", "analytics"],
@@ -406,10 +399,10 @@ export const features: Feature[] = [
   {
     slug: "analytics",
     name: "Analytics & Reporting",
-    tagline: "Data-driven support decisions",
-    headline: "Measure everything. Improve what matters.",
+    tagline: "Reports on volume, response and resolution times",
+    headline: "See how your support team is doing.",
     description:
-      "Built-in analytics give you conversation volume trends, response time breakdowns, resolution times, agent performance scores, and CSAT results. No third-party analytics tool required.",
+      "Built-in analytics show conversation volume, response times, resolution times and per-agent numbers. CSAT settings and a CSAT dashboard are there, but visitors can't rate in the widget yet.",
     icon: "analytics",
     highlights: [
       {
@@ -421,19 +414,19 @@ export const features: Feature[] = [
       {
         title: "Agent performance",
         description:
-          "Per-agent metrics: conversations handled, average response time, resolution time, and CSAT score. Identify top performers and coaching opportunities.",
+          "Per-agent metrics: conversations handled, average response time and resolution time.",
         icon: "users",
       },
       {
-        title: "CSAT surveys",
+        title: "CSAT settings and dashboard",
         description:
-          "Automatic customer satisfaction surveys after conversation close. Track scores over time and per agent. Identify what's working and what's not.",
+          "Set up a CSAT survey in Settings and see results on the Feedback page. Visitors can't rate in the widget yet, so there are no scores until widget rating ships.",
         icon: "star",
       },
       {
         title: "Workload monitoring",
         description:
-          "See active conversation counts and workload per agent, updating live when you add Pusher keys. Balance the load before anyone burns out.",
+          "See how many open conversations each agent has right now.",
         icon: "eye",
       },
     ],
@@ -442,39 +435,45 @@ export const features: Feature[] = [
       "Response time analytics",
       "Resolution time tracking",
       "Agent performance dashboards",
-      "CSAT survey system",
-      "NPS surveys",
+      "CSAT settings and dashboard (no widget rating yet)",
+      "NPS survey settings and score dashboard",
       "Workload monitoring",
       "Daily analytics snapshots",
+      "Agent availability tracking",
       "Per-workspace analytics",
     ],
     useCaseExamples: [
       {
         title: "Monthly team review",
         description:
-          "Pull up the performance dashboard for the past month. See who handled the most conversations, who has the best CSAT scores, and where bottlenecks are forming.",
+          "Pull up the performance dashboard for the past month. See who handled the most conversations, how fast each person replied, and where bottlenecks are forming.",
       },
       {
         title: "Identify documentation gaps",
         description:
-          "Topics that come up often in conversations point to missing knowledge base articles. Write those articles and watch the numbers improve.",
+          "Read recent conversations for questions your help center does not answer yet. After you publish an article, check its views and votes.",
       },
     ],
     faqs: [
       {
         question: "Is analytics included in the free plan?",
         answer:
-          "Yes. All analytics features (conversation metrics, agent performance, CSAT surveys) are included in the free plan.",
+          "Yes. All analytics features (conversation metrics, agent performance, CSAT and NPS settings and dashboards) are included in the free plan.",
+      },
+      {
+        question: "Do you support NPS?",
+        answer:
+          "Partly. You can set up an NPS survey in Settings and the Feedback page shows your NPS score. The widget does not ask visitors the NPS question yet.",
       },
       {
         question: "Can I export analytics data?",
         answer:
-          "Analytics data is accessible via the REST API. You can query snapshots and export to your preferred reporting tool or data warehouse.",
+          "Not yet. The REST API has no analytics endpoint. You can pull conversations through the API and build your own reports.",
       },
       {
         question: "How far back does data go?",
         answer:
-          "Analytics snapshots are stored daily with no retention limit. You can view trends from the day your workspace was created.",
+          "A snapshot is stored each day with no retention limit. Trends start from the first daily snapshot after your workspace was created.",
       },
     ],
     relatedFeatures: ["shared-inbox", "automation-rules", "ai-agents"],

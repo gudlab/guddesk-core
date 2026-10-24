@@ -22,7 +22,7 @@ const freePlanFeatures = [
   "Live chat widget",
   "Shared inbox",
   "Knowledge base",
-  "Basic automations",
+  "SLA policies",
   "Community support",
 ];
 
@@ -33,7 +33,6 @@ const proPlanFeatures = [
   "Unlimited conversations",
   "AI assist: planned",
   "Remove GudDesk branding",
-  "Slack integration",
   "Priority support",
 ];
 
@@ -100,8 +99,8 @@ const comparisonRows = [
     feature: "Automations",
     intercomStarter: "Limited",
     intercom: "check",
-    guddeskFree: "check",
-    guddeskPro: "check",
+    guddeskFree: "Not running yet",
+    guddeskPro: "Not running yet",
   },
   {
     feature: "Self-hostable",
