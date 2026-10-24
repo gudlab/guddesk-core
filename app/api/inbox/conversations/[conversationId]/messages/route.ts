@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { messagesQueryArgs } from "@/lib/inbox-polling";
 import { requireWorkspaceMember } from "@/lib/workspace";
 
-// GET /api/inbox/conversations/[conversationId]/messages
+// GET /api/inbox/conversations/[conversationId]/messages[?after=ISO-8601]
+// `after` (optional) returns only messages created at or after that time,
+// oldest first, at most MESSAGES_AFTER_TAKE of them. The inbox polling
+// fallback uses it so each poll reads a few rows, not the whole thread.
+// Without it, or when it isn't a date, the response is the full thread, as
+// before. Dates outside 1970 to 9999 are clamped (see parseMessagesAfter).
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ conversationId: string }> },
 ) {
   try {
@@ -28,13 +34,12 @@ export async function GET(
     await requireWorkspaceMember(conversation.workspaceId, session.user.id);
 
     const messages = await prisma.message.findMany({
-      where: { conversationId },
+      ...messagesQueryArgs(conversationId, req.nextUrl.searchParams.get("after")),
       include: {
         sender: {
           select: { name: true, image: true },
         },
       },
-      orderBy: { createdAt: "asc" },
     });
 
     return NextResponse.json({ messages });

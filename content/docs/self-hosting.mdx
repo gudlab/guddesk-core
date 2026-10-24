@@ -1,52 +1,46 @@
 ---
 title: Self-Hosting
-description: Deploy GudDesk on your own infrastructure with Docker or bare metal.
+description: Deploy GudDesk on your own infrastructure from source, with Node.js and PostgreSQL.
 ---
 
 GudDesk is fully open source (AGPL-3.0) and designed to run on your own infrastructure. This guide covers deployment options for production environments.
 
-## Docker Compose (Recommended)
+## Install from Source
 
-The easiest way to self-host GudDesk:
+GudDesk runs from source on Node.js. There is no Docker image or Compose file. You need:
+
+- Node.js 20.19 or later, and pnpm
+- A PostgreSQL 15+ database that you run yourself or rent (for example Neon, Supabase or AWS RDS)
 
 ```bash
 git clone https://github.com/gudlab/guddesk-core.git
-cd guddesk
-
-cp .env.example .env
-# Edit .env with your production configuration
-
-docker compose up -d
-```
-
-This starts GudDesk and a PostgreSQL database. The app will be available on port 3000.
-
-### Production Docker Configuration
-
-For production, we recommend:
-
-- Set `NODE_ENV=production`
-- Use an external managed PostgreSQL database (e.g., Neon, Supabase, AWS RDS)
-- Put GudDesk behind a reverse proxy with TLS (Nginx, Caddy, or Traefik)
-- Enable real-time features by configuring Pusher or a compatible WebSocket service
-
-## Bare Metal
-
-If you prefer running directly on your server:
-
-```bash
-# Install dependencies
+cd guddesk-core
 pnpm install
 
-# Run database migrations
-pnpm db:push
+cp .env.example .env
+# Edit .env with your production configuration (see Environment Variables below)
 
-# Build for production
+# Create the database tables
+pnpm prisma db push
+
+# Build for production (this also builds the chat widget)
 pnpm build
 
 # Start the production server
 pnpm start
 ```
+
+`pnpm install` also generates the Prisma client. The app listens on port 3000.
+
+### Production Checklist
+
+For production, we recommend:
+
+- Use a managed PostgreSQL database with backups turned on
+- Put GudDesk behind a reverse proxy with TLS (Nginx, Caddy, or Traefik)
+- Set the four Pusher variables if you want live updates (see [Real-time updates](#real-time-updates-optional)). Without them the inbox and widget poll for new messages
+
+## Process Manager
 
 Use a process manager like PM2 for reliability:
 
@@ -102,7 +96,21 @@ See the [Quickstart guide](/docs/quickstart) for the full list of environment va
 | `NEXT_PUBLIC_APP_URL` | Your public URL (e.g., `https://support.yourdomain.com`) |
 | `RESEND_API_KEY` | Email delivery API key |
 | `ANTHROPIC_API_KEY` | Required for AI agent features |
-| `PUSHER_APP_ID` / `PUSHER_SECRET` | Required for real-time chat |
+| `PUSHER_APP_ID` | Optional. Pusher app ID (server only) |
+| `PUSHER_SECRET` | Optional. Pusher secret (server only, keep it private) |
+| `NEXT_PUBLIC_PUSHER_KEY` | Optional. Pusher key, used by the dashboard and the widget |
+| `NEXT_PUBLIC_PUSHER_CLUSTER` | Optional. Pusher cluster, for example `eu` or `us2` |
+
+### Real-time updates (optional)
+
+The four Pusher variables are optional. Set all four to get live updates over WebSockets. Without them GudDesk falls back to polling:
+
+- The inbox refreshes the conversation list every 10 seconds and the open thread every 4 seconds, while the browser tab is visible.
+- The chat widget checks for new messages every 4 seconds while it's open.
+
+Typing indicators and collision warnings need Pusher, so they stay off in polling mode.
+
+Next.js builds `NEXT_PUBLIC_` values into the browser code, so rebuild (`pnpm build`) and restart after you set or change `NEXT_PUBLIC_PUSHER_KEY` or `NEXT_PUBLIC_PUSHER_CLUSTER`. `PUSHER_APP_ID` and `PUSHER_SECRET` are read at runtime and only need a restart.
 
 ## Backups
 
@@ -123,7 +131,7 @@ Set up automated daily backups via cron or your cloud provider's managed backup 
 ```bash
 git pull origin main
 pnpm install
-pnpm db:push
+pnpm prisma db push
 pnpm build
 pm2 restart guddesk
 ```

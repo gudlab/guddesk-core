@@ -2,6 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { usePusher, usePusherReconnect } from "./use-pusher";
+import { usePollingFallback } from "./use-polling-fallback";
+import {
+  CONVERSATION_LIST_POLL_MS,
+  appendConversationPage,
+  mergeConversationPage,
+} from "@/lib/inbox-polling";
 
 export interface ConversationListItem {
   id: string;
@@ -42,6 +48,11 @@ export function useConversations({
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const nextCursorRef = useRef<string | null>(null);
+  // True once "load more" has appended a second page.
+  const extraPagesRef = useRef(false);
+  const filterKey = `${workspaceId}|${status}|${assigneeId ?? ""}`;
+  const filterKeyRef = useRef(filterKey);
+  filterKeyRef.current = filterKey;
 
   const fetchConversations = useCallback(async (cursor?: string) => {
     try {
@@ -60,11 +71,14 @@ export function useConversations({
         const data = await res.json();
 
         if (cursor) {
-          // Appending more results
-          setConversations((prev) => [...prev, ...data.conversations]);
+          // Appending more results. A poll may already have pulled some of
+          // these rows up, so skip duplicates.
+          setConversations((prev) => appendConversationPage(prev, data.conversations));
+          extraPagesRef.current = true;
         } else {
           // Fresh fetch (filter change or refresh)
           setConversations(data.conversations);
+          extraPagesRef.current = false;
         }
 
         setHasMore(data.hasMore ?? false);
@@ -105,6 +119,37 @@ export function useConversations({
 
   // Resync after reconnect — events that fired while disconnected are lost.
   usePusherReconnect(refresh);
+
+  // Without Pusher, poll the first page. One request per poll, same
+  // endpoint and filters. Rows from "load more" are kept.
+  const pollConversations = useCallback(async () => {
+    const key = `${workspaceId}|${status}|${assigneeId ?? ""}`;
+    const params = new URLSearchParams({
+      workspaceId,
+      status,
+      limit: String(PAGE_SIZE),
+    });
+    if (assigneeId) params.set("assigneeId", assigneeId);
+    try {
+      const res = await fetch(`/api/inbox/conversations?${params}`, {
+        cache: "no-store",
+      });
+      if (!res.ok || filterKeyRef.current !== key) return;
+      const data = await res.json();
+      setConversations((prev) =>
+        mergeConversationPage(prev, data.conversations ?? [], PAGE_SIZE),
+      );
+      setTotal(data.total ?? 0);
+      if (!extraPagesRef.current) {
+        setHasMore(data.hasMore ?? false);
+        nextCursorRef.current = data.nextCursor ?? null;
+      }
+    } catch {
+      // Next poll retries.
+    }
+  }, [workspaceId, status, assigneeId]);
+
+  usePollingFallback(pollConversations, CONVERSATION_LIST_POLL_MS);
 
   return { conversations, isLoading, hasMore, total, loadMore, refetch: refresh };
 }

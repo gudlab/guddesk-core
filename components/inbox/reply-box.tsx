@@ -7,6 +7,7 @@ import { sendMessage } from "@/actions/send-message";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Icons } from "@/components/shared/icons";
+import { publishLocalMessage } from "@/lib/local-messages";
 import { CannedResponsePicker } from "./canned-response-picker";
 
 interface CannedResponse {
@@ -49,6 +50,12 @@ export function ReplyBox({
       if (result.status === "error") {
         toast.error(result.message || "Failed to send message");
         return;
+      }
+
+      // Show the reply in the thread now. With Pusher on, the matching
+      // message:created event is merged by id and doesn't add a second copy.
+      if ("sentMessage" in result && result.sentMessage) {
+        publishLocalMessage(conversationId, result.sentMessage);
       }
 
       setBody("");
