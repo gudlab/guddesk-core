@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { env } from "@/env.mjs";
 import { EmailChannelProvider } from "@/lib/channels/email/provider";
 import { prisma } from "@/lib/db";
+import { sendUnverifiedReplyBounce } from "@/lib/email-notifications";
 import { handleInboundEmail } from "@/lib/inbound-email/handler";
 import { safeTriggerBatch } from "@/lib/pusher-server";
 
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
       fetchReceivedEmail,
       handleCustomerInbound: (payload) => emailProvider.handleInbound(payload),
       broadcast: safeTriggerBatch,
+      sendUnverifiedReplyBounce,
     },
   );
 

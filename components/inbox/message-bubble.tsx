@@ -56,7 +56,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       >
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground">
-            {senderName}
+            {/* bdi: a right-to-left name can't reorder the text around it. */}
+            <bdi>{senderName}</bdi>
           </span>
           <span className="text-[10px] text-muted-foreground">
             {formatTime(message.createdAt)}

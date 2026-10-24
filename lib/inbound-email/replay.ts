@@ -80,10 +80,13 @@ export async function releaseWebhookId(db: ReplayDb, svixId: string): Promise<vo
   await db.verificationToken.deleteMany({ where: { token: replayKey(svixId) } });
 }
 
-/** Delete expired inbound:svix:* rows. Returns how many. */
+/** Every row this module family writes: inbound:svix:* and inbound:bounce:*. */
+export const INBOUND_PREFIX = "inbound:";
+
+/** Delete expired inbound:* rows (replay ids and bounce rate limits). Returns how many. */
 export async function sweepExpiredWebhookIds(db: ReplayDb, now: Date = new Date()): Promise<number> {
   const { count } = await db.verificationToken.deleteMany({
-    where: { token: { startsWith: REPLAY_PREFIX }, expires: { lt: now } },
+    where: { token: { startsWith: INBOUND_PREFIX }, expires: { lt: now } },
   });
   return count;
 }

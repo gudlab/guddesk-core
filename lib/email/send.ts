@@ -16,7 +16,8 @@ export type EmailTemplate =
   | "workspace-invitation"
   | "inbox-notification"
   | "sla-breach"
-  | "email-channel-reply";
+  | "email-channel-reply"
+  | "unverified-reply-bounce";
 
 export type SendOutcome =
   | { status: "sent"; id: string | null }

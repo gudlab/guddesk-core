@@ -15,6 +15,8 @@ export interface ReceivedEmailEvent {
   kind: "received";
   emailId: string;
   recipients: string[];
+  /** From the webhook's own from, so a bad sender is ignored before the fetch. */
+  senderProblem?: SenderProblem;
 }
 
 export interface LegacyInboundEmail {
@@ -32,6 +34,8 @@ export interface InboundEmail {
   /** DMARC and DKIM results Resend reports for the received email, when it reports them. */
   dmarc?: string;
   dkim?: string;
+  /** Set when the From can't name one sender; the handler ignores the email. */
+  senderProblem?: SenderProblem;
 }
 
 export type ParsedInbound =
@@ -53,6 +57,42 @@ export function splitAddress(raw: string): { address: string; name?: string } {
   return { address: match[2].trim(), ...(name ? { name } : {}) };
 }
 
+/** RFC 5321 limit; a longer address is invalid. */
+export const MAX_ADDRESS_LENGTH = 254;
+
+/**
+ * ambiguous_sender: the From names two or more addresses, so there is no
+ * one sender to file it under. invalid_sender: the address is longer than
+ * an address can be.
+ */
+export type SenderProblem = "ambiguous_sender" | "invalid_sender";
+
+/**
+ * The distinct addresses in a From value, lowercased. Quoted display names
+ * and (comments) are not addresses, so "Jane (jane@x)" <m@y> is one.
+ */
+export function fromAddresses(raw: string): string[] {
+  const text = raw.replace(/"(?:[^"\\]|\\.)*"/g, " ").replace(/\([^()]*\)/g, " ");
+  const bracketed = [...text.matchAll(/<([^<>]*)>/g)].map((m) => m[1]);
+  const outside = text.replace(/<[^<>]*>/g, " ").split(/[\s,;]+/);
+  const seen = new Set<string>();
+  for (const token of [...bracketed, ...outside]) {
+    const address = token.trim().toLowerCase();
+    if (address.includes("@")) seen.add(address);
+  }
+  return [...seen];
+}
+
+export function senderProblem(...froms: unknown[]): SenderProblem | undefined {
+  for (const raw of froms) {
+    if (typeof raw !== "string") continue;
+    const addresses = fromAddresses(raw);
+    if (addresses.length >= 2) return "ambiguous_sender";
+    if (addresses.some((a) => a.length > MAX_ADDRESS_LENGTH)) return "invalid_sender";
+  }
+  return undefined;
+}
+
 function lowerHeaders(value: unknown): Record<string, string> {
   const out: Record<string, string> = {};
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -71,10 +111,12 @@ export function parseInboundPayload(json: unknown): ParsedInbound {
     if (body.type !== "email.received") return { kind: "ignored_event", type: body.type };
     const data = (body.data ?? {}) as Record<string, unknown>;
     if (typeof data.email_id !== "string" || !data.email_id) return { kind: "invalid" };
+    const problem = senderProblem(data.from);
     return {
       kind: "received",
       emailId: data.email_id,
       recipients: [...asStrings(data.to), ...asStrings(data.received_for)],
+      ...(problem ? { senderProblem: problem } : {}),
     };
   }
 
@@ -83,6 +125,7 @@ export function parseInboundPayload(json: unknown): ParsedInbound {
   if (!from?.address || recipients.length === 0 || typeof body.text !== "string" || !body.text) {
     return { kind: "invalid" };
   }
+  const problem = senderProblem(body.from);
   return {
     kind: "legacy",
     email: {
@@ -92,6 +135,7 @@ export function parseInboundPayload(json: unknown): ParsedInbound {
       subject: typeof body.subject === "string" ? body.subject : undefined,
       text: body.text,
       headers: lowerHeaders(body.headers),
+      ...(problem ? { senderProblem: problem } : {}),
     },
   };
 }
@@ -128,7 +172,9 @@ export function fromReceivedEmail(
   const headers = lowerHeaders(received.headers);
   const fromRaw = headers.from ?? (typeof received.from === "string" ? received.from : "");
   const from = splitAddress(fromRaw);
-  const bare = typeof received.from === "string" ? received.from.trim() : "";
+  // received.from can carry a display name too ("Name <a@b>"): match
+  // members on the bare address only.
+  const bare = typeof received.from === "string" ? splitAddress(received.from).address : "";
   const text =
     typeof received.text === "string" && received.text.trim()
       ? received.text
@@ -137,6 +183,7 @@ export function fromReceivedEmail(
         : "";
   const address = bare || from.address;
   if (!address || !text.trim()) return null;
+  const problem = senderProblem(fromRaw, received.from);
   const auth =
     received.authentication && typeof received.authentication === "object"
       ? (received.authentication as Record<string, unknown>)
@@ -150,5 +197,6 @@ export function fromReceivedEmail(
     headers,
     ...(typeof auth.dmarc === "string" ? { dmarc: auth.dmarc.toLowerCase() } : {}),
     ...(typeof auth.dkim === "string" ? { dkim: auth.dkim.toLowerCase() } : {}),
+    ...(problem ? { senderProblem: problem } : {}),
   };
 }
