@@ -95,6 +95,7 @@ See the [Quickstart guide](/docs/quickstart) for the full list of environment va
 | `AUTH_SECRET` | Session encryption secret (generate with `openssl rand -base64 32`) |
 | `NEXT_PUBLIC_APP_URL` | Your public URL (e.g., `https://support.yourdomain.com`) |
 | `RESEND_API_KEY` | Email delivery API key |
+| `RESEND_WEBHOOK_SECRET` | Needed for inbound email. The signing secret (`whsec_...`) of your Resend webhook for the `email.received` event, pointed at `https://<your-domain>/api/email/inbound`. Without it, the route refuses every request and inbound email stays off. Inbound also needs `RESEND_API_KEY` to be a **full-access** key, not a sending-only one: the webhook only carries the email's id, and the app fetches the email with the key, so with a sending-only key every inbound email fails (500) |
 | `ANTHROPIC_API_KEY` | Required for AI agent features |
 | `PUSHER_APP_ID` | Optional. Pusher app ID (server only) |
 | `PUSHER_SECRET` | Optional. Pusher secret (server only, keep it private) |
