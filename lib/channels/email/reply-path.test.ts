@@ -23,7 +23,20 @@ describe("reply+ customer replies use the email channel's customer path", () => 
 
   it("a threaded reply is appended to that email conversation", () => {
     assert.match(provider, /where: \{ id: threadId, workspaceId, channel: "EMAIL" \}/);
-    assert.match(provider, /return this\.appendToConversation\(existing, workspaceId, from, fromName, body\);/);
+    assert.match(provider, /return this\.appendToConversation\(existing, workspaceId, from, fromName, body, \{/);
+  });
+
+  it("reply+ (keepVisitor) never overwrites the visitor; support+ threading still updates it", () => {
+    assert.match(provider, /return this\.appendToConversation\(existing, workspaceId, from, fromName, body, \{\s*keepVisitor: payload\.keepVisitor === true,\s*\}\);/);
+    assert.match(appendBody, /if \(!options\.keepVisitor\) \{\s*await prisma\.visitor\.update\(\{\s*where: \{ id: conversation\.visitorId \},\s*data: \{\s*\.\.\.\(fromEmail && \{ email: fromEmail \}\),/);
+    // The only visitor write in the append path is behind that check.
+    assert.equal((appendBody.match(/prisma\.visitor\.update/g) ?? []).length, 1);
+    assert.match(read("lib/inbound-email/handler.ts"), /threadId: conversation\.id,\s*keepVisitor: true,/);
+  });
+
+  it("agent replies go to the conversation's visitor email (not the last sender)", () => {
+    assert.match(read("actions/send-message.ts"), /visitorEmail: conversation\.visitor\?\.email \?\? null,/);
+    assert.match(provider, /to: context\.visitorEmail,/);
   });
 
   it("appending respects autoReopen=false and fires message.created", () => {

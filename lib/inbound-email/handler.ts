@@ -23,7 +23,9 @@
  *    - Anyone else: a customer message in that conversation, through the
  *      email channel's own path (handleCustomerInbound with the thread),
  *      so it fires message.created, respects autoReopen and runs what that
- *      path runs. It needs an email-channel conversation with the channel
+ *      path runs. The conversation's visitor is never changed to the sender
+ *      (keepVisitor): it may be someone the customer forwarded to, and
+ *      agent replies keep going to the original customer. It needs an email-channel conversation with the channel
  *      on. A customer reply is never dropped silently: when it can't be
  *      filed (not an email conversation, channel off) the answer is a 422
  *      with a reason code, and a fetch or database failure is a 500. Both
@@ -328,6 +330,7 @@ async function handleReplyAddress(
     subject: email.subject,
     body: email.text.trim(),
     threadId: conversation.id,
+    keepVisitor: true,
   });
   return {
     status: 200,

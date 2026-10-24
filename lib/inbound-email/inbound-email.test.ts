@@ -379,6 +379,8 @@ describe("POST /api/email/inbound: valid requests", () => {
       body: "Private customer text",
       threadId: undefined,
     });
+    // support+ threading is unchanged: no keepVisitor, so it still updates the visitor.
+    assert.ok(!("keepVisitor" in t.customer[0]));
     // Threading lookups stay inside the recipient's workspace.
     assert.deepEqual((t.messageLookups[0] as { where: unknown }).where, {
       emailMessageId: "<msg-1@mail.guddesk.com>",
@@ -572,6 +574,7 @@ describe("POST /api/email/inbound: reply+ address", () => {
       subject: "Help",
       body: "Agent reply text",
       threadId: "conva",
+      keepVisitor: true,
     });
   }
 
@@ -586,6 +589,12 @@ describe("POST /api/email/inbound: reply+ address", () => {
   it("a stranger: a customer message, never an agent", async () => {
     const { t } = await replyTo("stranger@example.com", "conva");
     assertCustomerReply(t, "stranger@example.com");
+  });
+
+  it("a forwarded sender is filed on the conversation without replacing its visitor (keepVisitor)", async () => {
+    const { t } = await replyTo("colleague@forwarded.example", "conva");
+    assertCustomerReply(t, "colleague@forwarded.example");
+    assert.equal(t.customer[0].keepVisitor, true);
   });
 
   it("a member of another workspace (cross-workspace id): a customer message, never an agent", async () => {

@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
 import { prisma } from "@/lib/db";
+import { bounceFrom } from "@/lib/email/bounce-from";
 import { unverifiedReplyEmail } from "@/lib/inbound-email/bounce";
 import type { UnverifiedReplyBounce } from "@/lib/inbound-email/handler";
 
@@ -144,8 +145,7 @@ export async function sendSlaBreachNotification(
 /**
  * A member's own email reply failed DMARC/DKIM and wasn't posted: tell
  * them at their account address. No Reply-To (they should answer in the
- * app) and never the original body. Same sender as the other notifications
- * here; it moves to emailFrom() with the rest when RESEND_FROM lands.
+ * app) and never the original body.
  */
 export async function sendUnverifiedReplyBounce(bounce: UnverifiedReplyBounce): Promise<boolean> {
   const workspace = await prisma.workspace.findUnique({
@@ -157,7 +157,7 @@ export async function sendUnverifiedReplyBounce(bounce: UnverifiedReplyBounce): 
   const content = unverifiedReplyEmail({ memberName: bounce.memberName, inboxUrl });
   try {
     const { error } = await resend.emails.send({
-      from: "GudDesk <notifications@guddesk.com>",
+      from: bounceFrom(),
       to: bounce.to,
       subject: content.subject,
       text: content.text,

@@ -51,7 +51,9 @@ export class EmailChannelProvider implements ChannelProvider {
       });
 
       if (existing) {
-        return this.appendToConversation(existing, workspaceId, from, fromName, body);
+        return this.appendToConversation(existing, workspaceId, from, fromName, body, {
+          keepVisitor: payload.keepVisitor === true,
+        });
       }
     }
 
@@ -134,16 +136,21 @@ export class EmailChannelProvider implements ChannelProvider {
     fromEmail: string,
     fromName: string | undefined,
     body: string,
+    options: { keepVisitor?: boolean } = {},
   ): Promise<InboundResult> {
-    // Update visitor email/name if changed
-    await prisma.visitor.update({
-      where: { id: conversation.visitorId },
-      data: {
-        ...(fromEmail && { email: fromEmail }),
-        ...(fromName && { name: fromName }),
-        lastSeenAt: new Date(),
-      },
-    });
+    // Update visitor email/name if changed. Not for reply+ (keepVisitor): the
+    // sender may be someone else, and the visitor's address is where agent
+    // replies go.
+    if (!options.keepVisitor) {
+      await prisma.visitor.update({
+        where: { id: conversation.visitorId },
+        data: {
+          ...(fromEmail && { email: fromEmail }),
+          ...(fromName && { name: fromName }),
+          lastSeenAt: new Date(),
+        },
+      });
+    }
 
     // Create the message
     const message = await prisma.message.create({
