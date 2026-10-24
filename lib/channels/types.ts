@@ -7,6 +7,8 @@
 
 import type { ConversationChannel, Message } from "@prisma/client";
 
+import type { OutboundDelivery } from "@/lib/email/delivery-notice";
+
 export interface InboundPayload {
   workspaceId: string;
   from: string; // sender identifier (email address, phone number, etc.)
@@ -45,7 +47,7 @@ export interface ChannelProvider {
   /**
    * Send a reply to the external channel when an agent responds.
    * For widget: no-op (widget uses Pusher).
-   * For email: sends an email to the customer.
+   * For email: sends an email to the customer and says whether it went out.
    */
-  sendOutbound(context: OutboundContext, message: Message): Promise<void>;
+  sendOutbound(context: OutboundContext, message: Message): Promise<OutboundDelivery | void>;
 }

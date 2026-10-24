@@ -2,7 +2,8 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { resend } from "@/lib/email";
+import { emailFrom } from "@/lib/email/from";
+import { sendEmail } from "@/lib/email/send";
 import { requireWorkspaceRole } from "@/lib/workspace";
 import { workspaceInviteSchema } from "@/lib/validations/workspace";
 import { env } from "@/env.mjs";
@@ -71,29 +72,38 @@ export async function inviteWorkspaceMember(
     const appUrl = env.NEXT_PUBLIC_APP_URL;
     const inviteUrl = `${appUrl}/invitation?token=${invitation.token}`;
 
-    try {
-      await resend.emails.send({
-        from: "GudDesk <onboarding@resend.dev>",
-        to: email,
-        subject: `You've been invited to join ${workspace?.name ?? "a workspace"} on GudDesk`,
-        react: WorkspaceInvitationEmail({
-          inviterName: session.user.name ?? "A workspace member",
-          workspaceName: workspace?.name ?? "a workspace",
-          role: role,
-          actionUrl: inviteUrl,
-        }),
-      });
-    } catch {
-      // Email sending failed but invitation was created
-      // The user can still share the invitation link manually
-    }
+    const sent = await sendEmail("workspace-invitation", {
+      from: emailFrom(),
+      to: email,
+      subject: `You've been invited to join ${workspace?.name ?? "a workspace"} on GudDesk`,
+      react: WorkspaceInvitationEmail({
+        inviterName: session.user.name ?? "A workspace member",
+        workspaceName: workspace?.name ?? "a workspace",
+        role: role,
+        actionUrl: inviteUrl,
+      }),
+    });
 
     revalidatePath(`/workspace`);
-    return { status: "success", token: invitation.token };
+    // The invitation exists either way. When its email did not go out, the
+    // form shows the link so it can be shared by hand.
+    if (sent.status === "failed") {
+      return {
+        status: "success",
+        token: invitation.token,
+        emailStatus: "failed",
+        inviteUrl,
+      } as const;
+    }
+    return {
+      status: "success",
+      token: invitation.token,
+      emailStatus: "sent",
+    } as const;
   } catch (error) {
     if (error instanceof Error) {
-      return { status: "error", message: error.message };
+      return { status: "error", message: error.message } as const;
     }
-    return { status: "error", message: "Failed to send invitation" };
+    return { status: "error", message: "Failed to send invitation" } as const;
   }
 }

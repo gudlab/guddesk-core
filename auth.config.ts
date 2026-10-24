@@ -6,7 +6,18 @@ import bcrypt from "bcryptjs";
 
 import { env } from "@/env.mjs";
 import { prisma } from "@/lib/db";
+import { emailFrom } from "@/lib/email/from";
+import { sendMagicLinkSafely } from "@/lib/email/send";
 import { userLoginSchema } from "@/lib/validations/auth";
+
+const MAGIC_LINK_FROM = emailFrom();
+
+// Auth.js's own Resend send, wrapped so a failure is logged redacted and
+// rethrown without addresses.
+const magicLink = Resend({
+  apiKey: env.RESEND_API_KEY,
+  from: MAGIC_LINK_FROM,
+});
 
 export default {
   providers: [
@@ -14,10 +25,16 @@ export default {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
-    Resend({
-      apiKey: env.RESEND_API_KEY,
-      from: "GudDesk App <onboarding@resend.dev>",
-    }),
+    {
+      ...magicLink,
+      options: {
+        ...magicLink.options,
+        sendVerificationRequest: (params) =>
+          sendMagicLinkSafely(params.identifier, () =>
+            magicLink.sendVerificationRequest(params),
+          ),
+      },
+    },
     Credentials({
       async authorize(credentials) {
         const validated = userLoginSchema.safeParse(credentials);
