@@ -352,7 +352,7 @@ export const features: Feature[] = [
       {
         title: "SLA enforcement",
         description:
-          "Define SLA policies with first-response and resolution deadlines. A check runs once a day, adds a note to breached conversations and emails the assignee, so a breach can take up to a day to be flagged.",
+          "Define SLA policies with first-response and resolution deadlines. GudDesk checks for breaches about every 5 minutes in each workspace while your team uses the inbox or API, and on the schedule you set for the SLA cron route. A breached conversation gets a note and the assignee gets an email.",
         icon: "clock",
       },
     ],
@@ -363,13 +363,13 @@ export const features: Feature[] = [
       "Tag, email and message conditions",
       "SLA policies with deadlines",
       "Business hours for SLA deadlines",
-      "Daily SLA breach check and email",
+      "SLA breach notes and emails",
     ],
     useCaseExamples: [
       {
         title: "Catch missed first replies",
         description:
-          "Set a first-response deadline. The daily SLA check adds a breach note to late conversations and emails the assignee.",
+          "Set a first-response deadline. The SLA check adds a breach note to late conversations and emails the assignee.",
       },
       {
         title: "Deadlines that respect business hours",

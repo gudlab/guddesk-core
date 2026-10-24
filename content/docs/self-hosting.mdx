@@ -109,7 +109,7 @@ The four Pusher variables are optional. Set all four to get live updates over We
 - The inbox refreshes the conversation list every 10 seconds and the open thread every 4 seconds, while the browser tab is visible.
 - The chat widget checks for new messages every 4 seconds while it's open.
 
-Typing indicators and collision warnings need Pusher, so they stay off in polling mode.
+Typing indicators need Pusher, so they stay off in polling mode.
 
 Next.js builds `NEXT_PUBLIC_` values into the browser code, so rebuild (`pnpm build`) and restart after you set or change `NEXT_PUBLIC_PUSHER_KEY` or `NEXT_PUBLIC_PUSHER_CLUSTER`. `PUSHER_APP_ID` and `PUSHER_SECRET` are read at runtime and only need a restart.
 
