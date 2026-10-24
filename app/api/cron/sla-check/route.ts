@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { withCronAuth } from "@/lib/cron-auth";
 import { prisma } from "@/lib/db";
 import { sweepExpiredWebhookIds } from "@/lib/inbound-email/replay";
+import { sweepExpiredReplyKeys } from "@/lib/reply-idempotency";
 import { processSlaBreaches } from "@/lib/sla/process";
 
 /**
@@ -32,12 +33,22 @@ async function sweepInboundIds(): Promise<number | null> {
   }
 }
 
+async function sweepReplyKeys(): Promise<number | null> {
+  try {
+    return await sweepExpiredReplyKeys(prisma);
+  } catch (error) {
+    console.error("Reply key sweep error:", error instanceof Error ? error.name : "error");
+    return null;
+  }
+}
+
 async function run() {
   // Independent of the SLA run, so one failing doesn't skip the other.
   const inboundIdsSwept = await sweepInboundIds();
+  const replyKeysSwept = await sweepReplyKeys();
   try {
     const result = await processSlaBreaches();
-    return NextResponse.json({ success: true, ...result, inboundIdsSwept });
+    return NextResponse.json({ success: true, ...result, inboundIdsSwept, replyKeysSwept });
   } catch (error) {
     console.error("SLA check cron error:", error);
     return NextResponse.json({ error: "SLA check failed" }, { status: 500 });

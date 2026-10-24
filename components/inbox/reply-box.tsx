@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Icons } from "@/components/shared/icons";
 import { publishLocalMessage } from "@/lib/local-messages";
+import { newReplyKey } from "@/lib/reply-idempotency";
 import { claimSubmit, releaseSubmit } from "@/lib/submit-guard";
 import { CannedResponsePicker } from "./canned-response-picker";
 
@@ -35,9 +36,17 @@ export function ReplyBox({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Set synchronously, so a second Enter in the same tick can't send twice.
   const inFlight = useRef(false);
+  // One idempotency key per composed reply, reused on retry, so the server
+  // creates (and emails) it once (lib/reply-idempotency.ts).
+  const replyKey = useRef<string>(newReplyKey());
 
   useEffect(() => {
     textareaRef.current?.focus();
+  }, [conversationId]);
+
+  // A different conversation is a new reply.
+  useEffect(() => {
+    replyKey.current = newReplyKey();
   }, [conversationId]);
 
   function handleSubmit() {
@@ -57,11 +66,18 @@ export function ReplyBox({
   async function submit(trimmed: string) {
     const result = await sendMessage(conversationId, {
       body: trimmed,
+      idempotencyKey: replyKey.current,
       type: mode === "note" ? "NOTE" : "AGENT",
     });
 
     if (result.status === "error") {
       toast.error(result.message || "Failed to send message");
+      return;
+    }
+
+    // The first send with this key is still running: don't send it again.
+    if (result.status === "sending") {
+      toast.message(result.message ?? "Your reply is still sending.");
       return;
     }
 
@@ -77,6 +93,7 @@ export function ReplyBox({
     }
 
     setBody("");
+    replyKey.current = newReplyKey();
     textareaRef.current?.focus();
   }
 

@@ -8,10 +8,11 @@ import { requireWorkspaceMember } from "@/lib/workspace";
 import { getChannelProvider } from "@/lib/channels/registry";
 import { deliveryNotice, withSendTimeout } from "@/lib/email/delivery-notice";
 import { revalidatePath } from "next/cache";
+import { createReplyOnce, normalizeIdempotencyKey } from "@/lib/reply-idempotency";
 
 export async function sendMessage(
   conversationId: string,
-  data: { body: string; type?: "AGENT" | "NOTE"; mentions?: string[] },
+  data: { body: string; type?: "AGENT" | "NOTE"; mentions?: string[]; idempotencyKey?: string },
 ) {
   try {
     const session = await auth();
@@ -45,17 +46,32 @@ export async function sendMessage(
 
     await requireWorkspaceMember(conversation.workspaceId, session.user.id);
 
-    // Create the message
-    const message = await prisma.message.create({
-      data: {
-        conversationId,
-        type,
-        body,
-        senderId: session.user.id,
-        senderName: session.user.name ?? "Agent",
-        mentions,
-      },
-    });
+    // Create the message, at most once per composed reply: the composer's
+    // idempotency key is claimed first (lib/reply-idempotency.ts), so a
+    // double send or a retry returns the first message and sends no second
+    // email.
+    const once = await createReplyOnce(
+      prisma,
+      { conversationId, key: normalizeIdempotencyKey(data.idempotencyKey) },
+      () =>
+        prisma.message.create({
+          data: {
+            conversationId,
+            type,
+            body,
+            senderId: session.user.id,
+            senderName: session.user.name ?? "Agent",
+            mentions,
+          },
+        }),
+    );
+    if (once.kind === "sending") {
+      return { status: "sending", message: "Your reply is still sending." };
+    }
+    if (once.kind === "duplicate") {
+      return existingReply(conversationId, once.messageId);
+    }
+    const message = once.message;
 
     // Update conversation metadata + track first response for SLA
     const preview = body.length > 100 ? body.slice(0, 100) + "..." : body;
@@ -209,4 +225,31 @@ export async function sendMessage(
     }
     return { status: "error", message: "Failed to send message" };
   }
+}
+
+/** The message an earlier send with the same key created, in sendMessage's success shape. */
+async function existingReply(conversationId: string, messageId: string) {
+  const message = await prisma.message.findFirst({
+    where: { id: messageId, conversationId },
+    include: { sender: { select: { name: true, image: true } } },
+  });
+  if (!message) {
+    return { status: "error", message: "This reply was already sent." };
+  }
+  return {
+    status: "success",
+    messageId: message.id,
+    deduped: true,
+    // The first send already reported (or didn't) its email; none is sent now.
+    emailError: null,
+    sentMessage: {
+      id: message.id,
+      type: message.type,
+      body: message.body,
+      senderId: message.senderId,
+      senderName: message.senderName,
+      createdAt: message.createdAt.toISOString(),
+      sender: { name: message.sender?.name ?? null, image: message.sender?.image ?? null },
+    },
+  };
 }

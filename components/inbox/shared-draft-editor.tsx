@@ -8,6 +8,7 @@ import { deleteSharedDraft } from "@/actions/manage-shared-draft";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
 import { publishLocalMessage } from "@/lib/local-messages";
+import { newReplyKey } from "@/lib/reply-idempotency";
 import { claimSubmit, releaseSubmit } from "@/lib/submit-guard";
 
 interface Props {
@@ -28,10 +29,18 @@ export function SharedDraftEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Set synchronously, so a second click in the same tick can't send twice.
   const inFlight = useRef(false);
+  // One idempotency key per composed reply, reused on retry, so the server
+  // creates (and emails) it once (lib/reply-idempotency.ts).
+  const replyKey = useRef<string>(newReplyKey());
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     textareaRef.current?.focus();
+  }, [conversationId]);
+
+  // A different conversation is a new reply.
+  useEffect(() => {
+    replyKey.current = newReplyKey();
   }, [conversationId]);
 
   function handleSendAsReply() {
@@ -51,11 +60,18 @@ export function SharedDraftEditor({
   async function send(trimmed: string) {
     const result = await sendMessage(conversationId, {
       body: trimmed,
+      idempotencyKey: replyKey.current,
       type: "AGENT",
     });
 
     if (result.status === "error") {
       toast.error(result.message ?? "Failed to send");
+      return;
+    }
+
+    // The first send with this key is still running: don't send it again.
+    if (result.status === "sending") {
+      toast.message(result.message ?? "Your reply is still sending.");
       return;
     }
 
@@ -72,6 +88,7 @@ export function SharedDraftEditor({
     // Delete the draft after sending
     await deleteSharedDraft(conversationId);
     onSent();
+    replyKey.current = newReplyKey();
   }
 
   function handleDiscard() {
