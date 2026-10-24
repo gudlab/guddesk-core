@@ -118,14 +118,84 @@ describe("automation close behaves like a manual close", () => {
     assert.deepEqual(await steps("automation"), await steps("agent"));
   });
 
-  it("closing an already closed conversation repeats the close effects but fires no closed rules", async () => {
+  it("closing an already closed conversation does nothing: no message, survey, webhook or closed rules", async () => {
     const w = createFakeWorld();
     w.addConversation({ id: "c1", status: "CLOSED" });
+    w.csat.set(WS, CSAT_ON);
     w.addRule({ trigger: "MESSAGE_RECEIVED", action: "CHANGE_STATUS", actionConfig: { status: "CLOSED" } });
     const onClosed = w.addRule({ trigger: "CONVERSATION_CLOSED", action: "ADD_TAG", actionConfig: { tag: "x" } });
     const outcomes = await runAutomationEvent(visitorMessage(), w.deps);
     assert.equal(outcomes.filter((o) => o.ruleId === onClosed.id).length, 0);
-    assert.equal(w.webhooks.filter((h) => h.event === "conversation.closed").length, 1, "same as the inbox re-close");
+    assert.equal(w.webhooks.filter((h) => h.event === "conversation.closed").length, 0);
+    assert.equal(surveys(w).length, 0);
+    assert.equal(w.messages.filter((m) => m.type === "SYSTEM").length, 0);
+    assert.equal(w.triggers.length, 0);
+  });
+
+  it("two concurrent manual closes (double click, two agents) give one survey, one webhook, one message", async () => {
+    for (let trial = 0; trial < 20; trial++) {
+      const w = createFakeWorld();
+      w.addConversation({ id: "c1" });
+      w.csat.set(WS, CSAT_ON);
+      const close = (userId: string) =>
+        changeConversationStatus(
+          {
+            conversationId: "c1",
+            workspaceId: WS,
+            status: "CLOSED",
+            actor: { kind: "agent", userId, name: userId },
+            at: w.now(),
+          },
+          w.statusDeps,
+        );
+      const results = await Promise.all([close("u1"), close("u2")]);
+      assert.deepEqual(
+        results.map((r) => r.closedNow).sort(),
+        [false, true],
+        `trial ${trial}: exactly one close wins`,
+      );
+      assert.equal(surveys(w).length, 1, `trial ${trial}: surveys`);
+      assert.equal(w.webhooks.filter((h) => h.event === "conversation.closed").length, 1);
+      assert.equal(
+        w.messages.filter((m) => m.type === "SYSTEM" && m.body.startsWith("Conversation closed")).length,
+        1,
+      );
+    }
+  });
+
+  it("five concurrent closes, agents and a rule mixed, still give one survey", async () => {
+    const w = createFakeWorld();
+    w.addConversation({ id: "c1" });
+    w.csat.set(WS, CSAT_ON);
+    const actors = [
+      { kind: "agent" as const, userId: "u1", name: "A" },
+      { kind: "automation" as const, ruleId: "r1", ruleName: "Rule" },
+      { kind: "agent" as const, userId: "u2", name: "B" },
+      { kind: "automation" as const, ruleId: "r2", ruleName: "Rule 2" },
+      { kind: "agent" as const, userId: "u3", name: "C" },
+    ];
+    const results = await Promise.all(
+      actors.map((actor) =>
+        changeConversationStatus(
+          { conversationId: "c1", workspaceId: WS, status: "CLOSED", actor, at: w.now() },
+          w.statusDeps,
+        ),
+      ),
+    );
+    assert.equal(results.filter((r) => r.closedNow).length, 1);
+    assert.equal(surveys(w).length, 1);
+    assert.equal(w.webhooks.filter((h) => h.event === "conversation.closed").length, 1);
+  });
+
+  it("CSAT, the closed webhook and the SYSTEM message are only sent by the close that won", () => {
+    const src = read("lib/conversations/status.ts");
+    assert.match(src, /const won = await deps\.closeIfNotClosed\(conversationId, at\);/);
+    assert.match(src, /if \(!won\) return \{ closedNow: false, closedAt: null \};/);
+    // The early return comes before any side effect.
+    const early = src.indexOf("if (!won) return");
+    for (const effect of ["deps.addSystemMessage(", "deps.triggerBatch(", "deps.triggerCsatSurvey(", "deps.webhook("]) {
+      assert.ok(src.indexOf(effect) > early, `${effect} after the early return`);
+    }
   });
 
   it("sends one survey even if the conversation is closed, reopened and closed again", async () => {

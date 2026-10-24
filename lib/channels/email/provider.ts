@@ -255,6 +255,8 @@ export class EmailChannelProvider implements ChannelProvider {
         visitorId: visitor.id,
         channel: "EMAIL",
         status: "OPEN",
+        // Created unassigned: the "unassigned for" automation counts from here.
+        unassignedAt: new Date(),
         subject: subject ?? null,
         lastMessageAt: new Date(),
         lastMessagePreview: preview,

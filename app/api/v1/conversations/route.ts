@@ -107,6 +107,8 @@ export async function POST(req: NextRequest) {
         workspaceId: ctx.workspaceId,
         visitorId,
         channel: "API",
+        // Created unassigned: the "unassigned for" automation counts from here.
+        unassignedAt: new Date(),
         subject: typeof subject === "string" ? subject.trim() : null,
         ...(message && typeof message === "string"
           ? {

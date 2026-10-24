@@ -311,7 +311,7 @@ model Conversation {
   createdAt          DateTime            @default(now()) @map(name: "created_at")
   updatedAt          DateTime            @updatedAt @map(name: "updated_at")
   closedAt           DateTime?
-  unassignedAt       DateTime? // When the assignee was last removed. Null: not unassigned since creation.
+  unassignedAt       DateTime? // Since when it has had no assignee: set at creation and on every unassign. Null on rows from before this column; the "unassigned for" job skips those.
 
   // SLA tracking
   slaPolicyId        String?

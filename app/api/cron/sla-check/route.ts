@@ -6,11 +6,12 @@ import { processSlaBreaches } from "@/lib/sla/process";
 /**
  * GET or POST /api/cron/sla-check
  *
- * Detects SLA breaches in every workspace. Call it every 5 minutes: GudDesk
- * Cloud uses .github/workflows/cron.yml (Vercel Hobby crons are daily only),
- * and self-hosters use system cron (see the self-hosting docs). Inbox and
- * API requests also run it per workspace at most every 5 minutes
- * (lib/scheduled).
+ * Detects SLA breaches in every workspace. Self-hosters call it every 5
+ * minutes from system cron (see the self-hosting docs). Inbox and API
+ * requests also run it per workspace at most every 5 minutes
+ * (lib/scheduled), which is the main path on GudDesk Cloud; Cloud also
+ * calls this route hourly from .github/workflows/cron.yml (Vercel Hobby
+ * crons are daily only).
  * For each breached conversation:
  *   1. Creates a SYSTEM message
  *   2. Sends notification email to assignee

@@ -39,4 +39,4 @@ Each conversation has a priority from 0 to 3, with 0 as the default. Set it thro
 
 ## Automation Rules
 
-You can create automation rules in **Automations**, with a trigger, conditions and one action. Rules run on their own when their trigger fires, so a rule can assign a new conversation, tag it, change its status or send a reply. Rules for conversations left unassigned are checked about every 5 minutes. For anything a rule can't do, [connect your own agent](/docs/agents/overview) and use the REST API.
+You can create automation rules in **Automations**, with a trigger, conditions and one action. Rules run on their own when their trigger fires, so a rule can assign a new conversation, tag it, change its status or send a reply. Rules for conversations left unassigned are checked about every 5 minutes, counting from when the conversation was created or last unassigned. Conversations from before automation rules ran are skipped until they are assigned and unassigned again. For anything a rule can't do, [connect your own agent](/docs/agents/overview) and use the REST API.

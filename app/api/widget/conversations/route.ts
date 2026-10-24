@@ -100,6 +100,8 @@ export async function POST(req: NextRequest) {
         visitorId,
         channel: "WIDGET",
         status: "OPEN",
+        // Created unassigned: the "unassigned for" automation counts from here.
+        unassignedAt: new Date(),
         lastMessageAt: new Date(),
         lastMessagePreview:
           message.length > 100 ? message.slice(0, 100) + "..." : message,

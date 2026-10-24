@@ -127,12 +127,13 @@ If `CRON_SECRET` is missing or empty, every cron route returns 401. Use a long r
 |---|---|---|
 | `/api/cron/sla-check` | Adds a note to conversations past their SLA deadline and emails the assignee | Every 5 minutes |
 | `/api/cron/webhook-retry` | Retries failed webhook deliveries that are due | Every 5 minutes |
+| `/api/cron/automations` | Runs "unassigned for" automation rules | Every 5 minutes |
 | `/api/cron/surveys` | Sends delayed CSAT survey messages | Every 10 minutes |
 | `/api/cron/analytics` | Stores the daily analytics snapshot | Daily |
 | `/api/cron/agent-performance` | Stores yesterday's per-agent numbers | Daily |
 | `/api/cron/webhook-cleanup` | Deletes webhook delivery records older than 30 days | Daily |
 
-Inbox and API requests also run the SLA check for their workspace at most every 5 minutes, so a busy workspace gets SLA notes even if a cron run is missed. Keep the cron schedule anyway, because a quiet workspace has no requests to trigger it.
+Inbox and API requests also run the SLA check and the "unassigned for" rules for their workspace at most every 5 minutes, so a busy workspace gets them even if a cron run is missed. Keep the cron schedule anyway, because a quiet workspace has no requests to trigger it.
 
 Test a route with curl:
 
@@ -157,6 +158,7 @@ CURL="curl -fsS --max-time 60 --retry 3 --retry-delay 10 -o /dev/null -H @/etc/g
 
 */5 * * * *  root  $CURL $BASE/api/cron/sla-check
 */5 * * * *  root  $CURL $BASE/api/cron/webhook-retry
+*/5 * * * *  root  $CURL $BASE/api/cron/automations
 */10 * * * * root  $CURL $BASE/api/cron/surveys
 0 1 * * *    root  $CURL $BASE/api/cron/analytics
 15 1 * * *   root  $CURL $BASE/api/cron/agent-performance

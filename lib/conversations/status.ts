@@ -3,7 +3,8 @@
  * (actions/update-conversation-status.ts) and the automation CHANGE_STATUS
  * action both go through this, so a close by an automation does what a
  * manual close does: the SYSTEM message, the realtime events, the CSAT
- * survey (where enabled) and the conversation.closed webhook.
+ * survey (where enabled) and the conversation.closed webhook. Closing a
+ * conversation that is already closed does none of these.
  *
  * It does not fire automations. The caller does that when closedNow is
  * true: the inbox action with fireAutomations(), the engine as a follow-up
@@ -68,10 +69,17 @@ export async function changeConversationStatus(
   const closedAt = status === "CLOSED" ? at : null;
   const snoozedUntil = status === "SNOOZED" ? (input.snoozedUntil ?? null) : null;
 
-  const closedNow = status === "CLOSED" ? await deps.closeIfNotClosed(conversationId, at) : false;
-  // Closing a conversation that is already closed still updates it, as
-  // the inbox always has.
-  if (!closedNow) await deps.update(conversationId, { status, snoozedUntil, closedAt });
+  if (status === "CLOSED") {
+    const won = await deps.closeIfNotClosed(conversationId, at);
+    // Already closed (a double click, two agents, or a rule and an agent
+    // at once): only the caller whose conditional update won does the
+    // close effects, so there is one SYSTEM message, one CSAT survey and
+    // one conversation.closed webhook per close.
+    if (!won) return { closedNow: false, closedAt: null };
+  } else {
+    await deps.update(conversationId, { status, snoozedUntil, closedAt });
+  }
+  const closedNow = status === "CLOSED";
 
   const label = LABELS[status];
   if (actor.kind === "agent") {

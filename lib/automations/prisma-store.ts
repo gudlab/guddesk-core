@@ -186,20 +186,25 @@ export function createPrismaAutomationStore(db: PrismaClient): AutomationStore &
     },
 
     async findUnassignedCandidates(rule, cutoff, limit) {
+      // Only conversations with unassignedAt set: new conversations get it
+      // at creation and every unassign sets it. Rows from before the column
+      // existed are null and are skipped, so enabling this job does not act
+      // on every old open conversation at once.
       // The NOT EXISTS matches unassignedEventKey() in events.ts:
       // "unassigned:<conversationId>:<since in epoch ms>".
       const rows = await db.$queryRaw<{ id: string; since: Date }[]>`
-        SELECT c."id", COALESCE(c."unassignedAt", c."created_at") AS "since"
+        SELECT c."id", c."unassignedAt" AS "since"
         FROM "conversations" c
         WHERE c."workspaceId" = ${rule.workspaceId}
           AND c."status" = 'OPEN'
           AND c."assigneeId" IS NULL
-          AND COALESCE(c."unassignedAt", c."created_at") <= ${cutoff}
+          AND c."unassignedAt" IS NOT NULL
+          AND c."unassignedAt" <= ${cutoff}
           AND NOT EXISTS (
             SELECT 1 FROM "automation_runs" r
             WHERE r."ruleId" = ${rule.id}
               AND r."eventKey" = 'unassigned:' || c."id" || ':' ||
-                (EXTRACT(EPOCH FROM COALESCE(c."unassignedAt", c."created_at")) * 1000)::bigint::text
+                (EXTRACT(EPOCH FROM c."unassignedAt") * 1000)::bigint::text
           )
         ORDER BY 2 ASC
         LIMIT ${limit}

@@ -58,6 +58,25 @@ describe("automation call sites", () => {
     });
   }
 
+  for (const file of [
+    "app/api/widget/conversations/route.ts",
+    "lib/channels/email/provider.ts",
+    "app/api/v1/conversations/route.ts",
+  ]) {
+    it(`${file} creates conversations with unassignedAt set`, () => {
+      const src = read(file);
+      const create = src.slice(src.indexOf("prisma.conversation.create({"));
+      assert.match(create.slice(0, 600), /unassignedAt: new Date\(\)/);
+    });
+  }
+
+  it("the unassigned-for query only takes rows with unassignedAt set (no created_at fallback)", () => {
+    const store = read("lib/automations/prisma-store.ts");
+    const query = store.slice(store.indexOf("async findUnassignedCandidates"));
+    assert.match(query, /c\."unassignedAt" IS NOT NULL/);
+    assert.doesNotMatch(query.slice(0, 1500), /created_at|COALESCE/);
+  });
+
   it("the scheduler runs the automations job next to the SLA check", () => {
     const jobs = read("lib/scheduled/index.ts");
     assert.match(jobs, /name: "automations", run: \(workspaceId\) => runUnassignedAutomations\(workspaceId\)/);

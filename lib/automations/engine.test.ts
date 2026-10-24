@@ -221,6 +221,32 @@ describe("trigger: tag added", () => {
 });
 
 describe("trigger: unassigned for", () => {
+  it("skips conversations with no unassignedAt (rows from before the column), so a deploy causes no burst", async () => {
+    const w = createFakeWorld();
+    const old = w.addConversation({ id: "c_old", unassignedAt: null });
+    w.addRule({
+      trigger: "CONVERSATION_UNASSIGNED_FOR",
+      action: "ADD_TAG",
+      actionConfig: { tag: "late" },
+      conditions: { unassigned_minutes: 30 },
+    });
+    w.advance(90 * 24 * 60 * 60 * 1000);
+    assert.equal((await processUnassignedFor(w.deps)).succeeded, 0);
+    assert.deepEqual(old.tags, []);
+    // A new conversation starts with unassignedAt set and is picked up.
+    const fresh = w.addConversation({ id: "c_new" });
+    assert.ok(fresh.unassignedAt);
+    w.advance(31 * 60 * 1000);
+    assert.equal((await processUnassignedFor(w.deps)).succeeded, 1);
+    assert.deepEqual(fresh.tags, ["late"]);
+    assert.deepEqual(old.tags, []);
+    // The old one counts once someone assigns and unassigns it.
+    old.unassignedAt = w.now();
+    w.advance(31 * 60 * 1000);
+    assert.equal((await processUnassignedFor(w.deps)).succeeded, 1);
+    assert.deepEqual(old.tags, ["late"]);
+  });
+
   it("fires once, and again only after being assigned and unassigned", async () => {
     const w = createFakeWorld();
     const c = w.addConversation({ id: "c1" });

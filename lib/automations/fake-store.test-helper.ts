@@ -165,7 +165,8 @@ export function createFakeWorld(start = new Date("2026-10-24T12:00:00Z")) {
     async findUnassignedCandidates(rule, cutoff, limit): Promise<UnassignedCandidate[]> {
       return [...conversations.values()]
         .filter((c) => c.workspaceId === rule.workspaceId && c.status === "OPEN" && c.assigneeId === null)
-        .map((c) => ({ conversationId: c.id, since: c.unassignedAt ?? c.createdAt }))
+        // Like the SQL: rows with no unassignedAt (from before the column) are skipped.
+        .flatMap((c) => (c.unassignedAt ? [{ conversationId: c.id, since: c.unassignedAt }] : []))
         .filter((c) => c.since <= cutoff)
         .filter(
           (c) =>
@@ -208,6 +209,9 @@ export function createFakeWorld(start = new Date("2026-10-24T12:00:00Z")) {
   // The real status change (changeConversationStatus) over in-memory data.
   const statusDeps: StatusChangeDeps = {
     async closeIfNotClosed(conversationId) {
+      // Yield first, like a database round trip, then check and set in one
+      // step, like the conditional UPDATE.
+      await new Promise<void>((resolve) => setImmediate(resolve));
       const c = conversations.get(conversationId)!;
       if (c.status === "CLOSED") return false;
       c.status = "CLOSED";
@@ -270,14 +274,20 @@ export function createFakeWorld(start = new Date("2026-10-24T12:00:00Z")) {
       clock += ms;
     },
     now: () => new Date(clock),
+    /**
+     * Like a conversation created now: one created without an assignee gets
+     * unassignedAt = createdAt, as the create routes do. Pass
+     * unassignedAt: null for a row from before the column existed.
+     */
     addConversation(input: Partial<FakeConversation> & { id: string; workspaceId?: string }) {
+      const createdAt = input.createdAt ?? new Date(clock);
       const c: FakeConversation = {
         workspaceId: "ws_1",
         status: "OPEN",
         tags: [],
         assigneeId: null,
-        unassignedAt: null,
-        createdAt: new Date(clock),
+        unassignedAt: input.assigneeId ? null : createdAt,
+        createdAt,
         visitorName: "Ada",
         visitorEmail: "ada@example.com",
         ...input,
