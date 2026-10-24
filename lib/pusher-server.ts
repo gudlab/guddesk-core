@@ -1,6 +1,7 @@
 import Pusher from "pusher";
 
 import { env } from "@/env.mjs";
+import { PUSHER_TIMEOUT_MS, withPusherTimeout } from "@/lib/pusher-timeout";
 
 let pusherServerInstance: Pusher | null = null;
 
@@ -16,6 +17,9 @@ export function getPusherServer(): Pusher | null {
       secret: env.PUSHER_SECRET,
       cluster: env.NEXT_PUBLIC_PUSHER_CLUSTER,
       useTLS: true,
+      // Client-side request timeout. safeTrigger and safeTriggerBatch also
+      // race every call against the same limit.
+      timeout: PUSHER_TIMEOUT_MS,
     });
   }
 
@@ -30,7 +34,8 @@ export interface RealtimeEvent {
 
 /**
  * Trigger a single Pusher event, swallowing errors so a realtime failure
- * (rate limit, account suspension, network blip) never bubbles up and
+ * (rate limit, account suspension, network blip, no answer within
+ * PUSHER_TIMEOUT_MS) never bubbles up and
  * fails an action whose primary work (DB write, etc.) already succeeded.
  * Returns true if Pusher accepted the event, false otherwise.
  *
@@ -46,7 +51,7 @@ export async function safeTrigger(
   const pusher = getPusherServer();
   if (!pusher) return false;
   try {
-    await pusher.trigger(channel, name, data);
+    await withPusherTimeout(pusher.trigger(channel, name, data));
     return true;
   } catch (err) {
     console.error(
@@ -74,7 +79,7 @@ export async function safeTriggerBatch(
   try {
     for (let i = 0; i < events.length; i += CHUNK_SIZE) {
       const chunk = events.slice(i, i + CHUNK_SIZE);
-      await pusher.triggerBatch(chunk);
+      await withPusherTimeout(pusher.triggerBatch(chunk));
     }
     return true;
   } catch (err) {

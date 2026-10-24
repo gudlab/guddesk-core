@@ -34,15 +34,17 @@ export function CreateAutomationForm({
   const [message, setMessage] = useState("");
   const [conditionField, setConditionField] = useState("");
   const [conditionValue, setConditionValue] = useState("");
+  const [minutes, setMinutes] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !trigger || !action) return;
+    const isUnassignedFor = trigger === "CONVERSATION_UNASSIGNED_FOR";
+    if (isUnassignedFor && !(Number(minutes) >= 1)) return;
 
-    const conditions =
-      conditionField && conditionValue
-        ? { [conditionField]: conditionValue }
-        : undefined;
+    const conditions: Record<string, string | number> = {};
+    if (conditionField && conditionValue) conditions[conditionField] = conditionValue;
+    if (isUnassignedFor) conditions.unassigned_minutes = Math.floor(Number(minutes));
 
     const actionConfig: Record<string, string> = {};
     if (action === "ASSIGN_TO") actionConfig.assigneeId = assigneeId;
@@ -55,7 +57,7 @@ export function CreateAutomationForm({
       const result = await createAutomationRule(workspaceId, {
         name,
         trigger,
-        conditions,
+        conditions: Object.keys(conditions).length > 0 ? conditions : undefined,
         action,
         actionConfig,
       });
@@ -73,6 +75,7 @@ export function CreateAutomationForm({
         setMessage("");
         setConditionField("");
         setConditionValue("");
+        setMinutes("");
       }
     });
   };
@@ -108,8 +111,21 @@ export function CreateAutomationForm({
                 Message received
               </SelectItem>
               <SelectItem value="TAG_ADDED">Tag added</SelectItem>
+              <SelectItem value="CONVERSATION_UNASSIGNED_FOR">
+                Unassigned for
+              </SelectItem>
             </SelectContent>
           </Select>
+          {trigger === "CONVERSATION_UNASSIGNED_FOR" && (
+            <Input
+              type="number"
+              min={1}
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              placeholder="Minutes, e.g. 30"
+              className="mt-1"
+            />
+          )}
         </div>
 
         <div className="space-y-2">
@@ -213,7 +229,16 @@ export function CreateAutomationForm({
         </div>
       )}
 
-      <Button type="submit" disabled={isPending || !name || !trigger || !action}>
+      <Button
+        type="submit"
+        disabled={
+          isPending ||
+          !name ||
+          !trigger ||
+          !action ||
+          (trigger === "CONVERSATION_UNASSIGNED_FOR" && !(Number(minutes) >= 1))
+        }
+      >
         {isPending ? "Creating..." : "Create Rule"}
       </Button>
     </form>

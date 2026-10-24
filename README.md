@@ -51,7 +51,7 @@ Built by [GudLab](https://gudlab.org).
 - **Knowledge Base**: collections, publish workflow, public help center
 - **AI assist (planned)**: reply suggestions and summaries, shipping with GudBot v1
 - **AI Agent Plugins**: external bots via REST + webhooks (`BOT` messages)
-- **Automation rules**: a rule builder for conversation events. Rules are saved but not run yet
+- **Automation rules**: a rule builder for conversation events. Each rule runs when its trigger fires
 - **Self-Hosted**: your Postgres, your keys
 
 ## Install the widget (hosted)

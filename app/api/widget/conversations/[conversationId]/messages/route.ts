@@ -5,6 +5,8 @@ import { cursorPageArgs } from "@/lib/pagination";
 import { safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { verifyVisitorToken } from "@/lib/visitor-auth";
+import { fireAutomations } from "@/lib/automations/dispatch";
+import { messageReceivedEvent, origin } from "@/lib/automations/events";
 
 // GET /api/widget/conversations/[conversationId]/messages
 // Returns messages for a conversation (visitor authenticated via token)
@@ -180,6 +182,17 @@ export async function POST(
       workspaceId: conversation.workspaceId,
       assigneeId: conversation.assigneeId ?? null,
     });
+
+    // Automation rules run after the response.
+    fireAutomations(
+      messageReceivedEvent({
+        workspaceId: conversation.workspaceId,
+        conversationId,
+        messageId: newMessage.id,
+        body: message,
+        origin: origin("visitor"),
+      }),
+    );
 
     return NextResponse.json({
       id: newMessage.id,
