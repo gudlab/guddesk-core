@@ -146,18 +146,6 @@ export function createPrismaAutomationStore(db: PrismaClient): AutomationStore &
       return true;
     },
 
-    async setStatus(conversationId, status, at) {
-      if (status === "CLOSED") {
-        const { count } = await db.conversation.updateMany({
-          where: { id: conversationId, status: { not: "CLOSED" } },
-          data: { status, closedAt: at },
-        });
-        return { closedNow: count > 0 };
-      }
-      await db.conversation.update({ where: { id: conversationId }, data: { status, closedAt: null } });
-      return { closedNow: false };
-    },
-
     async addSystemMessage(conversationId, body) {
       await db.message.create({ data: { conversationId, type: "SYSTEM", body } });
     },

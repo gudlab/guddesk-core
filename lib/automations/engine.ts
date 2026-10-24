@@ -20,6 +20,7 @@
 import type { AutomationAction, AutomationTrigger } from "@prisma/client";
 
 import { matchesConditions } from "@/lib/automations/conditions";
+import type { StatusChangeInput } from "@/lib/conversations/status";
 import {
   conversationClosedEvent,
   tagAddedEvents,
@@ -87,12 +88,6 @@ export interface AutomationStore {
   /** Adds the tag if missing. True when it was added. */
   addTag(conversationId: string, tag: string): Promise<boolean>;
   removeTag(conversationId: string, tag: string): Promise<boolean>;
-  /** closedNow: the conversation moved into CLOSED from another status. */
-  setStatus(
-    conversationId: string,
-    status: ConversationStatusValue,
-    at: Date,
-  ): Promise<{ closedNow: boolean }>;
   addSystemMessage(conversationId: string, body: string): Promise<void>;
   addBotMessage(conversationId: string, body: string, at: Date): Promise<BotMessage>;
   findCannedResponse(workspaceId: string, id: string): Promise<{ body: string } | null>;
@@ -106,6 +101,11 @@ export interface AutomationEffects {
   webhook(workspaceId: string, event: string, data: Record<string, unknown>): Promise<void>;
   /** Throws on a failed or timed-out post. */
   postSlack(webhookUrl: string, text: string, signal: AbortSignal): Promise<void>;
+  /**
+   * The same status change the inbox uses (changeConversationStatus in
+   * lib/conversations/status.ts). closedNow: it moved into CLOSED.
+   */
+  changeStatus(input: StatusChangeInput): Promise<{ closedNow: boolean }>;
 }
 
 export interface EngineDeps {
@@ -333,9 +333,17 @@ async function executeAction(
       const status = str(cfg.status);
       if (!status || !STATUSES.includes(status)) throw new AutomationActionError("no valid status set");
       const at = now();
-      const { closedNow } = await store.setStatus(conversationId, status as ConversationStatusValue, at);
-      await store.addSystemMessage(conversationId, `Status changed to ${status} by automation`);
-      await updated();
+      // Exactly like a manual close: SYSTEM message, realtime events, CSAT
+      // survey where enabled, and the conversation.closed webhook. The
+      // closed event goes back through this engine as a follow-up at
+      // depth + 1, so the depth and chain guards apply to it.
+      const { closedNow } = await effects.changeStatus({
+        conversationId,
+        workspaceId,
+        status: status as ConversationStatusValue,
+        actor: { kind: "automation", ruleId: rule.id, ruleName: rule.name },
+        at,
+      });
       return closedNow
         ? [conversationClosedEvent({ workspaceId, conversationId, closedAt: at, origin: event.origin })]
         : [];

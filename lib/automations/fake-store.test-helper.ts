@@ -16,6 +16,8 @@ import type {
 } from "@/lib/automations/engine";
 import { unassignedEventKey } from "@/lib/automations/events";
 import type { UnassignedCandidate, UnassignedStore } from "@/lib/automations/prisma-store";
+import { changeConversationStatus, type StatusChangeDeps } from "@/lib/conversations/status";
+import { sendCsatSurvey, type CsatDeps } from "@/lib/surveys/trigger";
 
 export interface FakeConversation {
   id: string;
@@ -46,6 +48,7 @@ export interface FakeMessage {
   conversationId: string;
   type: "SYSTEM" | "BOT";
   body: string;
+  senderId?: string | null;
 }
 
 let seq = 0;
@@ -69,6 +72,8 @@ export function createFakeWorld(start = new Date("2026-10-24T12:00:00Z")) {
   };
   let postSlack: AutomationEffects["postSlack"] = async () => undefined;
   const failures = new Map<string, Error>(); // store method -> error to throw
+  const csat = new Map<string, { isEnabled: boolean; questionText: string; thankYouText: string }>();
+  const csatResponses = new Set<string>(); // conversation ids with a CSAT response
 
   const fail = (name: string) => {
     const error = failures.get(name);
@@ -133,12 +138,6 @@ export function createFakeWorld(start = new Date("2026-10-24T12:00:00Z")) {
       c.tags = c.tags.filter((t) => t !== tag);
       return true;
     },
-    async setStatus(conversationId, status) {
-      const c = conversations.get(conversationId)!;
-      const closedNow = status === "CLOSED" && c.status !== "CLOSED";
-      c.status = status;
-      return { closedNow };
-    },
     async addSystemMessage(conversationId, body) {
       messages.push({ id: id("msg"), conversationId, type: "SYSTEM", body });
     },
@@ -179,6 +178,56 @@ export function createFakeWorld(start = new Date("2026-10-24T12:00:00Z")) {
     },
   };
 
+  // The real CSAT logic (sendCsatSurvey) over in-memory data.
+  const csatDeps: CsatDeps = {
+    async getConversation(conversationId) {
+      const c = conversations.get(conversationId);
+      return c ? { workspaceId: c.workspaceId } : null;
+    },
+    async getCsatConfig(workspaceId) {
+      return csat.get(workspaceId) ?? null;
+    },
+    async hasSurveyMessage(conversationId) {
+      return messages.some(
+        (m) => m.conversationId === conversationId && m.type === "SYSTEM" && m.body.includes('"type":"csat_survey"'),
+      );
+    },
+    async hasCsatResponse(conversationId) {
+      return csatResponses.has(conversationId);
+    },
+    async createSystemMessage(conversationId, body) {
+      const m = { id: id("msg"), conversationId, type: "SYSTEM" as const, body };
+      messages.push(m);
+      return { id: m.id, body, createdAt: new Date(clock) };
+    },
+    async triggerBatch(events) {
+      for (const e of events) triggers.push({ channel: e.channel, event: e.name, data: e.data });
+    },
+  };
+
+  // The real status change (changeConversationStatus) over in-memory data.
+  const statusDeps: StatusChangeDeps = {
+    async closeIfNotClosed(conversationId) {
+      const c = conversations.get(conversationId)!;
+      if (c.status === "CLOSED") return false;
+      c.status = "CLOSED";
+      return true;
+    },
+    async update(conversationId, data) {
+      conversations.get(conversationId)!.status = data.status;
+    },
+    async addSystemMessage(conversationId, body, sender) {
+      messages.push({ id: id("msg"), conversationId, type: "SYSTEM", body, senderId: sender?.id ?? null });
+    },
+    async triggerBatch(events) {
+      for (const e of events) triggers.push({ channel: e.channel, event: e.name, data: e.data });
+    },
+    triggerCsatSurvey: (conversationId) => sendCsatSurvey(conversationId, csatDeps),
+    async webhook(workspaceId, event, data) {
+      webhooks.push({ workspaceId, event, data });
+    },
+  };
+
   const effects: AutomationEffects = {
     async trigger(channel, event, data) {
       triggers.push({ channel, event, data });
@@ -187,6 +236,7 @@ export function createFakeWorld(start = new Date("2026-10-24T12:00:00Z")) {
       webhooks.push({ workspaceId, event, data });
     },
     postSlack: (url, text, signal) => postSlack(url, text, signal),
+    changeStatus: (input) => changeConversationStatus(input, statusDeps),
   };
 
   const deps: EngineDeps & { store: AutomationStore & UnassignedStore } = {
@@ -210,6 +260,9 @@ export function createFakeWorld(start = new Date("2026-10-24T12:00:00Z")) {
     logs,
     calls,
     failures,
+    csat,
+    csatResponses,
+    statusDeps,
     setPostSlack(fn: AutomationEffects["postSlack"]) {
       postSlack = fn;
     },

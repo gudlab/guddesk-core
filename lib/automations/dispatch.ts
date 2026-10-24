@@ -17,6 +17,8 @@ import {
 import type { AutomationEvent } from "@/lib/automations/events";
 import { createPrismaAutomationStore } from "@/lib/automations/prisma-store";
 import { processUnassignedFor } from "@/lib/automations/unassigned";
+import { changeConversationStatus, type StatusChangeInput } from "@/lib/conversations/status";
+import { prismaStatusDeps } from "@/lib/conversations/status-prisma";
 import { safeTrigger } from "@/lib/pusher-server";
 import { postSlackWebhook } from "@/lib/slack";
 import { dispatchWebhooks } from "@/lib/webhooks";
@@ -30,6 +32,7 @@ export function automationDeps() {
       },
       webhook: dispatchWebhooks,
       postSlack: postSlackWebhook,
+      changeStatus: (input: StatusChangeInput) => changeConversationStatus(input, prismaStatusDeps()),
     },
   } satisfies EngineDeps;
 }

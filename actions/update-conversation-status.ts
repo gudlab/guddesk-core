@@ -3,9 +3,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceMember } from "@/lib/workspace";
-import { safeTriggerBatch } from "@/lib/pusher-server";
-import { triggerCsatSurvey } from "@/lib/surveys/trigger";
-import { dispatchWebhooks } from "@/lib/webhooks";
+import { changeConversationStatus } from "@/lib/conversations/status";
+import { prismaStatusDeps } from "@/lib/conversations/status-prisma";
 import { revalidatePath } from "next/cache";
 import { fireAutomations } from "@/lib/automations/dispatch";
 import { conversationClosedEvent, origin } from "@/lib/automations/events";
@@ -23,7 +22,7 @@ export async function updateConversationStatus(
 
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      select: { workspaceId: true, status: true },
+      select: { workspaceId: true },
     });
 
     if (!conversation) {
@@ -32,70 +31,30 @@ export async function updateConversationStatus(
 
     await requireWorkspaceMember(conversation.workspaceId, session.user.id);
 
-    const closedAt = status === "CLOSED" ? new Date() : null;
-    const data: Record<string, unknown> = {
-      status,
-      snoozedUntil: status === "SNOOZED" && snoozedUntil ? new Date(snoozedUntil) : null,
-      closedAt,
-    };
-
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data,
-    });
-
-    // System message
-    const statusLabels = { OPEN: "reopened", SNOOZED: "snoozed", CLOSED: "closed" };
-    await prisma.message.create({
-      data: {
+    // Same path as an automation close (lib/conversations/status.ts): the
+    // SYSTEM message, realtime events, CSAT survey and closed webhook.
+    const { closedNow, closedAt } = await changeConversationStatus(
+      {
         conversationId,
-        type: "SYSTEM",
-        body: `Conversation ${statusLabels[status]} by ${session.user.name ?? "Agent"}`,
-        senderId: session.user.id,
-        senderName: session.user.name,
+        workspaceId: conversation.workspaceId,
+        status,
+        snoozedUntil: status === "SNOOZED" && snoozedUntil ? new Date(snoozedUntil) : null,
+        actor: { kind: "agent", userId: session.user.id, name: session.user.name ?? null },
+        at: new Date(),
       },
-    });
-
-    await safeTriggerBatch(
-      [
-        {
-          channel: `private-workspace-${conversation.workspaceId}`,
-          name: "conversation:updated",
-          data: { conversationId, status },
-        },
-        {
-          channel: `private-conversation-${conversationId}`,
-          name: "conversation:updated",
-          data: { status },
-        },
-      ],
-      "updateConversationStatus",
+      prismaStatusDeps(),
     );
 
-    // Trigger CSAT survey on close (fire-and-forget)
-    if (status === "CLOSED") {
-      triggerCsatSurvey(conversationId).catch((err) =>
-        console.error("CSAT trigger error:", err),
+    // Only a change into CLOSED fires "conversation closed".
+    if (closedNow && closedAt) {
+      fireAutomations(
+        conversationClosedEvent({
+          workspaceId: conversation.workspaceId,
+          conversationId,
+          closedAt,
+          origin: origin("agent"),
+        }),
       );
-
-      // Dispatch conversation.closed webhook
-      await dispatchWebhooks(conversation.workspaceId, "conversation.closed", {
-        conversationId,
-        closedBy: session.user.id,
-        closedByName: session.user.name,
-      });
-
-      // Only a change into CLOSED fires "conversation closed".
-      if (closedAt && conversation.status !== "CLOSED") {
-        fireAutomations(
-          conversationClosedEvent({
-            workspaceId: conversation.workspaceId,
-            conversationId,
-            closedAt,
-            origin: origin("agent"),
-          }),
-        );
-      }
     }
 
     revalidatePath(`/workspace`);
