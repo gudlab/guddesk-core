@@ -47,7 +47,7 @@ export default function AgentsShowcase() {
             Agent-ready platform
           </div>
           <h2 className="font-heading text-3xl md:text-4xl lg:text-[40px]">
-            Plug in AI agents. Automate support.
+            Plug in your own AI agent.
           </h2>
           <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
             Connect your own AI agent to GudDesk. It gets conversation events by

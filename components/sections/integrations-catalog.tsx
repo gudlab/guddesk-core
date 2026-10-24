@@ -78,7 +78,7 @@ const integrations: Integration[] = [
   {
     name: "Slack",
     description:
-      "Get conversation notifications in Slack. Reply to customers from Slack threads without leaving your workspace.",
+      "Save a Slack incoming webhook and pick events. Notifications are not sent yet, and replying from Slack is not supported.",
     category: "channels",
     icon: "messages",
     tier: "pro",
@@ -99,15 +99,6 @@ const integrations: Integration[] = [
       "Connect your WhatsApp Business account. Manage conversations from the same inbox as live chat.",
     category: "channels",
     icon: "phone",
-    tier: "pro",
-    status: "coming-soon",
-  },
-  {
-    name: "Telegram",
-    description:
-      "Receive and respond to Telegram messages directly in GudDesk. Full conversation history synced.",
-    category: "channels",
-    icon: "send",
     tier: "pro",
     status: "coming-soon",
   },

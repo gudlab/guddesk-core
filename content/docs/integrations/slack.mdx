@@ -1,63 +1,24 @@
 ---
 title: Slack Integration
-description: Connect GudDesk to Slack to receive notifications and reply to customers directly from Slack.
+description: Save a Slack incoming webhook for conversation notifications. Sending is not built yet.
 ---
 
-The Slack integration lets your team receive conversation notifications in Slack channels and reply to customers without leaving Slack.
+<Callout type="warning">
+  GudDesk does not send Slack notifications yet. You can save the settings below today, and they will be used once sending ships.
+</Callout>
 
 ## Setting Up
 
-### 1. Connect Your Workspace
+1. In Slack, create an [incoming webhook](https://api.slack.com/messaging/webhooks) for the channel you want to use
+2. In GudDesk, go to **Workspace Settings > Integrations**
+3. Paste the webhook URL under **Slack** and save
+4. Choose the events you want: new conversations, closed conversations and assignments
 
-1. Go to **Dashboard > Settings > Integrations**
-2. Find **Slack** and click **Connect**
-3. Authorize GudDesk to access your Slack workspace
-4. Select the default channel for notifications
+## What is not available
 
-### 2. Configure Notifications
+- Notifications are not sent yet
+- You can't reply to customers from Slack
+- There are no slash commands
+- There is no per-tag channel mapping
 
-Choose which events trigger Slack notifications:
-
-| Event | Description |
-|---|---|
-| **New conversation** | A customer started a new conversation |
-| **New message** | A customer replied to an existing conversation |
-| **Assignment** | A conversation was assigned to you |
-| **Escalation** | An AI agent escalated to a human |
-| **Mention** | A team member mentioned you in a note |
-
-### 3. Channel Mapping (Optional)
-
-Route notifications to specific channels based on tags or teams:
-
-| Condition | Slack Channel |
-|---|---|
-| Tag: "billing" | #support-billing |
-| Tag: "bug" | #engineering-bugs |
-| Team: Enterprise | #enterprise-support |
-| Default | #support-general |
-
-## Replying from Slack
-
-When you receive a conversation notification in Slack:
-
-1. Click **Reply** on the notification message
-2. Type your response in the thread
-3. Your reply is sent to the customer through GudDesk
-
-Internal notes: Start your message with `/note` to add an internal note instead of a customer-facing reply.
-
-## Slash Commands
-
-| Command | Description |
-|---|---|
-| `/guddesk status` | Show your open conversation count |
-| `/guddesk assign @user conv_id` | Assign a conversation |
-| `/guddesk resolve conv_id` | Resolve a conversation |
-| `/guddesk snooze conv_id 2h` | Snooze a conversation |
-
-## Requirements
-
-- A Slack workspace with permission to install apps
-- GudDesk Pro plan (for bi-directional replies) or Free plan (notifications only)
-- `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET` environment variables configured (self-hosted only)
+To get conversation events somewhere else today, use [webhooks](/docs/api/webhooks). Each request is signed, so you can forward events to Slack or any other tool from your own service.

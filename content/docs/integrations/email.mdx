@@ -7,71 +7,50 @@ The email integration lets you manage support emails alongside chat conversation
 
 ## How It Works
 
-1. Forward incoming emails to your GudDesk inbox address
+1. Forward incoming emails to your GudDesk support address
 2. Emails appear as conversations in your shared inbox
 3. Reply from GudDesk. Your response is sent as a regular email
-4. The full email thread is preserved in the conversation
+4. Later emails in the same thread are added to the same conversation
 
 ## Setting Up Email Forwarding
 
-### 1. Find Your Inbox Address
+### 1. Find Your Support Address
 
-Each GudDesk workspace has a unique inbox email address:
+Each workspace has its own support address in this form:
 
 ```
-support@inbox.guddesk.com
+support+<your-app-id>@mail.guddesk.com
 ```
 
-Find yours in **Dashboard > Settings > Email**.
+Find yours in **Workspace Settings > Email Channel**, under **Support Address**.
 
 ### 2. Configure Forwarding
 
-Set up email forwarding from your support email to your GudDesk inbox address:
+Set up email forwarding from your support email to your GudDesk support address:
 
 **Gmail:**
 1. Go to Settings > Forwarding and POP/IMAP
-2. Add your GudDesk inbox address as a forwarding address
+2. Add your GudDesk support address as a forwarding address
 3. Confirm the forwarding request
 
 **Custom domain:**
-Set up a mail forwarding rule or MX record to forward `support@yourdomain.com` to your GudDesk inbox address.
+Set up a mail forwarding rule with your email provider to forward `support@yourdomain.com` to your GudDesk support address.
 
-### 3. Configure Reply-From Address
+### 3. Outbound Settings
 
-To send replies from your own domain (e.g., `support@yourdomain.com`):
-
-1. Go to **Settings > Email > Reply-From**
-2. Enter your custom email address
-3. Verify domain ownership via DNS (TXT record)
-4. GudDesk sends replies on your behalf via Resend
+Under **Outbound Settings** you can set the from name, the from address and an email signature. GudDesk sends replies through Resend. A custom from address only works if its domain is verified in the Resend account that sends your mail, which on a self-hosted install is your own account.
 
 ## Email Threading
 
-GudDesk preserves email threads correctly:
-
-- Replies include proper `In-Reply-To` and `References` headers
-- Customers see a normal email thread in their inbox
-- CC/BCC recipients are tracked in the conversation metadata
+Replies include `In-Reply-To` and `References` headers, so customers see a normal email thread in their mail app.
 
 ## Attachments
 
-Email attachments are automatically:
+Attachments are not imported yet. The text of each email arrives in the conversation, but attached files don't.
 
-- Displayed inline in the conversation view
-- Stored securely and linked from the conversation
-- Scannable by your AI agents for context
+## Auto-Reopen
 
-## Auto-Responder
-
-Set up an automatic acknowledgment email:
-
-1. Go to **Settings > Email > Auto-Responder**
-2. Enable and customize the message
-3. Optionally include links to your knowledge base
-
-Example:
-
-> Thanks for reaching out! We've received your message and will get back to you within 24 hours. In the meantime, you might find an answer in our [Help Center](https://your-domain.com/help/your-workspace-slug).
+With **Auto-reopen on reply** turned on (the default), a closed conversation reopens when the customer sends a new email reply. GudDesk does not send automatic acknowledgment emails.
 
 ## Self-Hosted Email
 
@@ -85,5 +64,5 @@ GudDesk uses [Resend](https://resend.com) for email delivery. You can use the fr
 
 ## Next Steps
 
-- [Set up the Slack integration](/docs/integrations/slack) for team notifications
-- [Configure AI agents](/docs/agents/overview) to auto-respond to common email queries
+- [Set up webhooks](/docs/api/webhooks) to send conversation events to your other tools
+- [Connect your own agent](/docs/agents/overview) to reply as BOT

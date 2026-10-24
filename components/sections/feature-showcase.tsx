@@ -25,7 +25,7 @@ const tabs = [
     id: "kb",
     label: "Knowledge Base",
     description:
-      "Create, organize, and publish help articles. Customers find answers themselves. Your widget suggests relevant articles automatically.",
+      "Create, organize, and publish help articles. Customers can search your help center.",
     mock: KnowledgeBaseMock,
   },
   {
@@ -81,10 +81,10 @@ function AgentsMock() {
         {/* Bot action badges */}
         <div className="ml-auto flex max-w-[80%] gap-1.5">
           <div className="rounded bg-emerald-100 px-2 py-0.5 text-[8px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-            auto-tagged: billing
+            tagged: billing
           </div>
           <div className="rounded bg-blue-100 px-2 py-0.5 text-[8px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-            suggested article
+            sent as BOT
           </div>
         </div>
 

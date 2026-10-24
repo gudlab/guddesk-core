@@ -10,7 +10,6 @@ const proFeatures = [
   "Unlimited conversations",
   "AI reply suggestions and summaries: planned",
   "Remove GudDesk branding",
-  "Slack integration",
   "Priority support",
 ];
 

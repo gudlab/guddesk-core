@@ -1,15 +1,15 @@
 ---
 title: Knowledge Base
-description: Create a help center with articles that customers and AI agents can search.
+description: Create a help center with articles that customers can browse and search.
 ---
 
-The GudDesk knowledge base lets you create help articles that serve two purposes: customers can browse them for self-service, and your AI agents use them as their source of truth when answering questions.
+The GudDesk knowledge base lets you publish help articles that customers can browse and search. If you connect your own agent, it can search the same articles through the MCP server.
 
 ## Creating Articles
 
 1. Navigate to **Dashboard > Knowledge Base**
 2. Click **New Article**
-3. Write your article using the rich text editor (supports Markdown)
+3. Write your article in the text editor. Each line break starts a new paragraph on the help center
 4. Assign it to a **collection** (category)
 5. Set the status to **Published** when ready
 
@@ -18,8 +18,8 @@ The GudDesk knowledge base lets you create help articles that serve two purposes
 Good help articles follow a consistent structure:
 
 - **Title**: Clear, searchable (e.g., "How to Reset Your Password")
-- **Description**: A brief summary shown in search results
-- **Body**: Step-by-step instructions with screenshots when helpful
+- **Excerpt**: A short summary of the article
+- **Body**: Step-by-step instructions
 - **Collection**: The category this article belongs to
 
 ## Collections
@@ -31,7 +31,7 @@ Collections organize your articles into browsable categories:
 - **Features**: How to use specific product features
 - **Troubleshooting**: Common issues and fixes
 
-Create collections in **Settings > Knowledge Base > Collections**.
+Create collections on the **Knowledge Base** page.
 
 ## Public Help Center
 
@@ -45,30 +45,24 @@ Each workspace has its own help center. There is no shared page at `/help` itsel
 
 Customers can browse collections, search articles, and find answers without contacting support.
 
-## AI Agent Integration
+## Your Own Agent
 
-This is where the knowledge base becomes powerful. When a customer asks a question through the chat widget:
+GudDesk does not ship a built-in agent yet. If you [connect your own agent](/docs/agents/overview), it can list articles through the REST API and search published articles with the MCP server's `search_articles` tool, then use them in its BOT replies.
 
-1. The AI agent searches your knowledge base for relevant articles
-2. If it finds a match, it summarizes the answer and links to the full article
-3. If the customer confirms the answer helped, the conversation is auto-resolved
-4. If not, the agent escalates to a human
-
-The more comprehensive your knowledge base, the more conversations your AI agents can resolve automatically.
+The widget does not suggest articles yet. Article suggestions are planned (see the [roadmap](/roadmap)).
 
 ## Search
 
-The knowledge base includes full-text search powered by PostgreSQL. Articles are indexed by title, description, and body content. Search results are ranked by relevance.
+Help center search matches the words you type against article titles and bodies. It is a plain text match, so results are not ranked by relevance.
 
 ## Analytics
 
 Track how your knowledge base performs:
 
 - **Article views**: Which articles are most popular
-- **Search queries**: What customers are searching for (use this to identify gaps)
 - **Helpful votes**: Which articles readers marked helpful or not helpful
 
 ## Next Steps
 
-- [Set up AI agents](/docs/agents/overview) to leverage your knowledge base
-- [Configure the chat widget](/docs/widget/customization) to show help articles proactively
+- [Connect your own agent](/docs/agents/overview)
+- [Configure the chat widget](/docs/widget/customization)

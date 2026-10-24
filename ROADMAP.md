@@ -16,8 +16,8 @@ Most support platforms charge per-agent, and lock AI behind expensive add-ons. G
 - **Customer identity verification**: HMAC-SHA256 identity verification (same standard as Intercom/Zendesk), `GudDesk.identify()` API with `userHash` support
 - **Shared inbox**: conversations from chat + email, assignment, status management, internal notes
 - **Knowledge base**: articles, collections, public help center
-- **Automation rules**: trigger-based workflows (auto-assign, auto-tag, bot messages)
-- **Integrations**: Slack notifications, email (Resend), webhooks, REST API
+- **Automation rules**: rule builder with 5 triggers and 6 actions. Rules are saved but not run yet
+- **Integrations**: email (Resend), webhooks, REST API. Slack webhook settings are saved, but notifications are not sent yet
 - **REST API v1**: full CRUD for conversations, customers (including PATCH updates), articles, workspaces, agents; cursor-based pagination, rate limiting
 - **API keys**: account-level keys with optional workspace scoping ("All Workspaces" or single workspace), permission levels (Read Only / Read & Write / Full Access)
 - **Agent framework**: install/uninstall agents via API with auto-provisioned webhook endpoints and dedicated API keys
@@ -44,7 +44,7 @@ _Fill the gaps that every competitor already covers._
 
 ### Ticketing & SLAs
 - [x] **SLA policies**: define response/resolution time targets per priority
-- [x] **SLA breach alerts**: notify agents and managers when SLAs are at risk
+- [x] **SLA breach alerts**: email the assignee and add a note when an SLA is breached
 - [x] **Business hours**: configure working hours, exclude holidays from SLA calculations
 - [x] **Ticket fields**: custom fields (dropdowns, text, date) per workspace
 - [x] **Ticket forms**: different intake forms for different request types
@@ -60,7 +60,7 @@ _Fill the gaps that every competitor already covers._
 
 ### CSAT & Feedback
 - [x] **CSAT surveys**: post-conversation satisfaction rating
-- [x] **NPS surveys**: periodic net promoter score collection
+- [x] **NPS surveys**: survey settings and score reporting. Sending NPS surveys to visitors is not built yet
 - [x] **Survey triggers**: auto-send on conversation close or after X days
 - [x] **Feedback dashboard**: aggregate scores, trends, per-agent breakdown
 

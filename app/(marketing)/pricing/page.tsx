@@ -53,8 +53,8 @@ const freeHighlights = [
   },
   {
     icon: Icons.automations,
-    title: "Automations & Webhooks",
-    desc: "Event-driven rules that auto-assign, tag, route, and notify. Hook into conversation lifecycle events.",
+    title: "Webhooks & Automation Rules",
+    desc: "Webhooks fire on conversation events. A rule builder saves automation rules, which don't run yet.",
   },
 ];
 
@@ -65,7 +65,7 @@ const freeIncludes = [
   "REST API & webhooks",
   "Unlimited knowledge base articles",
   "Widget customization",
-  "Basic automations",
+  "SLA policies",
   "Self-hosting support",
   "Community support",
   "BOT message type",
@@ -78,7 +78,6 @@ const proFeatures = [
   "AI reply suggestions and summaries: planned",
   "Advanced agent analytics",
   "Remove GudDesk branding",
-  "Slack integration",
   "Priority email support",
 ];
 
@@ -156,8 +155,8 @@ const comparisonRows = [
     feature: "Automations",
     intercomStarter: "Advanced plan",
     intercom: "check",
-    guddeskFree: "check",
-    guddeskPro: "check",
+    guddeskFree: "Not running yet",
+    guddeskPro: "Not running yet",
   },
   {
     feature: "Self-hostable",
@@ -214,7 +213,7 @@ export default function PricingPage() {
             </h1>
             <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
               Most workspaces never need to pay. Get live chat, shared inbox,
-              knowledge base, automations, SDK, and full API access. All for
+              knowledge base, webhooks and full API access. All for
               $0, forever.
             </p>
           </div>
@@ -457,8 +456,8 @@ export default function PricingPage() {
               </div>
               <h4 className="mb-1 font-heading text-sm">Integrations</h4>
               <p className="text-xs text-muted-foreground">
-                Slack notifications, custom branding removal, and priority
-                support for your workspace.
+                Custom branding removal and priority support for your
+                workspace.
               </p>
             </div>
           </div>
