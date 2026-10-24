@@ -19,7 +19,7 @@ export async function assignConversation(
 
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      select: { workspaceId: true },
+      select: { workspaceId: true, assigneeId: true },
     });
 
     if (!conversation) {
@@ -41,7 +41,10 @@ export async function assignConversation(
 
     const updated = await prisma.conversation.update({
       where: { id: conversationId },
-      data: { assigneeId },
+      data: assigneeId
+        ? { assigneeId }
+        : // Unassigned: start the "unassigned for" clock if it had an assignee.
+          { assigneeId: null, ...(conversation.assigneeId ? { unassignedAt: new Date() } : {}) },
       include: {
         assignee: {
           include: { user: { select: { name: true } } },

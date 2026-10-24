@@ -127,12 +127,13 @@ If `CRON_SECRET` is missing or empty, every cron route returns 401. Use a long r
 |---|---|---|
 | `/api/cron/sla-check` | Adds a note to conversations past their SLA deadline and emails the assignee | Every 5 minutes |
 | `/api/cron/webhook-retry` | Retries failed webhook deliveries that are due | Every 5 minutes |
+| `/api/cron/automations` | Runs "unassigned for" automation rules | Every 5 minutes |
 | `/api/cron/surveys` | Sends delayed CSAT survey messages | Every 10 minutes |
 | `/api/cron/analytics` | Stores the daily analytics snapshot | Daily |
 | `/api/cron/agent-performance` | Stores yesterday's per-agent numbers | Daily |
 | `/api/cron/webhook-cleanup` | Deletes webhook delivery records older than 30 days | Daily |
 
-Inbox and API requests also run the SLA check for their workspace at most every 5 minutes, so a busy workspace gets SLA notes even if a cron run is missed. Keep the cron schedule anyway, because a quiet workspace has no requests to trigger it.
+Inbox and API requests also run the SLA check and the "unassigned for" rules for their workspace at most every 5 minutes, so a busy workspace gets them even if a cron run is missed. Keep the cron schedule anyway, because a quiet workspace has no requests to trigger it.
 
 Test a route with curl:
 
@@ -157,6 +158,7 @@ CURL="curl -fsS --max-time 60 --retry 3 --retry-delay 10 -o /dev/null -H @/etc/g
 
 */5 * * * *  root  $CURL $BASE/api/cron/sla-check
 */5 * * * *  root  $CURL $BASE/api/cron/webhook-retry
+*/5 * * * *  root  $CURL $BASE/api/cron/automations
 */10 * * * * root  $CURL $BASE/api/cron/surveys
 0 1 * * *    root  $CURL $BASE/api/cron/analytics
 15 1 * * *   root  $CURL $BASE/api/cron/agent-performance
@@ -190,6 +192,17 @@ pm2 restart guddesk
 ```
 
 Always review the [changelog](https://github.com/gudlab/guddesk-core/releases) before updating to check for breaking changes or required migration steps.
+
+### Upgrading: automation runs
+
+This release adds migration `0003_automation_runs`. It creates the `automation_runs` table, which records each automation run so a rule fires once per event, and adds a nullable `unassignedAt` column to `conversations`. Nothing existing is changed or dropped.
+
+Back up the database first, then apply it the same way you set up the schema:
+
+- If you followed this guide (`pnpm prisma db push`), run the steps above. `db push` adds the new table and column.
+- If you manage the schema with migrations instead, run `pnpm prisma migrate deploy`.
+
+Conversations from before the upgrade have no `unassignedAt`, so the "Unassigned for" condition only counts conversations that were unassigned after you upgraded.
 
 ## System Requirements
 

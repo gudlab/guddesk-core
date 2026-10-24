@@ -19,6 +19,8 @@ import { computeSlaDeadlines } from "@/lib/sla/compute";
 import { generateMessageId, buildReplyHeaders } from "./threading";
 import { renderOutboundEmail } from "./templates";
 import { Resend } from "resend";
+import { fireAutomations } from "@/lib/automations/dispatch";
+import { conversationCreatedEvents, messageReceivedEvent, origin } from "@/lib/automations/events";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -195,6 +197,16 @@ export class EmailChannelProvider implements ChannelProvider {
       workspaceId,
     });
 
+    fireAutomations(
+      messageReceivedEvent({
+        workspaceId,
+        conversationId: conversation.id,
+        messageId: message.id,
+        body,
+        origin: origin("visitor"),
+      }),
+    );
+
     return {
       conversationId: conversation.id,
       messageId: message.id,
@@ -243,6 +255,8 @@ export class EmailChannelProvider implements ChannelProvider {
         visitorId: visitor.id,
         channel: "EMAIL",
         status: "OPEN",
+        // Created unassigned: the "unassigned for" automation counts from here.
+        unassignedAt: new Date(),
         subject: subject ?? null,
         lastMessageAt: new Date(),
         lastMessagePreview: preview,
@@ -313,6 +327,15 @@ export class EmailChannelProvider implements ChannelProvider {
         workspaceId,
       });
     }
+
+    fireAutomations(
+      conversationCreatedEvents({
+        workspaceId,
+        conversationId: conversation.id,
+        firstMessage: firstMessage ? { id: firstMessage.id, body } : null,
+        origin: origin("visitor"),
+      }),
+    );
 
     return {
       conversationId: conversation.id,

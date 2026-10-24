@@ -35,7 +35,7 @@ const features = [
     icon: Icons.automations,
     title: "Webhooks & Automation Rules",
     description:
-      "Webhooks fire on conversation events so your agents can act. A rule builder saves automation rules, which don't run yet.",
+      "Webhooks fire on conversation events so your agents can act. Automation rules assign, tag, reply or close conversations on their own.",
     illustration: AutomationIllustration,
   },
   {

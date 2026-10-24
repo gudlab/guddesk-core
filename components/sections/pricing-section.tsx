@@ -99,8 +99,8 @@ const comparisonRows = [
     feature: "Automations",
     intercomStarter: "Limited",
     intercom: "check",
-    guddeskFree: "Not running yet",
-    guddeskPro: "Not running yet",
+    guddeskFree: "check",
+    guddeskPro: "check",
   },
   {
     feature: "Self-hostable",

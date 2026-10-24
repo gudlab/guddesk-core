@@ -33,7 +33,12 @@ export const automationRuleSchema = z.object({
     tag: z.string().optional(),
     status: z.enum(["OPEN", "SNOOZED", "CLOSED"]).optional(),
     message: z.string().optional(),
+    cannedResponseId: z.string().optional(),
   }),
-});
+}).refine(
+  (rule) =>
+    rule.trigger !== "CONVERSATION_UNASSIGNED_FOR" || (rule.conditions?.unassigned_minutes ?? 0) >= 1,
+  { message: "Unassigned for rules need a number of minutes", path: ["conditions", "unassigned_minutes"] },
+);
 
 export type AutomationRuleInput = z.infer<typeof automationRuleSchema>;

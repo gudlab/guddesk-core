@@ -54,7 +54,7 @@ const freeHighlights = [
   {
     icon: Icons.automations,
     title: "Webhooks & Automation Rules",
-    desc: "Webhooks fire on conversation events. A rule builder saves automation rules, which don't run yet.",
+    desc: "Webhooks fire on conversation events. Automation rules assign, tag, reply or close conversations on their own.",
   },
 ];
 
@@ -155,8 +155,8 @@ const comparisonRows = [
     feature: "Automations",
     intercomStarter: "Advanced plan",
     intercom: "check",
-    guddeskFree: "Not running yet",
-    guddeskPro: "Not running yet",
+    guddeskFree: "check",
+    guddeskPro: "check",
   },
   {
     feature: "Self-hostable",

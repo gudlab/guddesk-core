@@ -10,6 +10,8 @@ import {
   prismaPagination,
   buildPaginationResult,
 } from "@/lib/api-utils";
+import { fireAutomations } from "@/lib/automations/dispatch";
+import { conversationCreatedEvents, origin } from "@/lib/automations/events";
 
 // ---------------------------------------------------------------------------
 // GET /api/v1/conversations  —  List conversations
@@ -105,6 +107,8 @@ export async function POST(req: NextRequest) {
         workspaceId: ctx.workspaceId,
         visitorId,
         channel: "API",
+        // Created unassigned: the "unassigned for" automation counts from here.
+        unassignedAt: new Date(),
         subject: typeof subject === "string" ? subject.trim() : null,
         ...(message && typeof message === "string"
           ? {
@@ -129,10 +133,21 @@ export async function POST(req: NextRequest) {
         visitor: {
           select: { id: true, name: true, email: true },
         },
+        messages: { select: { id: true, body: true }, take: 1 },
       },
     });
 
-    return withHeaders(apiOk(conversation, undefined, 201), rateLimitHeaders);
+    const { messages, ...created } = conversation;
+    fireAutomations(
+      conversationCreatedEvents({
+        workspaceId: ctx.workspaceId,
+        conversationId: created.id,
+        firstMessage: messages[0] ?? null,
+        origin: origin("api"),
+      }),
+    );
+
+    return withHeaders(apiOk(created, undefined, 201), rateLimitHeaders);
   } catch (error) {
     console.error("Create conversation error:", error);
     return withHeaders(apiError("Failed to create conversation", 500), rateLimitHeaders);

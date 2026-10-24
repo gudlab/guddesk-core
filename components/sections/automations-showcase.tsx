@@ -26,7 +26,7 @@ export default function AutomationsShowcase() {
         <HeaderSection
           label="Work smarter"
           title="Build rules for the repetitive stuff"
-          subtitle="Pick a trigger and an action without writing code. Rules are saved today but don't run yet."
+          subtitle="Pick a trigger and an action without writing code. Each rule runs when its trigger fires."
         />
 
         {/* Flow diagram */}
