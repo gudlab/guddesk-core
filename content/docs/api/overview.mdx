@@ -49,8 +49,8 @@ Each API key has a permission level that controls what it can do:
 
 ### Workspace Scoping
 
-- **Single workspace key** — The `workspaceId` is fixed; no need to pass it in requests.
-- **All workspaces key** — You must include `workspaceId` as a query parameter or in the request body for workspace-scoped endpoints.
+- **Single workspace key**: The `workspaceId` is fixed; no need to pass it in requests.
+- **All workspaces key**: You must include `workspaceId` as a query parameter or in the request body for workspace-scoped endpoints.
 
 ## Rate Limits
 
@@ -375,7 +375,7 @@ The response follows the standard envelope format:
 }
 ```
 
-> **Note:** Webhook registration requires a **Full Access** API key. If your agent only needs to read/write articles and reply to conversations, a **Read & Write** key is sufficient — but you'll need to register the webhook manually in the dashboard.
+> **Note:** Webhook registration requires a **Full Access** API key. If your agent only needs to read/write articles and reply to conversations, a **Read & Write** key is sufficient, but you'll need to register the webhook manually in the dashboard.
 
 **Remove a webhook:**
 
@@ -394,6 +394,6 @@ See [MCP Server](/docs/api/mcp) for the tool list, a copy-paste `tools/call` exa
 
 ## Next Steps
 
-- [Webhooks](/docs/api/webhooks) — Receive real-time event notifications
+- [Webhooks](/docs/api/webhooks): Receive real-time event notifications
 - [MCP Server](/docs/api/mcp) for MCP clients such as Cursor and Claude Desktop
-- [gud-agent](https://github.com/gudlab/gud-agent) — Open-source AI support agent
+- [gud-agent](https://github.com/gudlab/gud-agent): Open-source AI support agent

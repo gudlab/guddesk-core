@@ -34,19 +34,19 @@ const faqs = [
       "Yes. Clone the repo, point it at your own Postgres and run it on any Node host, or use GudDesk Cloud. When you self-host, your data stays on your servers.",
   },
   {
-    question: "What built-in AI features are included?",
+    question: "Does GudDesk have built-in AI?",
     answer:
-      "Claude can suggest replies, summarise conversations and read sentiment. On Cloud these come with Pro. When you self-host, set your own ANTHROPIC_API_KEY to turn them on.",
+      "Not yet. AI reply suggestions and summaries are planned and will ship with GudBot v1. Today you can connect your own AI agent, which replies as BOT through the API.",
   },
   {
     question: "How do I install the chat widget?",
     answer:
-      "Add two lines of JavaScript to your site. The widget loads asynchronously, is fully customizable — colors, position, welcome message — and works on any website or web app. Agent and bot messages appear natively in the widget.",
+      "Add two lines of JavaScript to your site. The widget loads asynchronously, is fully customizable (colors, position, welcome message) and works on any website or web app. Agent and bot messages appear natively in the widget.",
   },
   {
     question: "Can I migrate from Intercom?",
     answer:
-      "We are building migration tools to import your conversations and articles. In the meantime, you can run both tools side by side during your transition.",
+      "There is no Intercom importer yet. Export your data from Intercom, then create customers and help articles through the GudDesk REST API. You can run both tools side by side while you switch.",
   },
 ];
 

@@ -76,10 +76,10 @@ ngrok http 3001
 # Use the ngrok URL as your webhook endpoint
 ```
 
-When running GudDesk locally (`localhost:3000`) and your agent locally (`localhost:3001`), you can register webhooks with HTTP URLs — no HTTPS required for local development.
+When running GudDesk locally (`localhost:3000`) and your agent locally (`localhost:3001`), you can register webhooks with HTTP URLs. No HTTPS is required for local development.
 
 ## Best Practices
 
-- **Respond quickly** — Return a 200 status within 5 seconds. Do heavy processing asynchronously.
-- **Verify signatures** — Always validate the `X-GudDesk-Signature` header in production.
-- **Graceful shutdown** — If your agent registered a webhook programmatically, unregister it on shutdown via `DELETE /api/agent/webhooks`.
+- **Respond quickly**: Return a 200 status within 5 seconds. Do heavy processing asynchronously.
+- **Verify signatures**: Always validate the `X-GudDesk-Signature` header in production.
+- **Graceful shutdown**: If your agent registered a webhook programmatically, unregister it on shutdown via `DELETE /api/agent/webhooks`.

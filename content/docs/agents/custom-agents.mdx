@@ -3,13 +3,13 @@ title: Custom Agents
 description: Build external AI agents that integrate with GudDesk.
 ---
 
-Agents are external services that receive webhook events from GudDesk and act on conversations via the REST API. Each agent brings its own logic, LLM, and billing — GudDesk provides the data and actions.
+Agents are external services that receive webhook events from GudDesk and act on conversations via the REST API. Each agent brings its own logic and its own LLM account. GudDesk provides the data and actions.
 
 ## How Agents Work
 
-1. **Install** — register your agent in a workspace (via the dashboard or API). GudDesk creates a webhook endpoint and a dedicated API key.
-2. **Receive events** — GudDesk sends webhook payloads to your agent's URL when conversations and messages happen.
-3. **Act** — your agent calls the GudDesk API to reply, tag, assign, or resolve conversations using the API key it received at install.
+1. **Install**: register your agent in a workspace (via the dashboard or API). GudDesk creates a webhook endpoint and a dedicated API key.
+2. **Receive events**: GudDesk sends webhook payloads to your agent's URL when conversations and messages happen.
+3. **Act**: your agent calls the GudDesk API to reply, tag, assign, or resolve conversations using the API key it received at install.
 
 This is the same pattern used by [gud-agent](https://github.com/gudlab/gud-agent), the open-source reference implementation.
 
@@ -34,7 +34,7 @@ Your agent is a web service at a public HTTPS URL. It can be written in any lang
 2. Click **Install Agent**
 3. Enter a name, your agent's webhook URL, and select which events to subscribe to
 4. Click **Install Agent**
-5. Save the webhook signing secret and API key — they're shown only once
+5. Save the webhook signing secret and API key. They're shown only once
 
 ### Via the API
 
@@ -204,14 +204,14 @@ app.listen(3001);
 
 ## Best Practices
 
-- **Verify webhook signatures** — always check the `X-GudDesk-Signature` header
-- **Respond quickly** — return a 200 status within a few seconds; do heavy processing asynchronously
-- **Start simple** — build agents for one specific task, not general-purpose bots
-- **Always have an escalation path** — if your agent can't handle something, leave the conversation open for a human
-- **Use `senderName`** — identify your agent's replies so humans know which bot responded
+- **Verify webhook signatures**: always check the `X-GudDesk-Signature` header
+- **Respond quickly**: return a 200 status within a few seconds; do heavy processing asynchronously
+- **Start simple**: build agents for one specific task, not general-purpose bots
+- **Always have an escalation path**: if your agent can't handle something, leave the conversation open for a human
+- **Use `senderName`**: identify your agent's replies so humans know which bot responded
 
 ## Next Steps
 
-- [API Overview](/docs/api/overview) — Full REST API documentation
-- [Webhooks](/docs/api/webhooks) — Webhook event reference and payload format
-- [gud-agent](https://github.com/gudlab/gud-agent) — Open-source AI support agent reference implementation
+- [API Overview](/docs/api/overview): Full REST API documentation
+- [Webhooks](/docs/api/webhooks): Webhook event reference and payload format
+- [gud-agent](https://github.com/gudlab/gud-agent): Open-source AI support agent reference implementation

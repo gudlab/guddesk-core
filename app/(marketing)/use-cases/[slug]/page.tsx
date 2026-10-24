@@ -30,10 +30,10 @@ export async function generateMetadata({
   if (!uc) return {};
 
   return {
-    title: `${uc.name} Customer Support Software — GudDesk`,
+    title: `${uc.name} Customer Support Software | GudDesk`,
     description: uc.description.slice(0, 155) + "…",
     openGraph: {
-      title: `${uc.name} Customer Support Software — GudDesk`,
+      title: `${uc.name} Customer Support Software | GudDesk`,
       description: uc.description.slice(0, 155) + "…",
       type: "website",
     },
@@ -178,7 +178,7 @@ export default async function UseCasePage({ params }: PageProps) {
               Everything you need
             </h2>
             <p className="mt-4 text-muted-foreground">
-              All features included — even on the free plan.
+              Free plan includes the core features. Pro lifts the member and conversation limits.
             </p>
           </div>
 
@@ -255,7 +255,7 @@ export default async function UseCasePage({ params }: PageProps) {
               Ready to get started?
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Free for small teams. Set up in 5 minutes. No credit card required.
+              Free plan for 2 members. No credit card required.
             </p>
             <div className="mt-8 flex justify-center gap-3">
               <Link

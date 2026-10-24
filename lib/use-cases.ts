@@ -30,12 +30,12 @@ export const useCases: UseCase[] = [
     tagline: "Customer support built for SaaS",
     headline: "Support that scales with your SaaS",
     description:
-      "SaaS teams need fast response times, intelligent routing, and self-service options. GudDesk combines live chat, AI agents, and a shared inbox so your support team can handle more conversations without burning out.",
+      "SaaS teams need fast replies and good self-service. GudDesk puts live chat and a shared inbox in one place, and your own agent can answer first through the API.",
     benefits: [
       {
         title: "Reduce churn with fast responses",
         description:
-          "Embed the chat widget in your app. AI agents handle L1 questions instantly while your team focuses on complex issues. Average first-response time drops from hours to seconds.",
+          "Embed the chat widget in your app. Your own AI agent can answer L1 questions through the agent API while your team focuses on complex issues.",
         icon: "zap",
       },
       {
@@ -90,7 +90,7 @@ export const useCases: UseCase[] = [
       {
         question: "Can GudDesk handle our volume?",
         answer:
-          "GudDesk is designed for small to mid-size SaaS teams handling hundreds to thousands of conversations per month. AI agents handle routine questions automatically, so your team scales without linear headcount growth.",
+          "GudDesk is designed for small to mid-size SaaS teams handling hundreds to thousands of conversations per month. Connect your own agent to answer first. AI reply suggestions for your team are planned.",
       },
       {
         question: "Does it integrate with our billing system?",
@@ -110,12 +110,12 @@ export const useCases: UseCase[] = [
     tagline: "Customer support for online stores",
     headline: "Turn support conversations into sales",
     description:
-      "Ecommerce customers expect instant answers about orders, returns, and products. GudDesk gives your team a shared inbox with AI-powered responses, so you can resolve questions fast and keep customers buying.",
+      "Ecommerce customers expect fast answers about orders and returns. GudDesk gives your team a shared inbox and lets you connect your own AI agent, so you can resolve questions fast and keep customers buying.",
     benefits: [
       {
-        title: "Answer pre-sale questions instantly",
+        title: "Answer pre-sale questions on the page",
         description:
-          "Visitors browsing your store can ask about sizing, availability, or shipping without leaving the page. AI agents respond in seconds, keeping buyers in the purchase flow.",
+          "Visitors browsing your store can ask about sizing or shipping without leaving the page. Your own agent can reply as BOT if you connected one.",
         icon: "messageCircle",
       },
       {
@@ -156,7 +156,7 @@ export const useCases: UseCase[] = [
     ],
     features: [
       "Live chat widget",
-      "AI agents",
+      "Agent API (reply as BOT)",
       "Shared inbox",
       "Knowledge base",
       "Automation rules",
@@ -180,7 +180,7 @@ export const useCases: UseCase[] = [
       {
         question: "Is there a free plan for small stores?",
         answer:
-          "Yes. GudDesk is free for 2 members with all features included. No credit card required. This covers most small ecommerce teams.",
+          "Yes. GudDesk Cloud Free covers 2 members and 500 conversations a month. No credit card required. This covers most small ecommerce teams.",
       },
     ],
   },
@@ -188,26 +188,26 @@ export const useCases: UseCase[] = [
     slug: "startups",
     name: "Startups",
     tagline: "Support that grows with your startup",
-    headline: "World-class support on a startup budget",
+    headline: "Customer support at a flat price for startups",
     description:
-      "Startups need powerful support tools at a flat $29 a month. GudDesk Cloud Free covers 2 members. Connect your own agent, or use Claude assist on Pro. Self-host if you need no caps.",
+      "Startups need support tools at a flat $29 a month. GudDesk Cloud Free covers 2 members. Connect your own agent through the API. Self-host if you need no caps.",
     benefits: [
       {
         title: "Cloud Free: 2 members",
         description:
-          "No credit card, no trial period, no feature gates. Get live chat, AI agents, knowledge base, and automations at zero cost while you're getting started.",
+          "No credit card, no trial period. Get live chat, knowledge base, automations and the agent API at zero cost while you're getting started.",
         icon: "sparkles",
       },
       {
-        title: "Set up in 5 minutes",
+        title: "Two lines of JavaScript",
         description:
           "Create an account, embed two lines of JavaScript, and you're live. No complex configuration, no implementation consultants, no onboarding calls.",
         icon: "zap",
       },
       {
-        title: "AI handles the first wave",
+        title: "Connect your own agent",
         description:
-          "Connect your own agent to answer as BOT. Claude can suggest replies on Cloud Pro, or when you self-host with an Anthropic key. A first-party GudDesk agent is on the roadmap.",
+          "Connect your own agent to answer as BOT. A first-party GudDesk agent is on the roadmap.",
         icon: "bot",
       },
       {
@@ -226,7 +226,7 @@ export const useCases: UseCase[] = [
       {
         title: "Scaling to your first support hire",
         description:
-          "Add a second agent for free. The shared inbox, collision detection, and assignment rules ensure you don't duplicate work or step on each other's toes.",
+          "Add a second member for free. The shared inbox and assignment rules help you avoid duplicate work, and collision detection helps too when you add Pusher keys.",
       },
       {
         title: "Investor demo or launch day",
@@ -237,7 +237,7 @@ export const useCases: UseCase[] = [
     features: [
       "Free for 2 members",
       "Agent API (reply as BOT)",
-      "5-minute setup",
+      "Two-line widget snippet",
       "Shared inbox",
       "Knowledge base",
       "Slack notifications",
@@ -250,7 +250,7 @@ export const useCases: UseCase[] = [
       {
         question: "What's the catch with the free plan?",
         answer:
-          "There is no catch. Cloud Free includes live chat, inbox, knowledge base, automations, and AI agent plugins. Caps are 2 members and 500 conversations/month. Pro is a flat $29/mo with no per-seat pricing.",
+          "There is no catch. Cloud Free includes live chat, inbox, knowledge base, automations and the agent API. Caps are 2 members and 500 conversations a month. Pro is a flat $29/mo with no per-seat pricing.",
       },
       {
         question: "Can I self-host GudDesk?",
@@ -293,7 +293,7 @@ export const useCases: UseCase[] = [
       {
         title: "Report to clients with data",
         description:
-          "Built-in analytics show conversation volume, response times, resolution rates, and CSAT scores. Export reports for client reviews.",
+          "Built-in analytics show conversation volume, response times, resolution times, and CSAT scores.",
         icon: "analytics",
       },
     ],
@@ -301,7 +301,7 @@ export const useCases: UseCase[] = [
       {
         title: "Onboarding a new client",
         description:
-          "Create a new workspace, configure the widget to match their brand, import their knowledge base articles, and invite their team. Done in under 30 minutes.",
+          "Create a new workspace, configure the widget to match their brand, add their knowledge base articles, and invite their team.",
       },
       {
         title: "Handling cross-client escalations",
@@ -311,7 +311,7 @@ export const useCases: UseCase[] = [
       {
         title: "Monthly client reporting",
         description:
-          "Pull analytics per workspace — conversations handled, average response time, CSAT scores, AI resolution rate. Present the data to prove your team's value.",
+          "Pull analytics per workspace: conversations handled, average response time, CSAT scores. Present the data to prove your team's value.",
       },
     ],
     features: [
@@ -319,7 +319,7 @@ export const useCases: UseCase[] = [
       "Custom branding per workspace",
       "Role-based access control",
       "Analytics per workspace",
-      "AI agents per workspace",
+      "Agent API per workspace",
       "Knowledge base per client",
       "Webhook integrations",
       "Internal notes",
@@ -350,7 +350,7 @@ export const useCases: UseCase[] = [
     tagline: "Community support for open-source maintainers",
     headline: "Support your community, not just your customers",
     description:
-      "Open-source projects need a way to help users, triage bugs, and answer questions — without a budget. GudDesk is free, open source, and self-hostable, making it ideal for maintainers who want structured support alongside GitHub Issues.",
+      "Open-source projects need a way to help users and triage bugs without a budget. GudDesk is free and open source, which makes it a good fit for maintainers who want structured support alongside GitHub Issues.",
     benefits: [
       {
         title: "Completely free and open source",
@@ -361,11 +361,11 @@ export const useCases: UseCase[] = [
       {
         title: "Embed in your docs site",
         description:
-          "Add the chat widget to your documentation. Users can ask questions without leaving the page. AI agents respond with answers from your knowledge base.",
+          "Add the chat widget to your documentation. Users can ask questions without leaving the page.",
         icon: "bookOpen",
       },
       {
-        title: "Triage with AI",
+        title: "Triage with rules",
         description:
           "Automation rules can tag a message as a bug or a feature request and route it to the right maintainer.",
         icon: "bot",
@@ -420,7 +420,7 @@ export const useCases: UseCase[] = [
       {
         question: "How is this different from Discord for community support?",
         answer:
-          "Discord is great for community chat, but messages get lost in channels. GudDesk gives you a structured inbox where every conversation is tracked, assigned, and resolvable. AI agents handle routine questions so you don't have to repeat yourself.",
+          "Discord is great for community chat, but messages get lost in channels. GudDesk gives you a structured inbox where every conversation is tracked and assigned until someone resolves it.",
       },
     ],
   },

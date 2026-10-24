@@ -8,7 +8,7 @@ import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 import { Icons } from "@/components/shared/icons";
 
 export const metadata: Metadata = {
-  title: "Roadmap – GudDesk",
+  title: "Roadmap | GudDesk",
   description:
     "See what we're building next. Our public roadmap shows completed features, current work, and future plans.",
 };
@@ -28,8 +28,8 @@ export default async function RoadmapPage() {
             Where we&apos;re headed
           </h1>
           <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-            GudDesk is built in the open. Track our progress across every phase
-            — from foundation features to enterprise scale.
+            GudDesk is built in the open. Track our progress across every phase,
+            from foundation features to enterprise scale.
           </p>
         </div>
 

@@ -36,8 +36,8 @@ export async function generateMetadata({
   if (!alt) return {};
 
   return {
-    title: `Free ${alt.name} Alternative — Open Source | GudDesk`,
-    description: `Looking for a free ${alt.name} alternative? GudDesk is an open-source customer messaging platform with live chat, AI agents, and a shared inbox. Free for small workspaces. Self-hostable.`,
+    title: `Free ${alt.name} Alternative | Open Source | GudDesk`,
+    description: `Looking for a free ${alt.name} alternative? GudDesk is open-source customer support software with live chat and a shared inbox. Free plan for 2 members. Self-hostable.`,
   };
 }
 
@@ -96,7 +96,7 @@ export default async function AlternativePage({ params }: PageProps) {
             </Link>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Free forever for small workspaces &middot; No credit card required
+            Free plan for 2 members &middot; No credit card required &middot; Self-host the AGPL-3.0 code
           </p>
         </MaxWidthWrapper>
       </section>
@@ -109,7 +109,7 @@ export default async function AlternativePage({ params }: PageProps) {
             <p className="mt-2 text-muted-foreground">{alt.pricing}</p>
             <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
               <Icons.check className="size-4" />
-              GudDesk: Free for 2 members. No credit card required.
+              GudDesk: Free for 2 members and 500 conversations a month. No credit card required. Pro is $29 a month flat.
             </div>
           </div>
         </MaxWidthWrapper>
@@ -195,7 +195,7 @@ export default async function AlternativePage({ params }: PageProps) {
               {
                 icon: Icons.code,
                 title: "Open Source",
-                desc: "AGPL-3.0 licensed. Audit, extend, and contribute.",
+                desc: "AGPL-3.0 licensed. Read the code and change it.",
               },
               {
                 icon: Icons.laptop,
@@ -204,13 +204,13 @@ export default async function AlternativePage({ params }: PageProps) {
               },
               {
                 icon: Icons.sparkles,
-                title: "AI Agents Included",
-                desc: "Three built-in agents. No per-resolution fees.",
+                title: "Bring your own AI agent",
+                desc: "Connect your bot through the agent API. No per-resolution fees.",
               },
               {
                 icon: Icons.users,
                 title: "No Per-Seat Pricing",
-                desc: "Free for 2 members. Flat pricing for workspaces.",
+                desc: "Free for 2 members. Pro is $29 a month for unlimited seats.",
               },
             ].map((item) => (
               <div key={item.title} className="text-center">
@@ -282,8 +282,7 @@ export default async function AlternativePage({ params }: PageProps) {
               Ready to switch from {alt.name}?
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Get started in 5 minutes. Free for small workspaces. No credit card
-              required.
+              Cloud Free for 2 members. No credit card required. Self-host the code if you prefer.
             </p>
             <div className="mt-8 flex justify-center gap-3">
               <Link

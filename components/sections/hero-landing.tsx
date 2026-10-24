@@ -29,9 +29,9 @@ export default function HeroLanding() {
         </h1>
 
         <p className="max-w-2xl text-balance text-muted-foreground sm:text-lg lg:text-xl">
-          Live chat, shared inbox, knowledge base, AI agents, and plugin
-          automations — all in one platform. Plug in your own AI bots or use
-          ours. Free for small teams. Self-hostable.
+          Live chat, a shared inbox, a knowledge base and automations in one
+          platform. Plug in your own AI bot through the agent API. Free for
+          small teams. Self-hostable.
         </p>
 
         <div className="flex justify-center space-x-2">
@@ -68,7 +68,7 @@ export default function HeroLanding() {
 
         <p className="text-sm text-muted-foreground">
           Free forever for small teams &middot; No credit card required &middot;
-          GPL-3.0 licensed
+          AGPL-3.0 licensed
         </p>
       </div>
     </section>

@@ -31,7 +31,7 @@ const proPlanFeatures = [
   "Unlimited workspaces",
   "Unlimited members",
   "Unlimited conversations",
-  "AI-powered features",
+  "AI assist: planned",
   "Remove GudDesk branding",
   "Slack integration",
   "Priority support",
@@ -39,7 +39,7 @@ const proPlanFeatures = [
 
 const businessPlanFeatures = [
   "Everything in Pro",
-  "~$99/mo flat — still no per-seat",
+  "~$99/mo flat, still not per seat",
   "Priority email support",
   "Higher-volume hosted workspaces",
   "Business hours & SLA tooling",
@@ -90,11 +90,11 @@ const comparisonRows = [
     guddeskPro: "check",
   },
   {
-    feature: "AI features",
+    feature: "Built-in AI",
     intercomStarter: "$0.99/resolution",
     intercom: "Included ($)",
     guddeskFree: "cross",
-    guddeskPro: "check",
+    guddeskPro: "cross",
   },
   {
     feature: "Automations",
@@ -196,7 +196,7 @@ export default function PricingSection() {
                 "mt-6 w-full",
               )}
             >
-              Start Free Trial
+              Get started
             </Link>
           </div>
 
