@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { cursorPageArgs, splitCursorPage } from "@/lib/pagination";
 import { requireWorkspaceMember } from "@/lib/workspace";
 
 // GET /api/inbox/conversations?workspaceId=xxx&status=OPEN&assigneeId=yyy&limit=25&cursor=xxx
@@ -31,14 +32,8 @@ export async function GET(req: NextRequest) {
     if (status) where.status = status;
     if (assigneeId) where.assigneeId = assigneeId;
 
-    // Cursor-based pagination
-    const paginationClause: Record<string, unknown> = {
-      take: limit + 1, // Fetch one extra to detect if there's a next page
-    };
-    if (cursor) {
-      paginationClause.cursor = { id: cursor };
-      paginationClause.skip = 1; // Skip the cursor itself
-    }
+    // Cursor-based pagination: one extra row tells us if there's a next page.
+    const paginationClause = cursorPageArgs(cursor, limit, { lookahead: true });
 
     const [conversations, total] = await Promise.all([
       prisma.conversation.findMany({
@@ -54,15 +49,14 @@ export async function GET(req: NextRequest) {
           },
           _count: { select: { messages: true } },
         },
-        orderBy: { lastMessageAt: { sort: "desc", nulls: "last" } },
+        // id breaks ties (equal or null lastMessageAt) so cursor pages are stable.
+        orderBy: [{ lastMessageAt: { sort: "desc", nulls: "last" } }, { id: "desc" }],
         ...paginationClause,
       }),
       prisma.conversation.count({ where }),
     ]);
 
-    const hasMore = conversations.length > limit;
-    const trimmed = hasMore ? conversations.slice(0, limit) : conversations;
-    const nextCursor = hasMore ? trimmed[trimmed.length - 1].id : null;
+    const { items: trimmed, hasMore, nextCursor } = splitCursorPage(conversations, limit);
 
     return NextResponse.json({
       conversations: trimmed,

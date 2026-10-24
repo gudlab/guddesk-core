@@ -4,6 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { prisma } from "@/lib/db";
 import { safeTrigger, safeTriggerBatch } from "@/lib/pusher-server";
 import type { McpAuthContext } from "../auth";
+import { cursorPageArgs, splitCursorPage } from "@/lib/pagination";
 
 // ---------------------------------------------------------------------------
 // Helper: JSON text response
@@ -56,18 +57,11 @@ export function registerMessageTools(server: McpServer, auth: McpAuthContext) {
           },
         },
         orderBy: { createdAt: "asc" },
-        take: limit + 1,
+        ...cursorPageArgs(cursor, limit, { lookahead: true }),
       };
 
-      if (cursor) {
-        findArgs.cursor = { id: cursor };
-        findArgs.skip = 1;
-      }
-
       const rows = await prisma.message.findMany(findArgs as Parameters<typeof prisma.message.findMany>[0]);
-      const hasNext = rows.length > limit;
-      const items = hasNext ? rows.slice(0, limit) : rows;
-      const nextCursor = hasNext ? items[items.length - 1].id : null;
+      const { items, nextCursor } = splitCursorPage(rows, limit);
 
       return json({ items, nextCursor });
     },
