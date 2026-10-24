@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
+import { cursorPageArgs } from "@/lib/pagination";
 import { safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { verifyVisitorToken } from "@/lib/visitor-auth";
@@ -56,11 +57,7 @@ export async function GET(
       type: { not: "NOTE" },
     },
     orderBy: { createdAt: "asc" },
-    take: limit,
-    ...(cursor && {
-      cursor: { id: cursor },
-      skip: 1,
-    }),
+    ...cursorPageArgs(cursor, limit),
     select: {
       id: true,
       type: true,
