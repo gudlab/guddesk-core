@@ -47,18 +47,6 @@ export async function fetchConfig(): Promise<void> {
   configLoaded.value = true;
 }
 
-export async function authenticate(): Promise<void> {
-  if (visitorToken.value && visitorId.value) return;
-
-  const data = await request<{ visitorId: string; visitorToken: string }>(
-    "/api/widget/auth",
-    { method: "POST", body: JSON.stringify({ appId }) },
-  );
-  visitorId.value = data.visitorId;
-  visitorToken.value = data.visitorToken;
-  persistState();
-}
-
 export async function identify(info: IdentifyVisitorInfo): Promise<void> {
   const data = await request<{ visitorId: string; visitorToken: string }>(
     "/api/widget/visitors",
