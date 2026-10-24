@@ -6,13 +6,17 @@ import { ConversationList } from "./conversation-list";
 import { MessageThread } from "./message-thread";
 import { ReplyBox } from "./reply-box";
 import { ConversationDetailSidebar } from "./conversation-detail-sidebar";
+import { AvailabilitySelector } from "./availability-selector";
 import { useTypingIndicator } from "@/hooks/use-typing-indicator";
 import { useConversations } from "@/hooks/use-conversations";
+import { useAgentPresence } from "@/hooks/use-agent-presence";
+import type { Availability } from "@/lib/agent-presence";
 import { Icons } from "@/components/shared/icons";
 
 interface WorkspaceMember {
   id: string;
   userId?: string;
+  availability?: Availability;
   user: { name: string | null; image: string | null };
 }
 
@@ -34,6 +38,7 @@ export function InboxLayout({
   workspaceId,
   members,
   cannedResponses,
+  currentUserId,
 }: InboxLayoutProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [status, setStatus] = useState<"OPEN" | "SNOOZED" | "CLOSED">("OPEN");
@@ -54,6 +59,13 @@ export function InboxLayout({
 
   const { isTyping, typingUser, sendTyping } = useTypingIndicator(selectedId);
 
+  // Own availability: stored value first, then Pusher updates.
+  const presenceMembers = members.flatMap((m) =>
+    m.userId && m.availability ? [{ id: m.id, userId: m.userId, availability: m.availability }] : [],
+  );
+  const { getAvailability } = useAgentPresence(workspaceId, presenceMembers);
+  const storedAvailability = members.find((m) => m.userId === currentUserId)?.availability;
+
   return (
     <div className="flex h-[calc(100vh-10rem)] overflow-hidden rounded-lg border">
       {/* Left: Conversation list */}
@@ -65,6 +77,15 @@ export function InboxLayout({
           onAssigneeChange={setAssigneeFilter}
           members={members}
         />
+        {currentUserId && (
+          <div className="flex items-center justify-end border-b px-3 py-1">
+            <AvailabilitySelector
+              workspaceId={workspaceId}
+              initialStatus={storedAvailability}
+              status={getAvailability(currentUserId, storedAvailability)}
+            />
+          </div>
+        )}
         <div className="flex-1 overflow-hidden">
           <ConversationList
             conversations={conversations}

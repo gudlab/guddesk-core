@@ -22,13 +22,13 @@ interface WorkloadMonitorProps {
 }
 
 export function WorkloadMonitor({ workspaceId, members }: WorkloadMonitorProps) {
-  const { getAvailability } = useAgentPresence(workspaceId);
+  const { getAvailability } = useAgentPresence(workspaceId, members);
 
   // Sort: online first, then away, then offline; within same status, sort by active conversations desc
   const sorted = [...members].sort((a, b) => {
     const statusOrder = { ONLINE: 0, AWAY: 1, OFFLINE: 2 };
-    const aStatus = getAvailability(a.userId) ?? a.availability;
-    const bStatus = getAvailability(b.userId) ?? b.availability;
+    const aStatus = getAvailability(a.userId, a.availability);
+    const bStatus = getAvailability(b.userId, b.availability);
     const orderDiff = statusOrder[aStatus] - statusOrder[bStatus];
     if (orderDiff !== 0) return orderDiff;
     return b.activeConversations - a.activeConversations;
@@ -36,7 +36,7 @@ export function WorkloadMonitor({ workspaceId, members }: WorkloadMonitorProps) 
 
   const totalActive = members.reduce((sum, m) => sum + m.activeConversations, 0);
   const onlineCount = members.filter(
-    (m) => (getAvailability(m.userId) ?? m.availability) === "ONLINE",
+    (m) => getAvailability(m.userId, m.availability) === "ONLINE",
   ).length;
   const avgLoad = members.length > 0 ? Math.round(totalActive / members.length) : 0;
 
@@ -84,7 +84,7 @@ export function WorkloadMonitor({ workspaceId, members }: WorkloadMonitorProps) 
       {/* Agent grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {sorted.map((member) => {
-          const liveStatus = getAvailability(member.userId) ?? member.availability;
+          const liveStatus = getAvailability(member.userId, member.availability);
           const initials = member.name.slice(0, 2).toUpperCase();
           const loadLevel =
             member.activeConversations > 10

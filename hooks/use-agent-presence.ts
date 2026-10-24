@@ -1,31 +1,35 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+
+import {
+  applyAvailabilityEvent,
+  resolveAvailability,
+  seedAgentStatuses,
+  type AgentStatus,
+  type Availability,
+  type StoredAvailability,
+} from "@/lib/agent-presence";
 import { usePusher } from "./use-pusher";
 
-export interface AgentStatus {
-  memberId: string;
-  userId: string;
-  availability: "ONLINE" | "AWAY" | "OFFLINE";
-}
+export type { AgentStatus } from "@/lib/agent-presence";
 
 /**
- * Track agent availability across the workspace in real-time.
- * Listens for `agent:availability-changed` events on the workspace channel.
+ * Track agent availability across the workspace.
+ * Starts from each member's stored availability, then listens for
+ * `agent:availability-changed` events on the workspace channel.
  */
-export function useAgentPresence(workspaceId: string) {
-  const [agentStatuses, setAgentStatuses] = useState<Map<string, AgentStatus>>(new Map());
-
-  const handleAvailabilityChanged = useCallback(
-    (data: AgentStatus) => {
-      setAgentStatuses((prev) => {
-        const next = new Map(prev);
-        next.set(data.userId, data);
-        return next;
-      });
-    },
-    [],
+export function useAgentPresence(
+  workspaceId: string,
+  initialMembers?: readonly StoredAvailability[],
+) {
+  const [agentStatuses, setAgentStatuses] = useState<Map<string, AgentStatus>>(
+    () => seedAgentStatuses(initialMembers),
   );
+
+  const handleAvailabilityChanged = useCallback((data: unknown) => {
+    setAgentStatuses((prev) => applyAvailabilityEvent(prev, data));
+  }, []);
 
   usePusher(
     `private-workspace-${workspaceId}`,
@@ -34,11 +38,14 @@ export function useAgentPresence(workspaceId: string) {
   );
 
   /**
-   * Get the availability for a specific user.
+   * Get the availability for a specific user: the latest Pusher event, then
+   * the stored value, then `fallback`, then OFFLINE.
    */
-  function getAvailability(userId: string): "ONLINE" | "AWAY" | "OFFLINE" {
-    return agentStatuses.get(userId)?.availability ?? "OFFLINE";
-  }
+  const getAvailability = useCallback(
+    (userId: string, fallback?: Availability): Availability =>
+      resolveAvailability(agentStatuses, userId, fallback),
+    [agentStatuses],
+  );
 
   return { agentStatuses, getAvailability };
 }
