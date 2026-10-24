@@ -83,7 +83,7 @@ export const features: Feature[] = [
       {
         question: "Does the widget slow down my website?",
         answer:
-          "The snippet loads the script with the async attribute, so it does not block your page from rendering. The script is about 33KB gzipped.",
+          "The snippet loads the script with the async attribute, so it does not block your page from rendering. The script is about 35 kB gzipped.",
       },
       {
         question: "Can I control which pages show the widget?",
