@@ -134,7 +134,7 @@ _Scale from a small team to a full support organization._
 - [ ] **Team inboxes**: separate inboxes per team (Sales, Support, Billing)
 
 ### Collaboration
-- [x] **Collision detection**: show when another agent is viewing or replying to a conversation (needs Pusher keys)
+- [ ] **Collision detection**: show when another agent is viewing or replying to a conversation. The banner is built but the inbox does not show it yet (will need Pusher keys)
 - [x] **@mentions**: tag teammates in internal notes
 - [x] **Shared drafts**: collaborate on a reply before sending
 - [x] **Side conversations**: discuss a ticket with another team without the customer seeing
