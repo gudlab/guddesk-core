@@ -34,6 +34,10 @@ describe("reply+ customer replies use the email channel's customer path", () => 
     assert.match(read("lib/inbound-email/handler.ts"), /threadId: conversation\.id,\s*keepVisitor: true,/);
   });
 
+  it("the threaded message's senderName is the fromName the handler passes (\"Name (address)\" for a forwarded sender)", () => {
+    assert.match(appendBody, /senderName: fromName \?\? fromEmail,/);
+  });
+
   it("agent replies go to the conversation's visitor email (not the last sender)", () => {
     assert.match(read("actions/send-message.ts"), /visitorEmail: conversation\.visitor\?\.email \?\? null,/);
     assert.match(provider, /to: context\.visitorEmail,/);

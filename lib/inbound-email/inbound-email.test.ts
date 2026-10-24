@@ -14,6 +14,7 @@ import {
 } from "./handler";
 import { htmlToText, parseInboundPayload } from "./payload";
 import { DONE, FINISHED_TTL_MS, IN_FLIGHT_TTL_MS, PROCESSING, replayKey, sweepExpiredWebhookIds } from "./replay";
+import { forwardedSenderName, SENDER_NAME_MAX } from "./sender-name";
 import { signSvixPayload, verifySvixSignature } from "./signature";
 
 const SECRET = "whsec_" + Buffer.from("test-signing-key-0123456789abcdef").toString("base64");
@@ -44,9 +45,9 @@ function fakeDb() {
     { workspaceId: "ws_b", userId: "u_other" },
   ];
   const conversations = [
-    { id: "conva", workspaceId: "ws_a", status: "CLOSED", channel: "EMAIL", firstResponseAt: null },
-    { id: "convb", workspaceId: "ws_b", status: "OPEN", channel: "EMAIL", firstResponseAt: null },
-    { id: "convchat", workspaceId: "ws_a", status: "OPEN", channel: "WIDGET", firstResponseAt: null },
+    { id: "conva", workspaceId: "ws_a", status: "CLOSED", channel: "EMAIL", firstResponseAt: null, visitor: { email: "jane.customer@example.com" } },
+    { id: "convb", workspaceId: "ws_b", status: "OPEN", channel: "EMAIL", firstResponseAt: null, visitor: { email: "bob@globex.test" } },
+    { id: "convchat", workspaceId: "ws_a", status: "OPEN", channel: "WIDGET", firstResponseAt: null, visitor: { email: null } },
   ];
   const db = {
     verificationToken: {
@@ -564,13 +565,13 @@ describe("POST /api/email/inbound: reply+ address", () => {
   });
 
   /** Filed through the email channel's own customer path, threaded onto the conversation. */
-  function assertCustomerReply(t: ReturnType<typeof setup>, from: string) {
+  function assertCustomerReply(t: ReturnType<typeof setup>, from: string, fromName?: string) {
     assert.equal(t.messages.length, 0, "not written here: the channel's path writes it");
     assert.equal(t.customer.length, 1);
     assert.deepEqual(t.customer[0], {
       workspaceId: "ws_a",
       from,
-      fromName: undefined,
+      fromName,
       subject: "Help",
       body: "Agent reply text",
       threadId: "conva",
@@ -588,13 +589,71 @@ describe("POST /api/email/inbound: reply+ address", () => {
 
   it("a stranger: a customer message, never an agent", async () => {
     const { t } = await replyTo("stranger@example.com", "conva");
-    assertCustomerReply(t, "stranger@example.com");
+    assertCustomerReply(t, "stranger@example.com", "stranger@example.com");
   });
 
   it("a forwarded sender is filed on the conversation without replacing its visitor (keepVisitor)", async () => {
     const { t } = await replyTo("colleague@forwarded.example", "conva");
-    assertCustomerReply(t, "colleague@forwarded.example");
+    assertCustomerReply(t, "colleague@forwarded.example", "colleague@forwarded.example");
     assert.equal(t.customer[0].keepVisitor, true);
+  });
+
+  /** A reply+ customer email with a From header that has a display name. */
+  async function replyWithName(fromHeader: string, bareFrom: string) {
+    const t = setup();
+    t.received.em_2 = { ...agentEmail(bareFrom, "conva"), headers: { from: fromHeader } };
+    await handleInboundEmail(signed(receivedEvent("em_2", ["reply+conva@mail.guddesk.com"])), t.deps);
+    assert.equal(t.customer.length, 1);
+    return t.customer[0];
+  }
+
+  it("senderName: a forwarded sender with a display name is 'Name (address)'", async () => {
+    const filed = await replyWithName("Colin Colleague <colin@forwarded.example>", "colin@forwarded.example");
+    assert.equal(filed.fromName, "Colin Colleague (colin@forwarded.example)");
+    assert.equal(filed.from, "colin@forwarded.example");
+  });
+
+  it("senderName: a forwarded sender without a display name is just the address", async () => {
+    const { t } = await replyTo("colleague@forwarded.example", "conva");
+    assert.equal(t.customer[0].fromName, "colleague@forwarded.example");
+  });
+
+  it("senderName: the visitor's own reply keeps its usual name", async () => {
+    const filed = await replyWithName("Jane Customer <jane.customer@example.com>", "jane.customer@example.com");
+    assert.equal(filed.fromName, "Jane Customer");
+  });
+
+  it("senderName: the visitor match ignores case", async () => {
+    const filed = await replyWithName("Jane C <JANE.Customer@Example.COM>", "JANE.Customer@Example.COM");
+    assert.equal(filed.fromName, "Jane C");
+    assert.equal(forwardedSenderName({ from: "Jane.Customer@EXAMPLE.com" }, "jane.customer@example.com"), null);
+    assert.equal(forwardedSenderName({ from: "jane.customer@example.com" }, "Jane <JANE.CUSTOMER@example.com>"), null);
+  });
+
+  it("senderName: CR/LF and control characters in the display name are stripped", () => {
+    assert.equal(
+      forwardedSenderName({ from: "colin@forwarded.example", fromName: "Colin\r\nBcc: x\u0000\u0007 Colleague\t" }, "jane.customer@example.com"),
+      "Colin Bcc: x Colleague (colin@forwarded.example)",
+    );
+    assert.equal(forwardedSenderName({ from: "colin@forwarded.example", fromName: "\r\n\u0000" }, "jane@x.test"), "colin@forwarded.example");
+  });
+
+  it("senderName: a display name with '(other@x)' can't pose as another address; the real one is shown", async () => {
+    const filed = await replyWithName(
+      '"Jane Customer (jane.customer@example.com)" <mallory@evil.example>',
+      "mallory@evil.example",
+    );
+    assert.equal(filed.fromName, "Jane Customer (mallory@evil.example)");
+    assert.equal(
+      forwardedSenderName({ from: "mallory@evil.example", fromName: "jane.customer@example.com <jane.customer@example.com>" }, "jane.customer@example.com"),
+      "mallory@evil.example",
+    );
+  });
+
+  it("senderName: capped, always keeping the real address", () => {
+    const name = forwardedSenderName({ from: "colin@forwarded.example", fromName: "A".repeat(500) }, "jane@x.test") ?? "";
+    assert.equal(name.length, SENDER_NAME_MAX);
+    assert.ok(name.endsWith(" (colin@forwarded.example)"));
   });
 
   it("a member of another workspace (cross-workspace id): a customer message, never an agent", async () => {
@@ -607,7 +666,7 @@ describe("POST /api/email/inbound: reply+ address", () => {
 
   it("a removed member: no longer a member, so a customer message", async () => {
     const { t } = await replyTo("removed@acme.test", "conva");
-    assertCustomerReply(t, "removed@acme.test");
+    assertCustomerReply(t, "removed@acme.test", "removed@acme.test");
   });
 
   it("a banned member: ignored, with no note and no bounce", async () => {

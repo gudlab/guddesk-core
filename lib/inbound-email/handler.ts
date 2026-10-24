@@ -25,7 +25,9 @@
  *      so it fires message.created, respects autoReopen and runs what that
  *      path runs. The conversation's visitor is never changed to the sender
  *      (keepVisitor): it may be someone the customer forwarded to, and
- *      agent replies keep going to the original customer. It needs an email-channel conversation with the channel
+ *      agent replies keep going to the original customer. When the sender
+ *      isn't the visitor, the message's senderName is "Name (address)" so
+ *      agents can see who wrote. It needs an email-channel conversation with the channel
  *      on. A customer reply is never dropped silently: when it can't be
  *      filed (not an email conversation, channel off) the answer is a 422
  *      with a reason code, and a fetch or database failure is a 500. Both
@@ -44,6 +46,7 @@ import type { safeTriggerBatch } from "@/lib/pusher-server";
 
 import { claimBounceSlot, releaseBounceSlot, unverifiedReplyNotice } from "./bounce";
 import { fromReceivedEmail, parseInboundPayload, type InboundEmail } from "./payload";
+import { forwardedSenderName } from "./sender-name";
 import { claimWebhookId, finishWebhookId, releaseWebhookId } from "./replay";
 import { verifySvixSignature } from "./signature";
 
@@ -261,6 +264,7 @@ type ReplyConversation = {
   status: string;
   channel: string;
   firstResponseAt: Date | null;
+  visitor: { email: string | null } | null;
 };
 
 /** The conversation id in the first reply+{id}@ recipient, if any. */
@@ -271,7 +275,14 @@ export function replyConversationId(recipients: string[]): string | undefined {
 function findReplyConversation(db: InboundDb, conversationId: string): Promise<ReplyConversation | null> {
   return db.conversation.findUnique({
     where: { id: conversationId },
-    select: { id: true, workspaceId: true, status: true, channel: true, firstResponseAt: true },
+    select: {
+      id: true,
+      workspaceId: true,
+      status: true,
+      channel: true,
+      firstResponseAt: true,
+      visitor: { select: { email: true } },
+    },
   });
 }
 
@@ -323,10 +334,14 @@ async function handleReplyAddress(
 
   // The email channel's own customer path, threaded onto this conversation:
   // message.created webhook, autoReopen and the rest, same as support+.
+  // Someone other than the visitor: "Name (address)" as the senderName
+  // (keepVisitor means fromName only names the message). The visitor's own
+  // reply keeps its usual name.
+  const forwarded = forwardedSenderName(email, conversation.visitor?.email);
   const result = await deps.handleCustomerInbound({
     workspaceId: conversation.workspaceId,
     from: email.from,
-    fromName: email.fromName,
+    fromName: forwarded ?? email.fromName,
     subject: email.subject,
     body: email.text.trim(),
     threadId: conversation.id,
