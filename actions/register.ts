@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 
+import { findUserByEmail, normalizeEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
 import { userRegisterSchema } from "@/lib/validations/auth";
 
@@ -16,11 +17,11 @@ export async function registerUser(values: {
     return { error: "Invalid fields" };
   }
 
-  const { name, email, password } = validated.data;
+  const { name, password } = validated.data;
+  const email = normalizeEmail(validated.data.email);
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() },
-  });
+  // Any case, so "Jane@acme.com" can't sign up again as "jane@acme.com".
+  const existingUser = await findUserByEmail(prisma, email);
 
   if (existingUser) {
     return { error: "Email already in use" };
@@ -31,7 +32,7 @@ export async function registerUser(values: {
   await prisma.user.create({
     data: {
       name,
-      email: email.toLowerCase(),
+      email,
       password: hashedPassword,
       emailVerified: new Date(),
     },

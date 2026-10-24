@@ -5,6 +5,7 @@ import Resend from "next-auth/providers/resend";
 import bcrypt from "bcryptjs";
 
 import { env } from "@/env.mjs";
+import { findUserByEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
 import { emailFrom } from "@/lib/email/from";
 import { sendMagicLinkSafely } from "@/lib/email/send";
@@ -43,9 +44,8 @@ export default {
 
         const { email, password } = validated.data;
 
-        const user = await prisma.user.findUnique({
-          where: { email: email.toLowerCase() },
-        });
+        // Any case: older accounts may be stored with capitals.
+        const user = await findUserByEmail(prisma, email);
 
         if (!user || !user.password) return null;
 
