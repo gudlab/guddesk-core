@@ -66,4 +66,7 @@ if (!Number.isFinite(count) || count < 1) {
   process.exit(1);
 }
 
-process.exit(result.status === 0 ? 0 : (result.status ?? 1));
+// Set exitCode instead of calling process.exit(): when stdout is a pipe
+// (CI runs `pnpm test | tee`), process.exit() can drop output that is still
+// queued, which cuts off the "# tests" summary.
+process.exitCode = result.status === 0 ? 0 : (result.status ?? 1);
