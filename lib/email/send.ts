@@ -52,7 +52,15 @@ export function resetEmailKeyWarning() {
   keyWarningShown = false;
 }
 
-/** One warning per process when the key is missing or Resend rejects it. The key is never logged. */
+/**
+ * One health warning per process, on the first send Resend refuses with a
+ * 401 or 403. The key is never logged.
+ *
+ * A missing key can't normally get here: env.mjs requires RESEND_API_KEY,
+ * so a deploy without one fails at boot, naming the variable. That is on
+ * purpose (a running app that silently drops every invite and reset is
+ * worse). The "missing" case stays for code that runs without env.mjs.
+ */
 export function warnAboutResendKeyOnce(
   problem: "missing" | { statusCode: number | null; name: string },
   warn: (line: string) => void = console.warn,
@@ -63,9 +71,13 @@ export function warnAboutResendKeyOnce(
     warn(
       "[email] RESEND_API_KEY is not set, so no email can be sent. Set it to a Resend API key.",
     );
+  } else if (KEY_ERRORS.has(problem.name) || problem.statusCode === 401) {
+    warn(
+      `[email] Resend rejected the API key (${problem.statusCode ?? "no status"} ${problem.name}). Emails are not being sent. Check RESEND_API_KEY.`,
+    );
   } else {
     warn(
-      `[email] Resend rejected the API key (${problem.statusCode ?? "no status"} ${problem.name}). Emails are not being sent. Check RESEND_API_KEY and the sending domain in Resend.`,
+      `[email] Resend refused the send (${problem.statusCode ?? "no status"} ${problem.name}). Emails are not being sent. Check that the RESEND_FROM domain is verified in Resend and that RESEND_API_KEY may send from it.`,
     );
   }
 }

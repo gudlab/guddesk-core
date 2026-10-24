@@ -1,11 +1,13 @@
 "use server";
 
 import crypto from "crypto";
+import { after } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { emailFrom } from "@/lib/email/from";
 import { sendEmail } from "@/lib/email/send";
 import { PASSWORD_RESET_NEUTRAL_MESSAGE } from "@/lib/password-reset-neutral";
+import { deferPasswordReset } from "@/lib/password-reset-request";
 import { env } from "@/env.mjs";
 import { forgotPasswordSchema } from "@/lib/validations/auth";
 
@@ -19,15 +21,21 @@ export async function forgotPassword(values: { email: string }) {
   const { email } = validated.data;
   const normalizedEmail = email.toLowerCase();
 
+  // Answer now, before the lookup. The lookup and the email run after the
+  // response, so a known and an unknown address take the same time and get
+  // the same answer, and this can't be used to find accounts.
+  deferPasswordReset(normalizedEmail, after, sendResetIfAccount);
+
+  return { success: PASSWORD_RESET_NEUTRAL_MESSAGE };
+}
+
+/** Runs after the response. Does nothing for an unknown address. */
+async function sendResetIfAccount(normalizedEmail: string): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
   });
 
-  // The same answer whether or not the account exists or the email went
-  // out, so the form can't be used to find accounts.
-  if (!user || !user.password) {
-    return { success: PASSWORD_RESET_NEUTRAL_MESSAGE };
-  }
+  if (!user || !user.password) return;
 
   // Delete existing tokens for this email
   await prisma.passwordResetToken.deleteMany({
@@ -48,8 +56,7 @@ export async function forgotPassword(values: { email: string }) {
 
   const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
-  // A failed send is logged, redacted, inside sendEmail. The answer stays
-  // the same either way.
+  // A failed send is logged, redacted, inside sendEmail.
   await sendEmail("password-reset", {
     from: emailFrom(),
     to: normalizedEmail,
@@ -80,6 +87,4 @@ export async function forgotPassword(values: { email: string }) {
         </div>
       `,
   });
-
-  return { success: PASSWORD_RESET_NEUTRAL_MESSAGE };
 }

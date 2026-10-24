@@ -148,6 +148,42 @@ describe("sendEmail errors", () => {
     assert.ok(!warn.lines[0].includes(KEY));
   });
 
+  it("a 401 key error fires the health warning, naming the key", async () => {
+    const warn = recorder();
+    const client = clientReturning({
+      data: null,
+      error: { name: "invalid_api_key", statusCode: 401, message: `bad ${KEY}` },
+    } as SendResult);
+    await sendEmail("password-reset", MESSAGE, { client, warn: warn.log, error: () => {} });
+    assert.equal(warn.lines.length, 1);
+    assert.match(warn.lines[0], /rejected the API key \(401 invalid_api_key\)\. .*Check RESEND_API_KEY\./);
+    assert.ok(!warn.lines[0].includes(KEY));
+  });
+
+  it("a 403 for an unverified sender fires the health warning, pointing at RESEND_FROM", async () => {
+    const warn = recorder();
+    const client = clientReturning({
+      data: null,
+      error: { name: "validation_error", statusCode: 403, message: "The domain is not verified" },
+    } as SendResult);
+    await sendEmail("workspace-invitation", MESSAGE, { client, warn: warn.log, error: () => {} });
+    assert.equal(warn.lines.length, 1);
+    assert.match(warn.lines[0], /Resend refused the send \(403 validation_error\).*RESEND_FROM domain is verified/);
+  });
+
+  it("other errors (422, 429, 500) don't fire the health warning", async () => {
+    const warn = recorder();
+    for (const [name, statusCode] of [["validation_error", 422], ["rate_limit_exceeded", 429], ["application_error", 500]] as const) {
+      const client = clientReturning({ data: null, error: { name, statusCode, message: "x" } } as SendResult);
+      await sendEmail("sla-breach", MESSAGE, { client, warn: warn.log, error: () => {} });
+    }
+    assert.equal(warn.lines.length, 0);
+  });
+
+  it("RESEND_API_KEY stays required in env.mjs, so a deploy without it fails at boot", () => {
+    assert.match(read("env.mjs"), /RESEND_API_KEY: z\.string\(\)\.min\(1\),/);
+  });
+
   it("warns once when RESEND_API_KEY is missing", async () => {
     const warn = recorder();
     const errors = recorder();
@@ -210,7 +246,8 @@ describe("callers", () => {
 
   it("forgot password gives the neutral answer in every branch and never says sent", () => {
     const action = read("actions/forgot-password.ts");
-    assert.equal((action.match(/success: PASSWORD_RESET_NEUTRAL_MESSAGE/g) ?? []).length, 2);
+    // One answer for every account state; the lookup runs after the response.
+    assert.equal((action.match(/success: PASSWORD_RESET_NEUTRAL_MESSAGE/g) ?? []).length, 1);
     assert.ok(!/we sent|Failed to send/i.test(action));
     assert.ok(!/we sent/i.test(read("components/forms/forgot-password-form.tsx")));
     assert.ok(!/sent/i.test(PASSWORD_RESET_NEUTRAL_MESSAGE));
