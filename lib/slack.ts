@@ -1,5 +1,22 @@
 import { prisma } from "@/lib/db";
 
+export const SLACK_TIMEOUT_MS = 5000;
+
+/** Posts to a Slack incoming webhook. Throws on a network error, timeout or non-2xx. */
+export async function postSlackWebhook(
+  webhookUrl: string,
+  text: string,
+  signal: AbortSignal,
+): Promise<void> {
+  const res = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+    signal,
+  });
+  if (!res.ok) throw new Error(`Slack responded with HTTP ${res.status}`);
+}
+
 export async function sendSlackNotification(
   workspaceId: string,
   event: "new_conversation" | "conversation_closed" | "conversation_assigned",
@@ -40,11 +57,7 @@ export async function sendSlackNotification(
   }
 
   try {
-    await fetch(slack.webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
+    await postSlackWebhook(slack.webhookUrl, text, AbortSignal.timeout(SLACK_TIMEOUT_MS));
   } catch (error) {
     console.error("Slack notification error:", error);
   }
