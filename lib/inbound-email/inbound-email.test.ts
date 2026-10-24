@@ -12,9 +12,9 @@ import {
   type InboundDeps,
   type UnverifiedReplyBounce,
 } from "./handler";
-import { htmlToText, parseInboundPayload } from "./payload";
+import { fromAddresses, htmlToText, MAX_ADDRESS_LENGTH, parseInboundPayload } from "./payload";
 import { DONE, FINISHED_TTL_MS, IN_FLIGHT_TTL_MS, PROCESSING, replayKey, sweepExpiredWebhookIds } from "./replay";
-import { forwardedSenderName, SENDER_NAME_MAX } from "./sender-name";
+import { cleanHeaderText, forwardedSenderName, SENDER_NAME_MAX, visitorFacingSenderName } from "./sender-name";
 import { signSvixPayload, verifySvixSignature } from "./signature";
 
 const SECRET = "whsec_" + Buffer.from("test-signing-key-0123456789abcdef").toString("base64");
@@ -650,10 +650,120 @@ describe("POST /api/email/inbound: reply+ address", () => {
     );
   });
 
-  it("senderName: capped, always keeping the real address", () => {
+  it("senderName: only the display name is capped, the address is never cut", () => {
     const name = forwardedSenderName({ from: "colin@forwarded.example", fromName: "A".repeat(500) }, "jane@x.test") ?? "";
-    assert.equal(name.length, SENDER_NAME_MAX);
+    assert.equal(name.length, SENDER_NAME_MAX + "colin@forwarded.example".length);
     assert.ok(name.endsWith(" (colin@forwarded.example)"));
+    // A long (but valid) address is kept whole, however long the name.
+    const long = `${"l".repeat(230)}@forwarded.example`;
+    assert.ok(long.length <= MAX_ADDRESS_LENGTH);
+    const withLong = forwardedSenderName({ from: long, fromName: "B".repeat(500) }, "jane@x.test") ?? "";
+    assert.ok(withLong.endsWith(` (${long})`));
+    assert.ok(withLong.length <= SENDER_NAME_MAX + long.length);
+    assert.equal(forwardedSenderName({ from: long }, "jane@x.test"), long);
+  });
+
+  it("senderName: bidi controls and zero-width characters are stripped (RTL mark case)", async () => {
+    // U+202E (RLO) reverses the text after it, so a name could make the address read as another one.
+    const filed = await replyWithName(
+      "\u202eColin\u200f \u200bColleague\ufeff\u2066\u2069 <colin@forwarded.example>",
+      "colin@forwarded.example",
+    );
+    assert.equal(filed.fromName, "Colin Colleague (colin@forwarded.example)");
+    assert.equal(
+      forwardedSenderName({ from: "colin\u200e@forwarded.example", fromName: "\u200eRLM\u200f\u202a\u202b\u202c\u202d\u2067\u2068\u200c\u200d\u2060" }, "jane@x.test"),
+      "RLM (colin@forwarded.example)",
+    );
+    assert.equal(cleanHeaderText("a\u200bb\ufeffc"), "abc");
+    assert.equal(forwardedSenderName({ from: "colin@forwarded.example", fromName: "\u202e\u200b" }, "jane@x.test"), "colin@forwarded.example");
+  });
+
+  it("the inbox message header renders senderName inside <bdi>", () => {
+    const bubble = readFileSync(join(__dirname, "..", "..", "components", "inbox", "message-bubble.tsx"), "utf8");
+    assert.match(bubble, /<bdi>\{senderName\}<\/bdi>/);
+  });
+
+  /** A reply+ delivery whose webhook and/or fetched From is `eventFrom` / `headerFrom`. */
+  async function replyFrom(eventFrom: string, headerFrom = eventFrom) {
+    const t = setup();
+    t.received.em_2 = { ...agentEmail("colin@forwarded.example", "conva"), from: "colin@forwarded.example", headers: { from: headerFrom } };
+    const event = receivedEvent("em_2", ["reply+conva@mail.guddesk.com"]);
+    const res = await handleInboundEmail(signed({ ...event, data: { ...event.data, from: eventFrom } }), t.deps);
+    return { t, res };
+  }
+
+  it("a From with two or more addresses: 200 ignored ambiguous_sender, no fetch, never filed", async () => {
+    for (const from of [
+      "a@x.test, b@y.test",
+      "Ann <a@x.test>, Bob <b@y.test>",
+      "Ann <a@x.test> b@y.test",
+      "a@x.test; b@y.test",
+    ]) {
+      const { t, res } = await replyFrom(from);
+      assert.equal(res.status, 200, from);
+      assert.deepEqual(res.body, { ignored: "ambiguous_sender" });
+      assert.equal(t.fetched.length, 0, "no fetch");
+      assert.equal(t.messages.length + t.customer.length + t.bounces.length, 0);
+      assert.ok(t.logs.some((l) => l.includes("ignored reason=ambiguous_sender")));
+      assertCleanLogs(t.logs);
+    }
+  });
+
+  it("two addresses only in the fetched From header: ignored after the fetch, never filed", async () => {
+    const { t, res } = await replyFrom("colin@forwarded.example", "Colin <colin@forwarded.example>, Mallory <mallory@evil.example>");
+    assert.deepEqual(res.body, { ignored: "ambiguous_sender" });
+    assert.equal(t.fetched.length, 1);
+    assert.equal(t.messages.length + t.customer.length, 0);
+  });
+
+  it("the legacy payload with two From addresses is ignored too", async () => {
+    const t = setup();
+    const res = await handleInboundEmail(
+      signed({ from: "a@x.test, b@y.test", to: ["support+appa@mail.guddesk.com"], subject: "Hi", text: "Hello" }),
+      t.deps,
+    );
+    assert.deepEqual(res.body, { ignored: "ambiguous_sender" });
+    assert.equal(t.customer.length, 0);
+  });
+
+  it("one address with a display name, a quoted name or a comment is not ambiguous", () => {
+    assert.deepEqual(fromAddresses("Jane <jane@x.test>"), ["jane@x.test"]);
+    assert.deepEqual(fromAddresses('"Doe, Jane (jane@x.test)" <m@y.test>'), ["m@y.test"]);
+    assert.deepEqual(fromAddresses("Jane (jane@x.test) <m@y.test>"), ["m@y.test"]);
+    assert.deepEqual(fromAddresses("JANE@x.test <jane@X.test>"), ["jane@x.test"]);
+    assert.deepEqual(fromAddresses("Doe, Jane <jane@x.test>"), ["jane@x.test"]);
+  });
+
+  it("an address over 254 characters: 200 ignored invalid_sender, no fetch", async () => {
+    const tooLong = `${"x".repeat(MAX_ADDRESS_LENGTH)}@forwarded.example`;
+    const { t, res } = await replyFrom(`Colin <${tooLong}>`);
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body, { ignored: "invalid_sender" });
+    assert.equal(t.fetched.length, 0);
+    assert.equal(t.messages.length + t.customer.length, 0);
+    assertCleanLogs(t.logs);
+    // Only in the fetched header: ignored after the fetch.
+    const later = await replyFrom("colin@forwarded.example", tooLong);
+    assert.deepEqual(later.res.body, { ignored: "invalid_sender" });
+    assert.equal(later.t.customer.length, 0);
+    // Exactly 254 is still an address.
+    const max = `${"m".repeat(MAX_ADDRESS_LENGTH - "@forwarded.example".length)}@forwarded.example`;
+    assert.equal(max.length, MAX_ADDRESS_LENGTH);
+    const ok = await replyFrom(max, max);
+    assert.equal(ok.res.status, 200);
+    assert.equal(ok.res.body.success, true);
+  });
+
+  it("the widget API shows a forwarded customer sender to the visitor without the address", () => {
+    assert.equal(visitorFacingSenderName("Colin Colleague (colin@forwarded.example)"), "Colin Colleague");
+    assert.equal(visitorFacingSenderName("colin@forwarded.example"), "colin@forwarded.example");
+    assert.equal(visitorFacingSenderName("Jane Customer"), "Jane Customer");
+    assert.equal(visitorFacingSenderName(null), null);
+    const route = readFileSync(
+      join(__dirname, "..", "..", "app", "api", "widget", "conversations", "[conversationId]", "messages", "route.ts"),
+      "utf8",
+    );
+    assert.match(route, /m\.type === "VISITOR" \? \{ \.\.\.m, senderName: visitorFacingSenderName\(m\.senderName\) \} : m/);
   });
 
   it("a member of another workspace (cross-workspace id): a customer message, never an agent", async () => {

@@ -35,7 +35,8 @@
  * 2. support+{appId}@...  A customer emailing support.
  *
  * Other verified requests that can't be used (a spoofed member address, a
- * banned member, an unknown conversation, other event types) get a 200
+ * banned member, an unknown conversation, a From with two or more
+ * addresses or an over-long address, other event types) get a 200
  * with { ignored }: there is nothing to file, and a retry would be ignored
  * the same way.
  * Logs carry a reason code and never the body, addresses or the secret.
@@ -110,7 +111,9 @@ export type IgnoreReason =
   | "sender_banned"
   | "unknown_conversation"
   | "unknown_app"
-  | "channel_disabled";
+  | "channel_disabled"
+  | "ambiguous_sender"
+  | "invalid_sender";
 
 /** svix-id is client-supplied; keep only id-like characters for logs. */
 function logId(id: string | null): string {
@@ -219,6 +222,12 @@ async function processVerified(
   }
   if (parsed.kind === "ignored_event") return ignored("event_type", log, id);
 
+  // A From with two or more addresses, or an address too long to be one:
+  // no single sender to file it under, and a retry can't change that. The
+  // webhook carries the From, so this is before the fetch.
+  const earlyProblem = parsed.kind === "received" ? parsed.senderProblem : parsed.email.senderProblem;
+  if (earlyProblem) return ignored(earlyProblem, log, id);
+
   // reply+: find the conversation before fetching from Resend. If there is
   // none, a retry won't help, so stop here (200) instead of ~27h of retries.
   const replyId = replyConversationId(parsed.kind === "received" ? parsed.recipients : parsed.email.recipients);
@@ -236,6 +245,8 @@ async function processVerified(
     email = parsed.email;
   }
   if (!email) return ignored("empty_email", log, id);
+  // The fetched From header can differ from the webhook's.
+  if (email.senderProblem) return ignored(email.senderProblem, log, id);
 
   if (conversation) return await handleReplyAddress(conversation, email, deps, log, id);
 

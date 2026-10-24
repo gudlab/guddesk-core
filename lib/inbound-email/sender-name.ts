@@ -10,12 +10,30 @@
  */
 import { splitAddress } from "./payload";
 
-/** No senderName limit exists elsewhere (text column); this keeps it to a sane line. */
+/**
+ * Cap for the display-name part, " (" and ")" included. The address is
+ * never cut, so a senderName is at most SENDER_NAME_MAX plus the address
+ * (which the handler limits to 254 characters).
+ */
 export const SENDER_NAME_MAX = 200;
 
-/** Header text for display: control characters (CR/LF included) become spaces, runs collapse, trimmed. */
+/**
+ * Bidi controls (LRM, RLM, LRE..RLO, LRI..PDI) and zero-width characters
+ * (ZWSP, ZWNJ, ZWJ, word joiner, BOM): they can reorder or hide what an
+ * agent reads, for example make an address look like another one.
+ */
+const INVISIBLE = /[\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ufeff]/g;
+
+/**
+ * Header text for display: bidi and zero-width characters removed, control
+ * characters (CR/LF included) become spaces, runs collapse, trimmed.
+ */
 export function cleanHeaderText(value: string): string {
-  return value.replace(/[\u0000-\u001f\u007f-\u009f]/g, " ").replace(/\s+/g, " ").trim();
+  return value
+    .replace(INVISIBLE, "")
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** A display name with anything address-like removed, so it can't carry a fake "(address)". */
@@ -41,11 +59,22 @@ export function forwardedSenderName(
   sender: { from: string; fromName?: string },
   visitorEmail: string | null | undefined,
 ): string | null {
-  const address = cleanHeaderText(sender.from).slice(0, SENDER_NAME_MAX);
+  const address = cleanHeaderText(sender.from);
   if (bare(address) === bare(visitorEmail)) return null;
-  const name = cleanDisplayName(sender.fromName ?? "");
+  const name = cleanDisplayName(sender.fromName ?? "")
+    .slice(0, SENDER_NAME_MAX - 3)
+    .trim();
   if (!name) return address;
-  const room = SENDER_NAME_MAX - address.length - 3;
-  if (room <= 0) return address;
-  return `${name.slice(0, room).trim()} (${address})`;
+  return `${name} (${address})`;
+}
+
+/**
+ * senderName as the visitor sees it (widget API): a customer-path message
+ * stored as "Name (address)" shows just "Name", so the forwarded sender's
+ * address isn't shown back. Anything else is unchanged.
+ */
+export function visitorFacingSenderName(senderName: string | null): string | null {
+  if (!senderName) return senderName;
+  const match = /^(.+?) \([^\s()@]+@[^\s()]+\)$/.exec(senderName);
+  return match ? match[1] : senderName;
 }
