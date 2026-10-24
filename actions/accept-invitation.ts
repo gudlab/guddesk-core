@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { normalizeEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
@@ -34,7 +35,7 @@ export async function acceptInvitation(token: string) {
     }
 
     // Verify the email matches
-    if (invitation.email.toLowerCase() !== session.user.email.toLowerCase()) {
+    if (normalizeEmail(invitation.email) !== normalizeEmail(session.user.email)) {
       return {
         status: "error",
         message: "This invitation was sent to a different email address",
