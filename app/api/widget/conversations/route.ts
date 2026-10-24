@@ -5,6 +5,7 @@ import { safeTrigger } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { createVisitorToken, verifyVisitorToken } from "@/lib/visitor-auth";
 import { computeSlaDeadlines } from "@/lib/sla/compute";
+import { VISITOR_NOT_FOUND } from "@/lib/widget-visitor";
 
 // POST /api/widget/conversations
 // Creates a new conversation (or resumes existing) with the first message
@@ -39,6 +40,19 @@ export async function POST(req: NextRequest) {
     if (visitorToken) {
       const payload = verifyVisitorToken(visitorToken);
       if (payload && payload.workspaceId === workspace.id) {
+        // The token can outlive its visitor. Tell the widget to drop it
+        // (it retries once without a token) instead of failing on the
+        // conversations_visitorId_fkey constraint with a 500.
+        const exists = await prisma.visitor.findFirst({
+          where: { id: payload.visitorId, workspaceId: workspace.id },
+          select: { id: true },
+        });
+        if (!exists) {
+          return NextResponse.json(
+            { error: "Visitor not found", code: VISITOR_NOT_FOUND },
+            { status: 401 },
+          );
+        }
         visitorId = payload.visitorId;
 
         // Update visitor info if provided
