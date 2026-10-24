@@ -23,8 +23,8 @@ const capabilities = [
   },
   {
     icon: Icons.automations,
-    title: "Automation rules (not running yet)",
-    desc: "Set rules for new conversations, new messages, closed conversations and unassigned ones, with an action to assign, tag, change status, send a message or notify Slack. GudDesk saves them but does not run them yet.",
+    title: "Automation rules",
+    desc: "Set rules for new conversations, new messages, closed conversations and unassigned ones, with an action to assign, tag, change status, send a message or notify Slack. Each rule runs when its trigger fires.",
   },
 ];
 

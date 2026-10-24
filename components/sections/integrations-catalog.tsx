@@ -78,7 +78,7 @@ const integrations: Integration[] = [
   {
     name: "Slack",
     description:
-      "Save a Slack incoming webhook and pick events. Notifications are not sent yet, and replying from Slack is not supported.",
+      "Save a Slack incoming webhook. Automation rules can post to it. Event notifications are not sent yet, and replying from Slack is not supported.",
     category: "channels",
     icon: "messages",
     tier: "pro",

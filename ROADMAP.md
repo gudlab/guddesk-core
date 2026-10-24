@@ -16,8 +16,8 @@ Most support platforms charge per-agent, and lock AI behind expensive add-ons. G
 - **Customer identity verification**: HMAC-SHA256 identity verification (same standard as Intercom/Zendesk), `GudDesk.identify()` API with `userHash` support
 - **Shared inbox**: conversations from chat + email, assignment, status management, internal notes
 - **Knowledge base**: articles, collections, public help center
-- **Automation rules**: rule builder with 5 triggers and 6 actions. Rules are saved but not run yet
-- **Integrations**: email (Resend), webhooks, REST API. Slack webhook settings are saved, but notifications are not sent yet
+- **Automation rules**: rule builder with 5 triggers and 6 actions. Rules run when their trigger fires
+- **Integrations**: email (Resend), webhooks, REST API. Automation rules can post to a saved Slack webhook. Other Slack notifications are not sent yet
 - **REST API v1**: full CRUD for conversations, customers (including PATCH updates), articles, workspaces, agents; cursor-based pagination, rate limiting
 - **API keys**: account-level keys with optional workspace scoping ("All Workspaces" or single workspace), permission levels (Read Only / Read & Write / Full Access)
 - **Agent framework**: install/uninstall agents via API with auto-provisioned webhook endpoints and dedicated API keys

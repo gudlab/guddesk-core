@@ -328,13 +328,13 @@ export const features: Feature[] = [
     tagline: "Rule builder and SLA policies",
     headline: "Set up rules and SLA deadlines.",
     description:
-      "Build rules with a trigger, conditions and one action. Rules are saved today, but GudDesk does not run them yet. SLA policies with first-response and resolution deadlines work today.",
+      "Build rules with a trigger, conditions and one action. GudDesk runs each rule when its trigger fires. SLA policies with first-response and resolution deadlines work today.",
     icon: "automations",
     highlights: [
       {
         title: "Triggers",
         description:
-          "Pick a trigger for each rule: conversation created, message received, conversation closed, tag added, or unassigned for a set time. Rules do not run yet.",
+          "Pick a trigger for each rule: conversation created, message received, conversation closed, tag added, or unassigned for a set time.",
         icon: "zap",
       },
       {
@@ -357,7 +357,7 @@ export const features: Feature[] = [
       },
     ],
     capabilities: [
-      "Rule builder (rules do not run yet)",
+      "Rule builder with one action per rule",
       "5 trigger types",
       "6 action types",
       "Tag, email and message conditions",
@@ -381,12 +381,12 @@ export const features: Feature[] = [
       {
         question: "How many automation rules can I create?",
         answer:
-          "There is no limit on the number of rules. Rules are saved with an order, but GudDesk does not run them yet.",
+          "There is no limit on the number of rules. Rules run in the order you set. To stop loops, one conversation runs at most 20 rules an hour.",
       },
       {
         question: "Can automations send messages to customers?",
         answer:
-          "Not yet. You can save a rule with a send-message action, but rules do not run yet. Agents can send canned responses from the reply box today.",
+          "Yes. A rule with a send-message action posts a bot reply with the text you set. On email conversations the reply shows in the thread but is not emailed yet.",
       },
       {
         question: "Do SLA timers account for business hours?",

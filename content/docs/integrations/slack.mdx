@@ -1,10 +1,10 @@
 ---
 title: Slack Integration
-description: Save a Slack incoming webhook for conversation notifications. Sending is not built yet.
+description: Save a Slack incoming webhook. Automation rules can post to it. Event notifications are not sent yet.
 ---
 
 <Callout type="warning">
-  GudDesk does not send Slack notifications yet. You can save the settings below today, and they will be used once sending ships.
+  Automation rules with a **Notify Slack** action post to this webhook. The event settings (new conversations, closes, assignments) are saved, but GudDesk does not send those notifications yet.
 </Callout>
 
 ## Setting Up
@@ -12,11 +12,15 @@ description: Save a Slack incoming webhook for conversation notifications. Sendi
 1. In Slack, create an [incoming webhook](https://api.slack.com/messaging/webhooks) for the channel you want to use
 2. In GudDesk, go to **Workspace Settings > Integrations**
 3. Paste the webhook URL under **Slack** and save
-4. Choose the events you want: new conversations, closed conversations and assignments
+4. Choose the events you want: new conversations, closed conversations and assignments (saved for later, not sent yet)
+
+## Posting from automation rules
+
+Create a rule in **Automations** with the **Notify Slack** action. When the rule runs, GudDesk posts the rule name, the message you set and the visitor's name to the webhook. It does not include the customer's message. If Slack doesn't answer within 5 seconds, the run is marked failed and the next rule still runs.
 
 ## What is not available
 
-- Notifications are not sent yet
+- Event notifications (new conversations, closes, assignments) are not sent yet
 - You can't reply to customers from Slack
 - There are no slash commands
 - There is no per-tag channel mapping
