@@ -58,6 +58,11 @@ export function ReplyBox({
         publishLocalMessage(conversationId, result.sentMessage);
       }
 
+      // Saved, but the email to the customer didn't go out.
+      if ("emailError" in result && result.emailError) {
+        toast.error(result.emailError, { duration: 10000 });
+      }
+
       setBody("");
       textareaRef.current?.focus();
     });

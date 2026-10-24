@@ -14,6 +14,7 @@ import type {
 } from "../types";
 import { prisma } from "@/lib/db";
 import { cleanDisplayName, emailFrom } from "@/lib/email/from";
+import { deliveryFailure, type OutboundDelivery } from "@/lib/email/delivery-notice";
 import { sendEmail } from "@/lib/email/send";
 import { safeTrigger, safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
@@ -59,12 +60,12 @@ export class EmailChannelProvider implements ChannelProvider {
   /**
    * Send an outbound email when an agent replies to an email conversation.
    */
-  async sendOutbound(context: OutboundContext, message: Message): Promise<void> {
+  async sendOutbound(context: OutboundContext, message: Message): Promise<OutboundDelivery> {
     if (!context.visitorEmail) {
       console.warn(
         `Cannot send outbound email for conversation ${context.conversationId}: no visitor email`,
       );
-      return;
+      return { status: "skipped" };
     }
 
     // Load email channel config for this workspace
@@ -72,7 +73,7 @@ export class EmailChannelProvider implements ChannelProvider {
       where: { workspaceId: context.workspaceId },
     });
 
-    if (!config?.isEnabled) return;
+    if (!config?.isEnabled) return { status: "skipped" };
 
     // Build threading headers
     const replyHeaders = await buildReplyHeaders(context.conversationId);
@@ -101,8 +102,9 @@ export class EmailChannelProvider implements ChannelProvider {
       signature: config.signature ?? undefined,
     });
 
-    // A failed send is logged, redacted, inside sendEmail.
-    await sendEmail("email-channel-reply", {
+    // A failed send is logged, redacted, inside sendEmail. The outcome goes
+    // back to the agent's reply box.
+    const sent = await sendEmail("email-channel-reply", {
       from,
       to: context.visitorEmail,
       subject: subjectLine,
@@ -118,6 +120,7 @@ export class EmailChannelProvider implements ChannelProvider {
         }),
       },
     });
+    return sent.status === "failed" ? deliveryFailure(sent.error) : { status: "sent" };
   }
 
   // ── Private helpers ──────────────────────────────────────────────
