@@ -198,6 +198,7 @@ model Workspace {
   emailChannelConfig          EmailChannelConfig?
   agentPerformanceSnapshots   AgentPerformanceSnapshot[]
   sideConversations           SideConversation[]
+  automationRuns              AutomationRun[]
 
   @@map(name: "workspaces")
 }
@@ -310,6 +311,7 @@ model Conversation {
   createdAt          DateTime            @default(now()) @map(name: "created_at")
   updatedAt          DateTime            @updatedAt @map(name: "updated_at")
   closedAt           DateTime?
+  unassignedAt       DateTime? // When the assignee was last removed. Null: not unassigned since creation.
 
   // SLA tracking
   slaPolicyId        String?
@@ -330,6 +332,7 @@ model Conversation {
   messages          Message[]
   sharedDraft       SharedDraft?
   sideConversations SideConversation[]
+  automationRuns    AutomationRun[]
 
   @@index([workspaceId, status])
   @@index([workspaceId, assigneeId])
@@ -491,10 +494,36 @@ model AutomationRule {
   createdAt   DateTime          @default(now()) @map(name: "created_at")
   updatedAt   DateTime          @updatedAt @map(name: "updated_at")
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  runs      AutomationRun[]
 
   @@index([workspaceId, isEnabled])
   @@map(name: "automation_rules")
+}
+
+/// One row per rule run for one event. The unique (ruleId, eventKey) pair
+/// makes a retried or duplicated event run each rule once. Rows also feed
+/// the per-conversation and per-workspace rate caps.
+model AutomationRun {
+  id             String            @id @default(cuid())
+  workspaceId    String
+  ruleId         String
+  conversationId String
+  trigger        AutomationTrigger
+  eventKey       String
+  status         String // running, succeeded, failed
+  error          String?
+  createdAt      DateTime          @default(now()) @map(name: "created_at")
+  finishedAt     DateTime?
+
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  rule         AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  conversation Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([ruleId, eventKey])
+  @@index([conversationId, createdAt])
+  @@index([workspaceId, createdAt])
+  @@map(name: "automation_runs")
 }
 
 // ─── AI Agents ─────────────────────────────────────────
