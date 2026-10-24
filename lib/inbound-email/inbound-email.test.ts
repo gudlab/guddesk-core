@@ -499,22 +499,57 @@ describe("POST /api/email/inbound: reply+ address", () => {
     assert.equal(t.messages.length, 0);
   });
 
-  it("a non-email-channel conversation: a non-member's email is ignored", async () => {
+  /** A customer reply that can't be filed: 422 with a reason, logged, svix-id freed for the retry. */
+  function assertUnfiled(t: ReturnType<typeof setup>, res: { status: number; body: unknown }, reason: string) {
+    assert.equal(res.status, 422);
+    assert.deepEqual(res.body, { error: "Customer reply not filed", reason });
+    assert.equal(t.messages.length, 0);
+    assert.equal(t.tokens.size, 0, "svix-id released so Svix's retry is processed");
+    assert.equal(t.logs.length, 1);
+    assert.equal(t.logs[0], `[inbound-email] unfiled reason=${reason} svix_id=msg_2abc`);
+    assertCleanLogs(t.logs);
+  }
+
+  it("a non-email-channel conversation: the customer reply is not dropped (422, retried)", async () => {
     const { t, res } = await replyTo("stranger@example.com", "convchat");
-    assert.deepEqual(res.body, { ignored: "not_email_conversation" });
-    assert.equal(t.messages.length, 0);
+    assertUnfiled(t, res, "not_email_conversation");
   });
 
-  it("email channel turned off: a non-member's email is ignored", async () => {
-    const { t, res } = await replyTo("stranger@example.com", "conva", "pass", "pass", (x) => x.disabledChannels.add("ws_a"));
-    assert.deepEqual(res.body, { ignored: "channel_disabled" });
-    assert.equal(t.messages.length, 0);
+  it("email channel turned off: 422, and the retry files it once the channel is back on", async () => {
+    const { t, res } = await replyTo("jane.customer@example.com", "conva", "pass", "pass", (x) => x.disabledChannels.add("ws_a"));
+    assertUnfiled(t, res, "channel_disabled");
+    t.disabledChannels.delete("ws_a");
+    const retry = await handleInboundEmail(signed(receivedEvent("em_2", ["reply+conva@mail.guddesk.com"])), t.deps);
+    assert.equal(retry.status, 200);
+    assert.equal(t.messages.length, 1);
+    assert.equal(t.messages[0].type, "VISITOR");
   });
 
-  it("unknown conversation: ignored", async () => {
-    const { t, res } = await replyTo("agent@acme.test", "nosuch");
-    assert.deepEqual(res.body, { ignored: "unknown_conversation" });
-    assert.equal(t.messages.length, 0);
+  it("unknown conversation: 422, not dropped", async () => {
+    const { t, res } = await replyTo("jane.customer@example.com", "nosuch");
+    assertUnfiled(t, res, "unknown_conversation");
+  });
+
+  it("a database failure while filing: 500, logged without details, svix-id freed", async () => {
+    const { t, res } = await replyTo("jane.customer@example.com", "conva", "pass", "pass", (x) => {
+      (x.db as unknown as { message: { create: () => Promise<never> } }).message.create = async () => {
+        throw Object.assign(new Error("connection lost for jane.customer@example.com"), { name: "PrismaClientKnownRequestError" });
+      };
+    });
+    assert.equal(res.status, 500);
+    assert.equal(t.tokens.size, 0);
+    assert.equal(t.logs.length, 1);
+    assert.equal(t.logs[0], "[inbound-email] failed reason=processing_error error=PrismaClientKnownRequestError svix_id=msg_2abc");
+    assertCleanLogs(t.logs);
+  });
+
+  it("a failed Resend fetch for a customer reply: 500, svix-id freed", async () => {
+    const t = setup();
+    const res = await handleInboundEmail(signed(receivedEvent("em_missing", ["reply+conva@mail.guddesk.com"])), t.deps);
+    assert.equal(res.status, 500);
+    assert.equal(t.tokens.size, 0);
+    assert.equal(t.logs.length, 1);
+    assert.match(t.logs[0], /^\[inbound-email\] failed reason=processing_error error=\w+ svix_id=msg_2abc$/);
   });
 
   it("senderAuthenticated: DMARC pass, or gray DMARC plus DKIM pass", () => {

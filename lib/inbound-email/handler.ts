@@ -13,13 +13,18 @@
  *      reply, only if the email authenticates (DMARC pass, or DMARC gray
  *      and DKIM pass). Otherwise it is a spoof of that member and is
  *      ignored, never filed as a customer message.
- *    - Anyone else: a customer message in that conversation, only if it
- *      is an email-channel conversation with the channel on. Never an
- *      agent message.
+ *    - Anyone else: a customer message in that conversation, never an
+ *      agent message. It needs an email-channel conversation with the
+ *      channel on.
+ *    A customer reply is never dropped silently. When it can't be filed
+ *    (no such conversation, not an email conversation, channel off) the
+ *    answer is a 422 with a reason code, and a fetch or database failure
+ *    is a 500. Both free the svix-id, so Svix retries.
  * 2. support+{appId}@...  A customer emailing support.
  *
- * Verified requests that can't be used get a 200 with { ignored }, because
- * Svix retries every non-2xx and a retry would be ignored the same way.
+ * Other verified requests that can't be used (a spoofed member address, a
+ * banned member, other event types) get a 200 with { ignored }: there is
+ * nothing to file, and a retry would be ignored the same way.
  * Logs carry a reason code and never the body, addresses or the secret.
  */
 import type { InboundPayload, InboundResult } from "@/lib/channels/types";
@@ -72,10 +77,9 @@ export type IgnoreReason =
   | "event_type"
   | "empty_email"
   | "unknown_recipient"
-  | "unknown_conversation"
   | "sender_not_authenticated"
   | "sender_banned"
-  | "not_email_conversation"
+
   | "unknown_app"
   | "channel_disabled";
 
@@ -87,6 +91,15 @@ function logId(id: string | null): string {
 const ignored = (reason: IgnoreReason, log: (line: string) => void, id: string): InboundResponse => {
   log(`[inbound-email] ignored reason=${reason} svix_id=${id}`);
   return { status: 200, body: { ignored: reason } };
+};
+
+/** Why a customer reply to a reply+ address couldn't be filed (yet). */
+export type UnfiledReason = "unknown_conversation" | "not_email_conversation" | "channel_disabled";
+
+/** Not a 2xx, so Svix retries; the caller frees the svix-id. */
+const unfiled = (reason: UnfiledReason, log: (line: string) => void, id: string): InboundResponse => {
+  log(`[inbound-email] unfiled reason=${reason} svix_id=${id}`);
+  return { status: 422, body: { error: "Customer reply not filed", reason } };
 };
 
 export async function handleInboundEmail(
@@ -120,7 +133,12 @@ export async function handleInboundEmail(
 
   try {
     const response = await processVerified(req.rawBody, deps, log, id);
-    await finishWebhookId(deps.db, verified.id, deps.now?.() ?? new Date());
+    if (response.status >= 200 && response.status < 300) {
+      await finishWebhookId(deps.db, verified.id, deps.now?.() ?? new Date());
+    } else {
+      // Not handled: let Svix's retry (same svix-id) through.
+      await releaseWebhookId(deps.db, verified.id);
+    }
     return response;
   } catch (error) {
     // Let Svix's retry (same svix-id) through.
@@ -216,7 +234,9 @@ async function handleReplyAddress(
     where: { id: conversationId },
     select: { id: true, workspaceId: true, status: true, channel: true, firstResponseAt: true },
   });
-  if (!conversation) return ignored("unknown_conversation", log, id);
+  // There's no workspace to check the sender against, so this can't be
+  // told apart from a customer reply: don't drop it.
+  if (!conversation) return unfiled("unknown_conversation", log, id);
 
   const user = await db.user.findFirst({
     where: { email: { equals: email.from, mode: "insensitive" } },
@@ -246,12 +266,12 @@ async function handleReplyAddress(
   // Anyone else is the customer side of the thread (the customer answering
   // an agent's email, or someone they forwarded it to). Only on an email
   // conversation whose workspace still has the email channel on.
-  if (conversation.channel !== "EMAIL") return ignored("not_email_conversation", log, id);
+  if (conversation.channel !== "EMAIL") return unfiled("not_email_conversation", log, id);
   const config = await db.emailChannelConfig.findUnique({
     where: { workspaceId: conversation.workspaceId },
     select: { isEnabled: true },
   });
-  if (!config?.isEnabled) return ignored("channel_disabled", log, id);
+  if (!config?.isEnabled) return unfiled("channel_disabled", log, id);
 
   return postReply(conversation, email, deps, {
     type: "VISITOR",
