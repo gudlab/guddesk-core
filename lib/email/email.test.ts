@@ -74,6 +74,25 @@ describe("emailFrom", () => {
     assert.match(lines[0], /RESEND_FROM is not set/);
   });
 
+  it("warns once per process, even when the module is loaded again (dev bundles and reloads)", async () => {
+    const { lines, log } = recorder();
+    const env = { NEXT_PUBLIC_APP_URL: "https://b.test" };
+    emailFrom(undefined, env, log);
+    // A second copy of the module, as Next.js dev makes per bundle or reload.
+    const copy = (await import(`./from.ts?copy=${Date.now()}`)) as typeof import("./from");
+    assert.notEqual(copy.emailFrom, emailFrom);
+    copy.emailFrom(undefined, env, log);
+    emailFrom(undefined, env, log);
+    assert.equal(lines.length, 1);
+  });
+
+  it("never uses a raw IP host as the fallback sender", () => {
+    for (const appUrl of ["http://10.0.0.5:3000", "http://[::1]:3000", "https://192.168.1.20"]) {
+      assert.equal(fallbackFromAddress(appUrl), "noreply@localhost", appUrl);
+    }
+    assert.equal(fallbackFromAddress("https://support.acme.test"), "noreply@support.acme.test");
+  });
+
   it("treats an invalid RESEND_FROM like unset and does not print it", () => {
     const { lines, log } = recorder();
     const from = emailFrom(undefined, { RESEND_FROM: "not an address zzq", NEXT_PUBLIC_APP_URL: "https://a.test" }, log);
