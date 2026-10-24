@@ -193,6 +193,17 @@ pm2 restart guddesk
 
 Always review the [changelog](https://github.com/gudlab/guddesk-core/releases) before updating to check for breaking changes or required migration steps.
 
+### Upgrading: automation runs
+
+This release adds migration `0003_automation_runs`. It creates the `automation_runs` table, which records each automation run so a rule fires once per event, and adds a nullable `unassignedAt` column to `conversations`. Nothing existing is changed or dropped.
+
+Back up the database first, then apply it the same way you set up the schema:
+
+- If you followed this guide (`pnpm prisma db push`), run the steps above. `db push` adds the new table and column.
+- If you manage the schema with migrations instead, run `pnpm prisma migrate deploy`.
+
+Conversations from before the upgrade have no `unassignedAt`, so the "Unassigned for" condition only counts conversations that were unassigned after you upgraded.
+
 ## System Requirements
 
 | Resource | Minimum | Recommended |
