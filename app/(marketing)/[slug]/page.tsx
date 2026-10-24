@@ -29,7 +29,7 @@ export async function generateMetadata({
   const { title, description } = page;
 
   return constructMetadata({
-    title: `${title} – GudDesk`,
+    title: `${title} | GudDesk`,
     description: description,
   });
 }

@@ -321,7 +321,7 @@ export const features: Feature[] = [
       {
         question: "Can I import existing documentation?",
         answer:
-          "You can create articles via the REST API, which makes it straightforward to import from other platforms. A dedicated import tool is planned.",
+          "There is no import tool yet. You can create articles through the REST API and bring content over from other platforms with your own script.",
       },
     ],
     relatedFeatures: ["ai-agents", "live-chat", "analytics"],

@@ -293,7 +293,7 @@ export const useCases: UseCase[] = [
       {
         title: "Report to clients with data",
         description:
-          "Built-in analytics show conversation volume, response times, resolution times, and CSAT scores. Export reports for client reviews.",
+          "Built-in analytics show conversation volume, response times, resolution times, and CSAT scores to share in client reviews.",
         icon: "analytics",
       },
     ],

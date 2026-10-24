@@ -46,7 +46,7 @@ const faqs = [
   {
     question: "Can I migrate from Intercom?",
     answer:
-      "We are building migration tools to import your conversations and articles. In the meantime, you can run both tools side by side during your transition.",
+      "There is no Intercom importer yet. Export your data from Intercom, then create customers and help articles through the GudDesk REST API. You can run both tools side by side while you switch.",
   },
 ];
 

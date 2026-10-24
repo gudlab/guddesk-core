@@ -8,7 +8,7 @@ import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 import { Icons } from "@/components/shared/icons";
 
 export const metadata: Metadata = {
-  title: "Roadmap – GudDesk",
+  title: "Roadmap | GudDesk",
   description:
     "See what we're building next. Our public roadmap shows completed features, current work, and future plans.",
 };

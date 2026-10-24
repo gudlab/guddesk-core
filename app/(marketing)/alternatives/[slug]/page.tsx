@@ -282,7 +282,7 @@ export default async function AlternativePage({ params }: PageProps) {
               Ready to switch from {alt.name}?
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Free for 2 members. No credit card required. Self-host the code if you prefer.
+              Cloud Free for 2 members. No credit card required. Self-host the code if you prefer.
             </p>
             <div className="mt-8 flex justify-center gap-3">
               <Link

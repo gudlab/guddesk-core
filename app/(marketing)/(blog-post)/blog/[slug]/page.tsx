@@ -44,7 +44,7 @@ export async function generateMetadata({
   const { title, description, image } = post;
 
   return constructMetadata({
-    title: `${title} – GudDesk`,
+    title: `${title} | GudDesk`,
     description: description,
     image,
   });

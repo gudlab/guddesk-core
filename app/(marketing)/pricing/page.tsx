@@ -18,7 +18,7 @@ import { Icons } from "@/components/shared/icons";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
 export const metadata: Metadata = {
-  title: "Pricing – GudDesk",
+  title: "Pricing | GudDesk",
   description:
     "GudDesk Pro is $29 a month flat for any team size. No per-seat or per-resolution fees. Free plan for 2 members.",
 };

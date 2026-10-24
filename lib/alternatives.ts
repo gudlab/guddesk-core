@@ -109,7 +109,7 @@ export const alternatives: Alternative[] = [
     tagline: "The open-source Zendesk alternative",
     description:
       "Zendesk is the enterprise standard for customer support, but its complexity and pricing make it overkill for most teams. GudDesk delivers live chat, a shared inbox and an agent API without the enterprise price tag.",
-    pricing: "Zendesk Suite costs $55 to $115 per agent a month billed annually ($69 to $149 billed monthly). Enterprise pricing is by quote.",
+    pricing: "Zendesk Suite costs $55 to $115 per agent a month billed annually ($69 to $149 billed monthly). Enterprise pricing is by quote (zendesk.com/pricing, 20 Oct 2026).",
     weaknesses: [
       "Expensive per-agent pricing even for basic features",
       "Complex setup and configuration. Steep learning curve",
@@ -144,7 +144,7 @@ export const alternatives: Alternative[] = [
       {
         title: "No enterprise tax",
         description:
-          "Zendesk Suite costs $55 to $115 per agent a month billed annually ($69 to $149 billed monthly), and Enterprise pricing is by quote. GudDesk is free for small teams and uses flat pricing, not per-agent fees that punish you for growing.",
+          "Zendesk Suite costs $55 to $115 per agent a month billed annually ($69 to $149 billed monthly), and Enterprise pricing is by quote (zendesk.com/pricing, 20 Oct 2026). GudDesk is free for small teams and uses flat pricing, not per-agent fees that punish you for growing.",
       },
       {
         title: "Agent API, not a bolted-on bot",
@@ -166,7 +166,7 @@ export const alternatives: Alternative[] = [
       {
         question: "How do I migrate from Zendesk to GudDesk?",
         answer:
-          "Export your Zendesk data using their API or admin tools. GudDesk can import customer profiles and conversation history. We're building a dedicated Zendesk migration tool to streamline this process.",
+          "There is no Zendesk importer yet. Export your data from Zendesk, then create customers and help articles through the GudDesk REST API. You can run both tools side by side while you switch.",
       },
       {
         question: "Is GudDesk secure enough for our team?",
@@ -181,9 +181,9 @@ export const alternatives: Alternative[] = [
     tagline: "The open-source Freshdesk alternative",
     description:
       "Freshdesk offers solid support tooling, but AI features and advanced automations are locked behind expensive plans. GudDesk gives you live chat, a shared inbox and an agent API. Cloud Free covers 2 members.",
-    pricing: "Free tier available but limited. Paid plans start at $15/agent/month billed annually. Pro is $55/agent/month billed annually.",
+    pricing: "Growth is $19, Pro $55 and Enterprise $89 per agent a month billed annually (freshworks.com/freshdesk/pricing, 20 Oct 2026). The Free Program covers 2 agents for 6 months.",
     weaknesses: [
-      "Free tier is very limited (no automations, basic reporting)",
+      "No permanent free plan. The Free Program covers 2 agents for 6 months",
       "Freddy AI Copilot is $29/agent/mo; extra agent sessions are $49 per 100 (as of 14 Oct 2026)",
       "Chat widget (Freshchat) is a separate product with separate pricing",
       "Per-agent pricing across multiple products adds up",
@@ -194,10 +194,10 @@ export const alternatives: Alternative[] = [
       { name: "Shared inbox", competitor: true, guddesk: true },
       { name: "AI agents", competitor: "Freddy AI Agent (Growth+; extra sessions $49/100, as of 14 Oct 2026)", guddesk: "Bring your own via API" },
       { name: "Knowledge base", competitor: true, guddesk: true },
-      { name: "Workflow automations", competitor: "Growth plan+ ($15/agent/mo billed annually)", guddesk: "Included free" },
+      { name: "Workflow automations", competitor: "Growth plan+ ($19/agent/mo billed annually)", guddesk: "Included free" },
       { name: "Self-hosting", competitor: false, guddesk: true },
       { name: "Open source", competitor: false, guddesk: "AGPL-3.0" },
-      { name: "Free tier", competitor: "Limited (10 agents, no automations)", guddesk: "Full features (2 members)" },
+      { name: "Free plan", competitor: "Free Program: 2 agents for 6 months", guddesk: "2 members, 500 conversations a month, no time limit" },
       { name: "Unified platform", competitor: "Multiple products", guddesk: "All-in-one" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
       { name: "Slack integration", competitor: true, guddesk: true },
@@ -210,9 +210,9 @@ export const alternatives: Alternative[] = [
           "Freshworks splits support across Freshdesk, Freshchat, and Freshcaller. GudDesk unifies live chat, email, and bot conversations in a single platform with a single price.",
       },
       {
-        title: "Full features on the free tier",
+        title: "Free with no time limit",
         description:
-          "Freshdesk's free tier strips out automations, AI and advanced reporting. GudDesk Cloud Free includes live chat, automations, knowledge base and the agent API for 2 members.",
+          "Freshdesk's Free Program ends after 6 months. GudDesk Cloud Free includes live chat, automations, knowledge base and the agent API for 2 members, with no time limit.",
       },
       {
         title: "Your own bot on every plan",
@@ -229,7 +229,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Is GudDesk's free tier better than Freshdesk's?",
         answer:
-          "For small teams, yes. Freshdesk's free plan supports 10 agents but excludes automations, AI and most advanced features. GudDesk Cloud Free covers 2 members with live chat, inbox, knowledge base, automations and the agent API.",
+          "For small teams, yes. Freshdesk's Free Program covers 2 agents for 6 months, then you move to a paid plan. GudDesk Cloud Free covers 2 members and 500 conversations a month with no time limit, with live chat, inbox, knowledge base, automations and the agent API.",
       },
       {
         question: "Do I need Freshchat too, or does GudDesk cover chat?",

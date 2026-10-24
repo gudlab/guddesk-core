@@ -1,6 +1,6 @@
 # GudDesk Roadmap
 
-> The open-source customer support platform that combines Intercom-quality UX, Crisp-style workspace pricing, and AI-first resolution, without the enterprise tax.
+> The open-source customer support platform with Intercom-quality UX and Crisp-style workspace pricing. Support that resolves questions fast, with AI where it helps, and without the enterprise tax.
 
 ---
 
