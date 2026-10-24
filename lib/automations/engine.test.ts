@@ -447,7 +447,13 @@ describe("failure isolation", () => {
     w.setPostSlack(
       (_url, _text, signal) =>
         new Promise((_resolve, reject) => {
-          signal.addEventListener("abort", () => reject(signal.reason));
+          // AbortSignal.timeout() doesn't keep the event loop alive, so a
+          // hanging request needs a timer of its own here (fetch has one).
+          const hang = setTimeout(() => undefined, 5000);
+          signal.addEventListener("abort", () => {
+            clearTimeout(hang);
+            reject(signal.reason);
+          });
         }),
     );
     const slack = w.addRule({ trigger: "MESSAGE_RECEIVED", action: "NOTIFY_SLACK", actionConfig: { message: "New" }, order: 0 });
