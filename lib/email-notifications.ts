@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 
 import { prisma } from "@/lib/db";
+import { unverifiedReplyEmail } from "@/lib/inbound-email/bounce";
+import type { UnverifiedReplyBounce } from "@/lib/inbound-email/handler";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const brandColor = "#3ECF8E";
@@ -136,5 +138,38 @@ export async function sendSlaBreachNotification(
     });
   } catch (error) {
     console.error("Failed to send SLA breach notification:", error);
+  }
+}
+
+/**
+ * A member's own email reply failed DMARC/DKIM and wasn't posted: tell
+ * them at their account address. No Reply-To (they should answer in the
+ * app) and never the original body. Same sender as the other notifications
+ * here; it moves to emailFrom() with the rest when RESEND_FROM lands.
+ */
+export async function sendUnverifiedReplyBounce(bounce: UnverifiedReplyBounce): Promise<boolean> {
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: bounce.workspaceId },
+    select: { slug: true },
+  });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const inboxUrl = workspace ? `${appUrl}/workspace/${workspace.slug}/inbox?c=${bounce.conversationId}` : appUrl;
+  const content = unverifiedReplyEmail({ memberName: bounce.memberName, inboxUrl });
+  try {
+    const { error } = await resend.emails.send({
+      from: "GudDesk <notifications@guddesk.com>",
+      to: bounce.to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+    });
+    if (error) {
+      console.error(`[email] send failed: template=unverified-reply-bounce error=${error.name}`);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error(`[email] send failed: template=unverified-reply-bounce error=${error instanceof Error ? error.name : "error"}`);
+    return false;
   }
 }

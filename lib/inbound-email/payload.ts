@@ -128,7 +128,9 @@ export function fromReceivedEmail(
   const headers = lowerHeaders(received.headers);
   const fromRaw = headers.from ?? (typeof received.from === "string" ? received.from : "");
   const from = splitAddress(fromRaw);
-  const bare = typeof received.from === "string" ? received.from.trim() : "";
+  // received.from can carry a display name too ("Name <a@b>"): match
+  // members on the bare address only.
+  const bare = typeof received.from === "string" ? splitAddress(received.from).address : "";
   const text =
     typeof received.text === "string" && received.text.trim()
       ? received.text

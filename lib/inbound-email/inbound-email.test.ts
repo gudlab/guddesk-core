@@ -4,7 +4,14 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import type { InboundPayload } from "../channels/types";
-import { handleInboundEmail, senderAuthenticated, type InboundDb, type InboundDeps } from "./handler";
+import { BOUNCE_WINDOW_MS, bounceKey, unverifiedReplyEmail } from "./bounce";
+import {
+  handleInboundEmail,
+  senderAuthenticated,
+  type InboundDb,
+  type InboundDeps,
+  type UnverifiedReplyBounce,
+} from "./handler";
 import { htmlToText, parseInboundPayload } from "./payload";
 import { DONE, FINISHED_TTL_MS, IN_FLIGHT_TTL_MS, PROCESSING, replayKey, sweepExpiredWebhookIds } from "./replay";
 import { signSvixPayload, verifySvixSignature } from "./signature";
@@ -129,6 +136,7 @@ function setup(overrides: Partial<InboundDeps> = {}) {
   const customer: InboundPayload[] = [];
   const fetched: string[] = [];
   const broadcasts: unknown[] = [];
+  const bounces: UnverifiedReplyBounce[] = [];
   const received: Record<string, Record<string, unknown>> = {};
   const deps: InboundDeps = {
     db: store.db,
@@ -149,9 +157,13 @@ function setup(overrides: Partial<InboundDeps> = {}) {
       broadcasts.push(events);
       return true;
     },
+    async sendUnverifiedReplyBounce(bounce) {
+      bounces.push(bounce);
+      return true;
+    },
     ...overrides,
   };
-  return { ...store, logs, customer, fetched, broadcasts, received, deps };
+  return { ...store, logs, customer, fetched, broadcasts, bounces, received, deps };
 }
 
 function signed(body: unknown, opts: { id?: string; ts?: string; secret?: string; signature?: string } = {}) {
@@ -324,14 +336,28 @@ describe("POST /api/email/inbound: rejections", () => {
     assert.equal(t.customer.length, 1);
   });
 
-  it("the sweep deletes only expired inbound:svix rows", async () => {
+  it("a database error on the claim: 500 with one reason-coded line, no stack", async () => {
+    const t = setup();
+    (t.db as unknown as { verificationToken: { updateMany: () => Promise<never> } }).verificationToken.updateMany = async () => {
+      throw Object.assign(new Error("Can't reach database server at db.internal for jane@example.com"), {
+        name: "PrismaClientInitializationError",
+      });
+    };
+    const res = await handleInboundEmail(signed(receivedEvent("em_1", ["support+appa@mail.guddesk.com"])), t.deps);
+    assert.deepEqual(res, { status: 500, body: { error: "Failed to process inbound email" } });
+    assert.deepEqual(t.logs, ["[inbound-email] failed reason=claim_error error=PrismaClientInitializationError svix_id=msg_2abc"]);
+    assert.equal(t.fetched.length, 0);
+  });
+
+  it("the sweep deletes only expired inbound rows (replay ids and bounce limits)", async () => {
     const t = setup();
     const past = new Date(NOW.getTime() - 1000);
     const future = new Date(NOW.getTime() + 1000);
     t.tokens.set(replayKey("old"), { identifier: DONE, expires: past });
     t.tokens.set(replayKey("live"), { identifier: DONE, expires: future });
+    t.tokens.set(bounceKey("u_agent", "conva"), { identifier: "inbound:bounce:", expires: past });
     t.tokens.set("throttle:sla:ws_a", { identifier: "throttle:sla:ws_a", expires: past });
-    assert.equal(await sweepExpiredWebhookIds(t.db, NOW), 1);
+    assert.equal(await sweepExpiredWebhookIds(t.db, NOW), 2);
     assert.deepEqual([...t.tokens.keys()].sort(), [replayKey("live"), "throttle:sla:ws_a"].sort());
     const cron = readFileSync(join(__dirname, "..", "..", "app", "api", "cron", "sla-check", "route.ts"), "utf8");
     assert.match(cron, /sweepExpiredWebhookIds\(prisma\)/);
@@ -439,71 +465,155 @@ describe("POST /api/email/inbound: reply+ address", () => {
     assert.equal(t.messages[0].type, "AGENT");
   });
 
-  it("member with DMARC fail: ignored as a spoof, not filed as anything", async () => {
-    const { t, res } = await replyTo("agent@acme.test", "conva", "fail", "pass");
-    assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
-    assert.equal(t.messages.length + t.customer.length, 0);
+  /** A member's reply that failed the checks: not posted, one agent-only note, one bounce to the account address. */
+  function assertUnverified(t: ReturnType<typeof setup>, res: { status: number; body: unknown }) {
+    assert.deepEqual(res, { status: 200, body: { ignored: "sender_not_authenticated" } });
+    assert.equal(t.customer.length, 0, "never filed as a customer message");
+    assert.equal(t.messages.length, 1);
+    assert.equal(t.messages[0].type, "NOTE", "agents only");
+    assert.equal(t.messages[0].conversationId, "conva");
+    assert.equal(t.messages[0].senderId, null);
+    assert.match(String(t.messages[0].body), /An email reply from Ada Agent couldn't be verified \(DMARC\/DKIM\), so it wasn't posted\./);
+    assert.ok(!String(t.messages[0].body).includes("Agent reply text"));
+    assert.ok(!String(t.messages[0].body).includes("@"));
+    assert.deepEqual(t.bounces, [
+      { to: "agent@acme.test", memberName: "Ada Agent", conversationId: "conva", workspaceId: "ws_a" },
+    ]);
+    assert.deepEqual(t.logs, ["[inbound-email] ignored reason=sender_not_authenticated notice=posted bounce=sent svix_id=msg_2abc"]);
     assertCleanLogs(t.logs);
+  }
+
+  it("member with DMARC fail: not posted; agent-only note and a bounce to the member", async () => {
+    const { t, res } = await replyTo("agent@acme.test", "conva", "fail", "pass");
+    assertUnverified(t, res);
   });
 
-  it("member with gray DMARC and no DKIM pass: ignored as a spoof", async () => {
+  it("member with gray DMARC and no DKIM pass: not posted; note and bounce", async () => {
     const { t, res } = await replyTo("agent@acme.test", "conva", "none", "fail");
-    assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
-    assert.equal(t.messages.length, 0);
+    assertUnverified(t, res);
   });
 
-  it("member through the legacy shape (no auth results): ignored as a spoof", async () => {
+  it("member through the legacy shape (no auth results): not posted; note and bounce", async () => {
     const t = setup();
     const res = await handleInboundEmail(
       signed({ from: "agent@acme.test", to: ["reply+conva@mail.guddesk.com"], text: "Agent reply text" }),
       t.deps,
     );
-    assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
-    assert.equal(t.messages.length, 0);
+    assertUnverified(t, res);
   });
 
-  it("the customer's usual address: filed as a customer message in that conversation", async () => {
+  it("a display-name spoof of a member ('Name <member@...>') is matched on the address: not filed as a customer", async () => {
+    const t = setup();
+    t.received.em_2 = {
+      ...agentEmail("Ada Agent <agent@acme.test>", "conva", "fail", "fail"),
+      from: "Ada Agent <agent@acme.test>",
+    };
+    const res = await handleInboundEmail(signed(receivedEvent("em_2", ["reply+conva@mail.guddesk.com"])), t.deps);
+    assertUnverified(t, res);
+  });
+
+  it("the note and bounce go out at most once per member per conversation per hour", async () => {
+    const t = setup();
+    t.received.em_2 = agentEmail("agent@acme.test", "conva", "fail", "fail");
+    const event = receivedEvent("em_2", ["reply+conva@mail.guddesk.com"]);
+    for (const id of ["msg_s1", "msg_s2", "msg_s3"]) {
+      const res = await handleInboundEmail(signed(event, { id }), t.deps);
+      assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
+    }
+    assert.equal(t.messages.length, 1);
+    assert.equal(t.bounces.length, 1);
+    assert.match(t.logs[1], /^\[inbound-email\] ignored reason=sender_not_authenticated notice=rate_limited svix_id=msg_s2$/);
+    assert.equal(t.tokens.get(bounceKey("u_agent", "conva"))?.expires.getTime(), NOW.getTime() + BOUNCE_WINDOW_MS);
+    // An hour later, another one may go out.
+    const later = new Date(NOW.getTime() + BOUNCE_WINDOW_MS);
+    t.deps.now = () => later;
+    await handleInboundEmail(signed(event, { id: "msg_s4", ts: String(Math.floor(later.getTime() / 1000)) }), t.deps);
+    assert.equal(t.messages.length, 2);
+    assert.equal(t.bounces.length, 2);
+  });
+
+  it("a bounce that fails to send is logged; still a 200 and the note stays", async () => {
+    const { t, res } = await replyTo("agent@acme.test", "conva", "fail", "fail", (x) => {
+      x.deps.sendUnverifiedReplyBounce = async () => false;
+    });
+    assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
+    assert.equal(t.messages.length, 1);
+    assert.match(t.logs[0], /notice=posted bounce=failed/);
+  });
+
+  it("a database failure saving the note: 500, and both the svix-id and the bounce slot are freed", async () => {
+    const { t, res } = await replyTo("agent@acme.test", "conva", "fail", "fail", (x) => {
+      (x.db as unknown as { message: { create: () => Promise<never> } }).message.create = async () => {
+        throw Object.assign(new Error("db down"), { name: "PrismaClientKnownRequestError" });
+      };
+    });
+    assert.equal(res.status, 500);
+    assert.equal(t.tokens.size, 0);
+    assert.equal(t.bounces.length, 0);
+  });
+
+  it("the bounce email never includes the original body", () => {
+    const email = unverifiedReplyEmail({ memberName: "Ada <b>", inboxUrl: "https://app.test/workspace/acme/inbox?c=conva" });
+    assert.equal(email.subject, "Your email reply wasn't posted");
+    assert.match(email.text, /couldn't be verified \(DMARC\/DKIM\), so it wasn't posted/);
+    assert.match(email.text, /https:\/\/app\.test\/workspace\/acme\/inbox\?c=conva/);
+    assert.match(email.html, /Ada &lt;b&gt;/);
+    assert.ok(!email.html.includes("<b>"));
+  });
+
+  /** Filed through the email channel's own customer path, threaded onto the conversation. */
+  function assertCustomerReply(t: ReturnType<typeof setup>, from: string) {
+    assert.equal(t.messages.length, 0, "not written here: the channel's path writes it");
+    assert.equal(t.customer.length, 1);
+    assert.deepEqual(t.customer[0], {
+      workspaceId: "ws_a",
+      from,
+      fromName: undefined,
+      subject: "Help",
+      body: "Agent reply text",
+      threadId: "conva",
+    });
+  }
+
+  it("the customer's usual address: filed through the customer path, threaded onto that conversation", async () => {
     const { t, res } = await replyTo("Jane.Customer@example.com", "conva", "none", "none");
     assert.equal(res.status, 200);
-    assert.equal(t.messages.length, 1);
-    assert.equal(t.messages[0].type, "VISITOR");
-    assert.equal(t.messages[0].conversationId, "conva");
-    assert.equal(t.messages[0].senderId, null);
-    const update = t.conversationUpdates[0] as { data: Record<string, unknown> };
-    assert.equal(update.data.status, "OPEN", "a closed conversation reopens");
-    assert.equal(update.data.firstResponseAt, undefined, "a customer message is not a first response");
+    assertCustomerReply(t, "Jane.Customer@example.com");
+    assert.equal(t.bounces.length, 0);
     assertCleanLogs(t.logs);
   });
 
-  it("a stranger: filed as a customer message, never as an agent", async () => {
+  it("a stranger: a customer message, never an agent", async () => {
     const { t } = await replyTo("stranger@example.com", "conva");
-    assert.equal(t.messages.length, 1);
-    assert.equal(t.messages[0].type, "VISITOR");
+    assertCustomerReply(t, "stranger@example.com");
   });
 
   it("a member of another workspace (cross-workspace id): a customer message, never an agent", async () => {
     const { t } = await replyTo("agent@acme.test", "convb");
-    assert.equal(t.messages.length, 1);
-    assert.equal(t.messages[0].type, "VISITOR");
-    assert.equal(t.messages[0].senderId, null);
+    assert.equal(t.messages.length, 0);
+    assert.equal(t.customer.length, 1);
+    assert.equal(t.customer[0].workspaceId, "ws_b");
+    assert.equal(t.customer[0].threadId, "convb");
   });
 
   it("a removed member: no longer a member, so a customer message", async () => {
     const { t } = await replyTo("removed@acme.test", "conva");
-    assert.equal(t.messages[0].type, "VISITOR");
+    assertCustomerReply(t, "removed@acme.test");
   });
 
-  it("a banned member: ignored", async () => {
-    const { t, res } = await replyTo("banned@acme.test", "conva");
-    assert.deepEqual(res.body, { ignored: "sender_banned" });
-    assert.equal(t.messages.length, 0);
+  it("a banned member: ignored, with no note and no bounce", async () => {
+    for (const dmarc of ["pass", "fail"]) {
+      const { t, res } = await replyTo("banned@acme.test", "conva", dmarc, dmarc);
+      assert.deepEqual(res.body, { ignored: "sender_banned" });
+      assert.equal(t.messages.length + t.customer.length + t.bounces.length, 0);
+    }
   });
 
   /** A customer reply that can't be filed: 422 with a reason, logged, svix-id freed for the retry. */
   function assertUnfiled(t: ReturnType<typeof setup>, res: { status: number; body: unknown }, reason: string) {
     assert.equal(res.status, 422);
     assert.deepEqual(res.body, { error: "Customer reply not filed", reason });
-    assert.equal(t.messages.length, 0);
+    assert.equal(t.messages.length + t.customer.length, 0);
     assert.equal(t.tokens.size, 0, "svix-id released so Svix's retry is processed");
     assert.equal(t.logs.length, 1);
     assert.equal(t.logs[0], `[inbound-email] unfiled reason=${reason} svix_id=msg_2abc`);
@@ -521,18 +631,30 @@ describe("POST /api/email/inbound: reply+ address", () => {
     t.disabledChannels.delete("ws_a");
     const retry = await handleInboundEmail(signed(receivedEvent("em_2", ["reply+conva@mail.guddesk.com"])), t.deps);
     assert.equal(retry.status, 200);
-    assert.equal(t.messages.length, 1);
-    assert.equal(t.messages[0].type, "VISITOR");
+    assert.equal(t.customer.length, 1);
+    assert.equal(t.customer[0].threadId, "conva");
   });
 
-  it("unknown conversation: 422, not dropped", async () => {
+  it("unknown conversation: 200 ignored before any Resend fetch (a retry can't help)", async () => {
     const { t, res } = await replyTo("jane.customer@example.com", "nosuch");
-    assertUnfiled(t, res, "unknown_conversation");
+    assert.deepEqual(res, { status: 200, body: { ignored: "unknown_conversation" } });
+    assert.equal(t.fetched.length, 0, "looked up before receiving.get");
+    assert.equal(t.messages.length + t.customer.length, 0);
+    assert.deepEqual(t.logs, ["[inbound-email] ignored reason=unknown_conversation svix_id=msg_2abc"]);
+  });
+
+  it("unknown conversation through the legacy shape: 200 ignored too", async () => {
+    const t = setup();
+    const res = await handleInboundEmail(
+      signed({ from: "jane.customer@example.com", to: ["reply+nosuch@mail.guddesk.com"], text: "Private customer text" }),
+      t.deps,
+    );
+    assert.deepEqual(res.body, { ignored: "unknown_conversation" });
   });
 
   it("a database failure while filing: 500, logged without details, svix-id freed", async () => {
     const { t, res } = await replyTo("jane.customer@example.com", "conva", "pass", "pass", (x) => {
-      (x.db as unknown as { message: { create: () => Promise<never> } }).message.create = async () => {
+      x.deps.handleCustomerInbound = async () => {
         throw Object.assign(new Error("connection lost for jane.customer@example.com"), { name: "PrismaClientKnownRequestError" });
       };
     });

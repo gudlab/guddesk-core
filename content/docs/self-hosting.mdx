@@ -203,7 +203,20 @@ Back up the database first, then apply it the same way you set up the schema:
 - If you followed this guide (`pnpm prisma db push`), run the steps above. `db push` adds the new table and column.
 - If you manage the schema with migrations instead, run `pnpm prisma migrate deploy`.
 
-Conversations from before the upgrade have no `unassignedAt`, so the "Unassigned for" condition only counts conversations that were unassigned after you upgraded.
+Conversations from before the upgrade have no `unassignedAt`, so the "Unassigned for" condition skips them until they are next unassigned. Conversations created after the upgrade do count: new widget, email and API conversations start with `unassignedAt` set to when they were created, and unassigning a conversation sets it again.
+
+**Optional backfill, run by you.** To have "Unassigned for" also cover conversations that are open and unassigned right now, you can set their `unassignedAt` yourself. The app never runs this. Back up first, and run it once after the upgrade:
+
+```sql
+-- Optional. Open or snoozed, unassigned, and from before the upgrade.
+UPDATE conversations
+SET "unassignedAt" = updated_at
+WHERE "assigneeId" IS NULL
+  AND "unassignedAt" IS NULL
+  AND status <> 'CLOSED';
+```
+
+`updated_at` is the cautious choice: it is the last time the conversation changed, so rules count from then. Use `created_at` instead to count from when the conversation was opened. Either way, "Unassigned for" rules whose time has already passed fire for these conversations on the next hourly run, so check your rules first.
 
 ## System Requirements
 
