@@ -48,6 +48,15 @@ describe("reply+ customer replies use the email channel's customer path", () => 
     assert.match(appendBody, /dispatchWebhooks\(workspaceId, "message\.created", \{/);
   });
 
+  it("the unverified-reply bounce goes through sendEmail from emailFrom(), like every other notification", () => {
+    const notifications = read("lib/email-notifications.ts");
+    const bounce = notifications.slice(notifications.indexOf("export async function sendUnverifiedReplyBounce"));
+    assert.match(bounce, /sendEmail\("unverified-reply-bounce", \{\s*from: emailFrom\(\),/);
+    assert.doesNotMatch(bounce, /bounceFrom|guddesk\.com/);
+    assert.doesNotMatch(notifications, /new Resend\(/);
+    assert.match(read("lib/email/send.ts"), /\| "unverified-reply-bounce";/);
+  });
+
   it("appending runs automations (message received, from the visitor)", () => {
     assert.match(appendBody, /fireAutomations\(\s*messageReceivedEvent\(\{[\s\S]*?origin: origin\("visitor"\),/);
   });
