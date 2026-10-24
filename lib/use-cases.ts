@@ -188,7 +188,7 @@ export const useCases: UseCase[] = [
     slug: "startups",
     name: "Startups",
     tagline: "Support that grows with your startup",
-    headline: "World-class support on a startup budget",
+    headline: "Customer support at a flat price for startups",
     description:
       "Startups need support tools at a flat $29 a month. GudDesk Cloud Free covers 2 members. Connect your own agent through the API. Self-host if you need no caps.",
     benefits: [

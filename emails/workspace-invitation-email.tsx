@@ -71,7 +71,7 @@ export const WorkspaceInvitationEmail = ({
 
           {/* Footer */}
           <Text className="mt-6 text-center text-xs text-gray-400">
-            GudDesk — Open-source customer messaging platform
+            GudDesk, the open-source customer messaging platform
           </Text>
           <Text className="mt-1 text-center text-xs text-gray-400">
             guddesk.com

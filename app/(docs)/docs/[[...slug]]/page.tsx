@@ -39,7 +39,7 @@ export async function generateMetadata({
   const { title, description } = doc;
 
   return constructMetadata({
-    title: `${title} – GudDesk`,
+    title: `${title} | GudDesk`,
     description: description,
   });
 }

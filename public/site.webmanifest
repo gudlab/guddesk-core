@@ -1,7 +1,7 @@
 {
-  "name": "GudDesk — Customer Messaging Platform",
+  "name": "GudDesk: Customer Messaging Platform",
   "short_name": "GudDesk",
-  "description": "Open-source customer messaging platform. Live chat, shared inbox, knowledge base, and AI-powered support — all in one place.",
+  "description": "Open-source customer messaging platform with live chat and a shared inbox.",
   "start_url": "/dashboard",
   "scope": "/",
   "id": "/",

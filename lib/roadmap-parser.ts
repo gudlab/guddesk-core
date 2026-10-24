@@ -103,7 +103,8 @@ export function parseRoadmap(markdown: string): RoadmapPhase[] {
     }
 
     // Checklist item: - [x] or - [ ]
-    const itemMatch = line.match(/^- \[([ xX])\] \*\*(.+?)\*\*\s*(?:—\s*(.*))?$/);
+    // Accepts "**Title**: desc", the older "**Title** \u2014 desc" and a bare "**Title**".
+    const itemMatch = line.match(/^- \[([ xX])\] \*\*(.+?)\*\*(?::|\s*\u2014)?\s*(.*)$/);
     if (itemMatch && currentSection) {
       currentSection.items.push({
         checked: itemMatch[1].toLowerCase() === "x",

@@ -178,9 +178,9 @@ export const alternatives: Alternative[] = [
     tagline: "The open-source Freshdesk alternative",
     description:
       "Freshdesk offers solid support tooling, but AI features and advanced automations are locked behind expensive plans. GudDesk gives you live chat and a shared inbox, plus an agent API for your own bot. Cloud Free covers 2 members.",
-    pricing: "Growth is $19, Pro $55 and Enterprise $89 per agent a month billed annually (freshworks.com/freshdesk/pricing, 20 Oct 2026). The Free Program covers 2 agents for 6 months.",
+    pricing: "Growth is $19, Pro $55 and Enterprise $89 per agent a month billed annually (freshworks.com/freshdesk/pricing, 20 Oct 2026). The Free Program covers 2 agents for 6 months, through their sales team.",
     weaknesses: [
-      "No permanent free plan. The Free Program covers 2 agents for 6 months",
+      "No permanent free plan. The Free Program covers 2 agents for 6 months and goes through sales",
       "Freddy AI Copilot is $29/agent/mo; extra agent sessions are $49 per 100 (as of 14 Oct 2026)",
       "Chat widget (Freshchat) is a separate product with separate pricing",
       "Per-agent pricing across multiple products adds up",
@@ -209,7 +209,7 @@ export const alternatives: Alternative[] = [
       {
         title: "Free with no time limit",
         description:
-          "Freshdesk's Free Program ends after 6 months. GudDesk Cloud Free includes live chat, automations, knowledge base and the agent API for 2 members, with no time limit. GudDesk branding stays on, and Slack and advanced analytics are on Pro.",
+          "Freshdesk's Free Program ends after 6 months. GudDesk Cloud Free includes live chat, automations, knowledge base and the agent API for 2 members, with no time limit. Pro removes branding and lifts the member and conversation limits.",
       },
       {
         title: "Your own bot on every plan",

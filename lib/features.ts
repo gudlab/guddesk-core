@@ -433,7 +433,7 @@ export const features: Feature[] = [
       {
         title: "Workload monitoring",
         description:
-          "See agent availability and workload per agent, updating live when you add Pusher keys. Balance the load before anyone burns out.",
+          "See active conversation counts and workload per agent, updating live when you add Pusher keys. Balance the load before anyone burns out.",
         icon: "eye",
       },
     ],
@@ -446,7 +446,6 @@ export const features: Feature[] = [
       "NPS surveys",
       "Workload monitoring",
       "Daily analytics snapshots",
-      "Agent availability tracking",
       "Per-workspace analytics",
     ],
     useCaseExamples: [
