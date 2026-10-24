@@ -9,6 +9,7 @@ const SECRET = "test-cron-secret";
 const ROUTES = [
   "agent-performance",
   "analytics",
+  "automations",
   "sla-check",
   "surveys",
   "webhook-cleanup",

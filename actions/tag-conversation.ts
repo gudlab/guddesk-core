@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { requireWorkspaceMember } from "@/lib/workspace";
 import { safeTrigger } from "@/lib/pusher-server";
 import { revalidatePath } from "next/cache";
+import { fireAutomations } from "@/lib/automations/dispatch";
+import { origin, tagAddedEvents } from "@/lib/automations/events";
 
 export async function tagConversation(
   conversationId: string,
@@ -18,7 +20,7 @@ export async function tagConversation(
 
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      select: { workspaceId: true },
+      select: { workspaceId: true, tags: true },
     });
 
     if (!conversation) {
@@ -32,10 +34,22 @@ export async function tagConversation(
       (t) => t.length > 0 && t.length <= 50,
     );
 
-    await prisma.conversation.update({
+    const updated = await prisma.conversation.update({
       where: { id: conversationId },
       data: { tags: cleanTags },
+      select: { updatedAt: true },
     });
+
+    fireAutomations(
+      tagAddedEvents({
+        workspaceId: conversation.workspaceId,
+        conversationId,
+        before: conversation.tags,
+        after: cleanTags,
+        at: updated.updatedAt,
+        origin: origin("agent"),
+      }),
+    );
 
     await safeTrigger(
       `private-workspace-${conversation.workspaceId}`,

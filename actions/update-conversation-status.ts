@@ -7,6 +7,8 @@ import { safeTriggerBatch } from "@/lib/pusher-server";
 import { triggerCsatSurvey } from "@/lib/surveys/trigger";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { revalidatePath } from "next/cache";
+import { fireAutomations } from "@/lib/automations/dispatch";
+import { conversationClosedEvent, origin } from "@/lib/automations/events";
 
 export async function updateConversationStatus(
   conversationId: string,
@@ -30,10 +32,11 @@ export async function updateConversationStatus(
 
     await requireWorkspaceMember(conversation.workspaceId, session.user.id);
 
+    const closedAt = status === "CLOSED" ? new Date() : null;
     const data: Record<string, unknown> = {
       status,
       snoozedUntil: status === "SNOOZED" && snoozedUntil ? new Date(snoozedUntil) : null,
-      closedAt: status === "CLOSED" ? new Date() : null,
+      closedAt,
     };
 
     await prisma.conversation.update({
@@ -81,6 +84,18 @@ export async function updateConversationStatus(
         closedBy: session.user.id,
         closedByName: session.user.name,
       });
+
+      // Only a change into CLOSED fires "conversation closed".
+      if (closedAt && conversation.status !== "CLOSED") {
+        fireAutomations(
+          conversationClosedEvent({
+            workspaceId: conversation.workspaceId,
+            conversationId,
+            closedAt,
+            origin: origin("agent"),
+          }),
+        );
+      }
     }
 
     revalidatePath(`/workspace`);

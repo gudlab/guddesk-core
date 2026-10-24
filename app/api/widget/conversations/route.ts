@@ -6,6 +6,8 @@ import { dispatchWebhooks } from "@/lib/webhooks";
 import { createVisitorToken, verifyVisitorToken } from "@/lib/visitor-auth";
 import { computeSlaDeadlines } from "@/lib/sla/compute";
 import { VISITOR_NOT_FOUND } from "@/lib/widget-visitor";
+import { fireAutomations } from "@/lib/automations/dispatch";
+import { conversationCreatedEvents, origin } from "@/lib/automations/events";
 
 // POST /api/widget/conversations
 // Creates a new conversation (or resumes existing) with the first message
@@ -163,6 +165,16 @@ export async function POST(req: NextRequest) {
         workspaceId: workspace.id,
       });
     }
+
+    // Automation rules run after the response.
+    fireAutomations(
+      conversationCreatedEvents({
+        workspaceId: workspace.id,
+        conversationId: conversation.id,
+        firstMessage: firstMessage ? { id: firstMessage.id, body: message } : null,
+        origin: origin("visitor"),
+      }),
+    );
 
     // Generate visitor token for future requests
     const newToken = createVisitorToken(visitorId, workspace.id);

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+import { fireAutomations } from "@/lib/automations/dispatch";
+import { conversationClosedEvent, conversationUpdateEvents, origin } from "@/lib/automations/events";
 import { prisma } from "@/lib/db";
 import type { McpAuthContext } from "../auth";
 
@@ -143,7 +145,7 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
     async ({ conversationId, status, assigneeId, priority, tags, subject }) => {
       const existing = await prisma.conversation.findUnique({
         where: { id: conversationId },
-        select: { workspaceId: true, status: true },
+        select: { workspaceId: true, status: true, tags: true, assigneeId: true },
       });
 
       if (!existing || existing.workspaceId !== auth.workspaceId) {
@@ -165,6 +167,7 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
       if (assigneeId !== undefined) {
         if (assigneeId === null) {
           updateData.assigneeId = null;
+          if (existing.assigneeId) updateData.unassignedAt = new Date();
         } else {
           const member = await prisma.workspaceMember.findUnique({
             where: { id: assigneeId },
@@ -200,6 +203,16 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
           updatedAt: true,
         },
       });
+
+      fireAutomations(
+        conversationUpdateEvents({
+          workspaceId: auth.workspaceId,
+          conversationId,
+          before: existing,
+          after: conversation,
+          origin: origin("api"),
+        }),
+      );
 
       return json(conversation);
     },
@@ -281,6 +294,17 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
           updatedAt: true,
         },
       });
+
+      if (existing.status !== "CLOSED" && conversation.closedAt) {
+        fireAutomations(
+          conversationClosedEvent({
+            workspaceId: auth.workspaceId,
+            conversationId,
+            closedAt: conversation.closedAt,
+            origin: origin("api"),
+          }),
+        );
+      }
 
       return json(conversation);
     },
