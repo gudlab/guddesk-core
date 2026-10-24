@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Channel } from "pusher-js";
 import { getPusherClient } from "@/lib/pusher-client";
+import { createReplyingSignal, type ReplyingSignal } from "@/lib/replying-signal";
 
 interface Viewer {
   userId: string;
@@ -22,6 +23,10 @@ export function useCollisionDetection(
   const [isOtherReplying, setIsOtherReplying] = useState(false);
   const [replyingUser, setReplyingUser] = useState<string | null>(null);
   const channelRef = useRef<Channel | null>(null);
+  // Outlives conversation changes: the reply box can focus (and call
+  // sendReplyingStart) before this effect has created the new channel.
+  const signalRef = useRef<ReplyingSignal | null>(null);
+  if (!signalRef.current) signalRef.current = createReplyingSignal();
 
   useEffect(() => {
     if (!conversationId || !currentUserId) {
@@ -36,6 +41,8 @@ export function useCollisionDetection(
     const channelName = `presence-conversation-${conversationId}`;
     const channel = client.subscribe(channelName);
     channelRef.current = channel;
+    const signal = signalRef.current!;
+    signal.attach((event, payload) => channel.trigger(event, payload));
 
     function updateViewers() {
       const presenceChannel = channel as any;
@@ -53,7 +60,15 @@ export function useCollisionDetection(
       setViewers(list);
     }
 
-    channel.bind("pusher:subscription_succeeded", updateViewers);
+    channel.bind("pusher:subscription_succeeded", () => {
+      updateViewers();
+      signal.markSubscribed();
+    });
+    // Already subscribed (channel reused): send the current state now.
+    if (channel.subscribed) {
+      updateViewers();
+      signal.markSubscribed();
+    }
     channel.bind("pusher:member_added", updateViewers);
     channel.bind("pusher:member_removed", () => {
       updateViewers();
@@ -77,6 +92,7 @@ export function useCollisionDetection(
     });
 
     return () => {
+      signal.detach();
       client.unsubscribe(channelName);
       channelRef.current = null;
       setViewers([]);
@@ -85,20 +101,17 @@ export function useCollisionDetection(
     };
   }, [conversationId, currentUserId]);
 
+  // Sent now if the channel has subscribed, otherwise on subscription_succeeded.
   const sendReplyingStart = useCallback(
     (userId: string, name: string) => {
-      if (channelRef.current) {
-        channelRef.current.trigger("client-replying-start", { userId, name });
-      }
+      signalRef.current?.start(userId, name);
     },
     [],
   );
 
   const sendReplyingStop = useCallback(
     (userId: string) => {
-      if (channelRef.current) {
-        channelRef.current.trigger("client-replying-stop", { userId });
-      }
+      signalRef.current?.stop(userId);
     },
     [],
   );

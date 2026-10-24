@@ -6,7 +6,7 @@ import Link from "next/link";
 import { UserAuthForm } from "@/components/forms/user-auth-form";
 
 export const metadata: Metadata = {
-  title: "Login – GudDesk",
+  title: "Login | GudDesk",
   description: "Sign in to your GudDesk account",
 };
 

@@ -42,6 +42,7 @@ export default async function InboxPage({
         members={members.map((m) => ({
           id: m.id,
           userId: m.userId,
+          availability: m.availability,
           user: { name: m.user.name, image: m.user.image },
         }))}
         cannedResponses={cannedResponses}

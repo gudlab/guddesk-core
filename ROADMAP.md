@@ -139,7 +139,7 @@ _Scale from a small team to a full support organization._
 - [x] **Side conversations**: discuss a ticket with another team without the customer seeing
 
 ### Workforce Management
-- [ ] **Agent availability**: manual online/away/offline status (selector not yet in the inbox; live presence needs Pusher keys)
+- [x] **Agent availability**: manual online/away/offline status (live presence needs Pusher keys)
 - [ ] **Availability routing**: route new conversations by agent status
 - [ ] **Shift scheduling**: define agent schedules and auto-assign based on availability
 - [x] **Performance dashboards**: per-agent metrics (response time, resolution time, CSAT, volume)
