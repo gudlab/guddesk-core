@@ -2,7 +2,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 
 import { isOpen, config, configLoaded, conversationId, messages, showOfflineForm, restoreState, visitorId } from "./stores/state";
-import { initClient, fetchConfig, authenticate, fetchMessages, identify } from "./api/client";
+import { initClient, fetchConfig, fetchMessages, identify } from "./api/client";
 import { shouldShowWidget } from "./utils/page-match";
 import { initPusher, subscribeToConversation, disconnect, isConnected } from "./api/pusher";
 import {
@@ -84,11 +84,10 @@ export function WidgetApp({
     restoreState();
     initClient(appId, baseUrl);
 
-    // Fetch config and authenticate in parallel
-    Promise.all([
-      fetchConfig().catch(() => {}),
-      authenticate().catch(() => {}),
-    ]).then(() => {
+    // Only fetch config on load. A visitor is created on the first message
+    // (POST /api/widget/conversations) or by identify(), not on every page
+    // view. A restored token from localStorage is still used as before.
+    fetchConfig().catch(() => {}).then(() => {
       const appearance = applySnippetAppearance(config.value, snippet);
       config.value = { ...config.value, ...appearance };
 
