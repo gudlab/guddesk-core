@@ -33,7 +33,7 @@ const pluginCapabilities = [
   },
   {
     icon: Icons.sparkles,
-    title: "AI-Native",
+    title: "Bring Your Own AI",
     desc: "AI reply suggestions and summaries for your team: planned. Your own agent can reply as BOT today.",
   },
 ];
