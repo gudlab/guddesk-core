@@ -101,7 +101,7 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Fill `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`, and Google OAuth. Leave Pusher / Stripe / Anthropic empty until you need them. **Do not commit `.env*` files.**
+Fill `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`, `RESEND_FROM` (a sender on a domain you have verified in Resend), and Google OAuth. Leave Pusher / Stripe / Anthropic empty until you need them. **Do not commit `.env*` files.**
 
 ### 3. Database + widget + dev
 

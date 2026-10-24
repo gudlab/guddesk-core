@@ -1,11 +1,10 @@
-import { Resend } from "resend";
 
 import { prisma } from "@/lib/db";
-import { bounceFrom } from "@/lib/email/bounce-from";
+import { emailFrom } from "@/lib/email/from";
+import { sendEmail } from "@/lib/email/send";
 import { unverifiedReplyEmail } from "@/lib/inbound-email/bounce";
 import type { UnverifiedReplyBounce } from "@/lib/inbound-email/handler";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const brandColor = "#3ECF8E";
 
 export async function sendAgentNotificationEmail(
@@ -36,8 +35,8 @@ export async function sendAgentNotificationEmail(
   const inboxUrl = `${appUrl}/workspace/${conversation.workspace.slug}/inbox?c=${conversationId}`;
 
   try {
-    await resend.emails.send({
-      from: `${conversation.workspace.name} <notifications@guddesk.com>`,
+    await sendEmail("inbox-notification", {
+      from: emailFrom(conversation.workspace.name),
       to: conversation.assignee.user.email,
       subject: `New message from ${visitorLabel}`,
       replyTo: `reply+${conversationId}@mail.guddesk.com`,
@@ -109,8 +108,8 @@ export async function sendSlaBreachNotification(
   const inboxUrl = `${appUrl}/workspace/${conversation.workspace.slug}/inbox?c=${conversationId}`;
 
   try {
-    await resend.emails.send({
-      from: `${conversation.workspace.name} <notifications@guddesk.com>`,
+    await sendEmail("sla-breach", {
+      from: emailFrom(conversation.workspace.name),
       to: conversation.assignee.user.email,
       subject: `[SLA Breach] ${breachLabel} — ${visitorLabel}`,
       html: `
@@ -155,21 +154,13 @@ export async function sendUnverifiedReplyBounce(bounce: UnverifiedReplyBounce): 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const inboxUrl = workspace ? `${appUrl}/workspace/${workspace.slug}/inbox?c=${bounce.conversationId}` : appUrl;
   const content = unverifiedReplyEmail({ memberName: bounce.memberName, inboxUrl });
-  try {
-    const { error } = await resend.emails.send({
-      from: bounceFrom(),
-      to: bounce.to,
-      subject: content.subject,
-      text: content.text,
-      html: content.html,
-    });
-    if (error) {
-      console.error(`[email] send failed: template=unverified-reply-bounce error=${error.name}`);
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.error(`[email] send failed: template=unverified-reply-bounce error=${error instanceof Error ? error.name : "error"}`);
-    return false;
-  }
+  // sendEmail never throws and logs failures redacted, with no body.
+  const outcome = await sendEmail("unverified-reply-bounce", {
+    from: emailFrom(),
+    to: bounce.to,
+    subject: content.subject,
+    text: content.text,
+    html: content.html,
+  });
+  return outcome.status === "sent";
 }

@@ -1,9 +1,13 @@
 "use server";
 
 import crypto from "crypto";
+import { after } from "next/server";
 
 import { prisma } from "@/lib/db";
-import { resend } from "@/lib/email";
+import { emailFrom } from "@/lib/email/from";
+import { sendEmail } from "@/lib/email/send";
+import { PASSWORD_RESET_NEUTRAL_MESSAGE } from "@/lib/password-reset-neutral";
+import { deferPasswordReset } from "@/lib/password-reset-request";
 import { env } from "@/env.mjs";
 import { forgotPasswordSchema } from "@/lib/validations/auth";
 
@@ -17,17 +21,21 @@ export async function forgotPassword(values: { email: string }) {
   const { email } = validated.data;
   const normalizedEmail = email.toLowerCase();
 
+  // Answer now, before the lookup. The lookup and the email run after the
+  // response, so a known and an unknown address take the same time and get
+  // the same answer, and this can't be used to find accounts.
+  deferPasswordReset(normalizedEmail, after, sendResetIfAccount);
+
+  return { success: PASSWORD_RESET_NEUTRAL_MESSAGE };
+}
+
+/** Runs after the response. Does nothing for an unknown address. */
+async function sendResetIfAccount(normalizedEmail: string): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
   });
 
-  // Always return success to prevent email enumeration
-  if (!user || !user.password) {
-    return {
-      success:
-        "If an account with that email exists, we sent a password reset link.",
-    };
-  }
+  if (!user || !user.password) return;
 
   // Delete existing tokens for this email
   await prisma.passwordResetToken.deleteMany({
@@ -48,14 +56,11 @@ export async function forgotPassword(values: { email: string }) {
 
   const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
-  try {
-    await resend.emails.send({
-      from: "GudDesk <onboarding@resend.dev>",
-      to:
-        process.env.NODE_ENV === "development"
-          ? "delivered@resend.dev"
-          : normalizedEmail,
-      subject: "Reset your GudDesk password",
+  // A failed send is logged, redacted, inside sendEmail.
+  await sendEmail("password-reset", {
+    from: emailFrom(),
+    to: normalizedEmail,
+    subject: "Reset your GudDesk password",
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 0;">
           <div style="background-color: #3ECF8E; border-radius: 8px 8px 0 0; padding: 20px 24px; text-align: center;">
@@ -81,13 +86,5 @@ export async function forgotPassword(values: { email: string }) {
           </p>
         </div>
       `,
-    });
-  } catch {
-    return { error: "Failed to send email. Please try again." };
-  }
-
-  return {
-    success:
-      "If an account with that email exists, we sent a password reset link.",
-  };
+  });
 }

@@ -6,6 +6,7 @@ import { safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { requireWorkspaceMember } from "@/lib/workspace";
 import { getChannelProvider } from "@/lib/channels/registry";
+import { deliveryNotice, withSendTimeout } from "@/lib/email/delivery-notice";
 import { revalidatePath } from "next/cache";
 
 export async function sendMessage(
@@ -147,7 +148,10 @@ export async function sendMessage(
       });
     }
 
-    // Send outbound email for email-channel conversations (fire-and-forget)
+    // Email the reply for email-channel conversations. Awaited so the agent
+    // learns when it did not go out (for example Resend rejecting an
+    // unverified from address). The message is saved either way.
+    let emailError: string | null = null;
     if (type === "AGENT" && conversation.channel === "EMAIL") {
       const provider = getChannelProvider("EMAIL");
       if (provider) {
@@ -155,20 +159,26 @@ export async function sendMessage(
           where: { id: message.id },
         });
         if (fullMessage) {
-          provider
-            .sendOutbound(
-              {
-                conversationId,
-                workspaceId: conversation.workspaceId,
-                visitorEmail: conversation.visitor?.email ?? null,
-                visitorName: conversation.visitor?.name ?? null,
-                subject: conversation.subject ?? null,
-              },
-              fullMessage,
-            )
-            .catch((err) =>
-              console.error("Outbound email error:", err),
+          try {
+            // At most ~8s: the reply is already saved, and a slow send
+            // becomes a "not confirmed" notice instead of a hung box.
+            const delivery = await withSendTimeout(
+              provider.sendOutbound(
+                {
+                  conversationId,
+                  workspaceId: conversation.workspaceId,
+                  visitorEmail: conversation.visitor?.email ?? null,
+                  visitorName: conversation.visitor?.name ?? null,
+                  subject: conversation.subject ?? null,
+                },
+                fullMessage,
+              ),
             );
+            emailError = deliveryNotice(delivery);
+          } catch (err) {
+            console.error("Outbound email error:", err instanceof Error ? err.name : "error");
+            emailError = deliveryNotice({ status: "failed", reason: "send_failed" });
+          }
         }
       }
     }
@@ -177,6 +187,7 @@ export async function sendMessage(
     return {
       status: "success",
       messageId: message.id,
+      emailError,
       // Same shape as GET /api/inbox/conversations/[id]/messages, so the
       // thread can render it before any refetch.
       sentMessage: {
