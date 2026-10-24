@@ -44,7 +44,7 @@ _Fill the gaps that every competitor already covers._
 
 ### Ticketing & SLAs
 - [x] **SLA policies**: define response/resolution time targets per priority
-- [x] **SLA breach alerts**: email the assignee and add a note when an SLA is breached
+- [x] **SLA breach alerts**: email the assignee and add a note when an SLA is breached. The check runs once a day for now
 - [x] **Business hours**: configure working hours, exclude holidays from SLA calculations
 - [x] **Ticket fields**: custom fields (dropdowns, text, date) per workspace
 - [x] **Ticket forms**: different intake forms for different request types
