@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { cursorPageArgs, splitCursorPage } from "@/lib/pagination";
 import { requireWorkspaceMember } from "@/lib/workspace";
+import { scheduleOpportunisticJobs } from "@/lib/scheduled";
 
 // GET /api/inbox/conversations?workspaceId=xxx&status=OPEN&assigneeId=yyy&limit=25&cursor=xxx
 export async function GET(req: NextRequest) {
@@ -27,6 +28,9 @@ export async function GET(req: NextRequest) {
     }
 
     await requireWorkspaceMember(workspaceId, session.user.id);
+    // The inbox polls this route, so it also runs the SLA check for this
+    // workspace at most every 5 minutes, after the response.
+    scheduleOpportunisticJobs(workspaceId);
 
     const where: Record<string, unknown> = { workspaceId };
     if (status) where.status = status;

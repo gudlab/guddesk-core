@@ -100,6 +100,7 @@ See the [Quickstart guide](/docs/quickstart) for the full list of environment va
 | `PUSHER_SECRET` | Optional. Pusher secret (server only, keep it private) |
 | `NEXT_PUBLIC_PUSHER_KEY` | Optional. Pusher key, used by the dashboard and the widget |
 | `NEXT_PUBLIC_PUSHER_CLUSTER` | Optional. Pusher cluster, for example `eu` or `us2` |
+| `CRON_SECRET` | Bearer token for the `/api/cron` routes (see [Scheduled jobs](#scheduled-jobs)). Without it every cron route returns 401 |
 
 ### Real-time updates (optional)
 
@@ -111,6 +112,58 @@ The four Pusher variables are optional. Set all four to get live updates over We
 Typing indicators and collision warnings need Pusher, so they stay off in polling mode.
 
 Next.js builds `NEXT_PUBLIC_` values into the browser code, so rebuild (`pnpm build`) and restart after you set or change `NEXT_PUBLIC_PUSHER_KEY` or `NEXT_PUBLIC_PUSHER_CLUSTER`. `PUSHER_APP_ID` and `PUSHER_SECRET` are read at runtime and only need a restart.
+
+## Scheduled jobs
+
+Some work runs from cron routes under `/api/cron`. Nothing calls them on its own when you self-host, so schedule them yourself. Each route accepts GET or POST and needs the `CRON_SECRET` from your environment as a bearer token:
+
+```
+Authorization: Bearer <CRON_SECRET>
+```
+
+If `CRON_SECRET` is missing or empty, every cron route returns 401. Use a long random value, for example `openssl rand -hex 32`.
+
+| Route | What it does | Suggested schedule |
+|---|---|---|
+| `/api/cron/sla-check` | Adds a note to conversations past their SLA deadline and emails the assignee | Every 5 minutes |
+| `/api/cron/webhook-retry` | Retries failed webhook deliveries that are due | Every 5 minutes |
+| `/api/cron/surveys` | Sends delayed CSAT survey messages | Every 10 minutes |
+| `/api/cron/analytics` | Stores the daily analytics snapshot | Daily |
+| `/api/cron/agent-performance` | Stores yesterday's per-agent numbers | Daily |
+| `/api/cron/webhook-cleanup` | Deletes webhook delivery records older than 30 days | Daily |
+
+Inbox and API requests also run the SLA check for their workspace at most every 5 minutes, so a busy workspace gets SLA notes even if a cron run is missed. Keep the cron schedule anyway, because a quiet workspace has no requests to trigger it.
+
+Test a route with curl:
+
+```bash
+curl -fsS --max-time 60 \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  https://support.example.com/api/cron/sla-check
+```
+
+To schedule them with system cron, keep the secret out of the crontab and the process list. Put it in a file only root can read:
+
+```bash
+# /etc/guddesk/cron-header (chmod 600)
+Authorization: Bearer <CRON_SECRET>
+```
+
+Then add `/etc/cron.d/guddesk`:
+
+```bash
+BASE=https://support.example.com
+CURL="curl -fsS --max-time 60 --retry 3 --retry-delay 10 -o /dev/null -H @/etc/guddesk/cron-header"
+
+*/5 * * * *  root  $CURL $BASE/api/cron/sla-check
+*/5 * * * *  root  $CURL $BASE/api/cron/webhook-retry
+*/10 * * * * root  $CURL $BASE/api/cron/surveys
+0 1 * * *    root  $CURL $BASE/api/cron/analytics
+15 1 * * *   root  $CURL $BASE/api/cron/agent-performance
+25 1 * * *   root  $CURL $BASE/api/cron/webhook-cleanup
+```
+
+`-H @file` needs curl 7.55 or later. Any scheduler that can send an HTTP request with a header works the same way, for example a Kubernetes CronJob or GitHub Actions.
 
 ## Backups
 

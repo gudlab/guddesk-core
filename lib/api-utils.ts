@@ -10,6 +10,7 @@ import {
   resolveWorkspace,
 } from "@/lib/api-auth";
 import type { ApiKeyPermission } from "@prisma/client";
+import { scheduleOpportunisticJobs } from "@/lib/scheduled";
 
 // ─── Standardized Response Helpers ────────────────────────────────────────
 
@@ -261,6 +262,10 @@ export async function withApiAuth(
       response: apiError(wsResult.error, wsResult.status),
     };
   }
+
+  // Runs the SLA check for this workspace at most every 5 minutes, after
+  // the response.
+  scheduleOpportunisticJobs(wsResult.workspaceId);
 
   return {
     ok: true,
