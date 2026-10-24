@@ -1,14 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
+import { withCronAuth } from "@/lib/cron-auth";
 import { prisma } from "@/lib/db";
 import { retryDelivery } from "@/lib/webhooks";
 
-export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+/**
+ * GET or POST /api/cron/webhook-retry
+ *
+ * Cron job that retries failed webhook deliveries. vercel.json runs it once a day (Hobby plan).
+ * Picks up to 50 PENDING deliveries whose nextRetryAt has passed,
+ * then calls retryDelivery() for each.
+ *
+ * Protected by CRON_SECRET.
+ */
+async function run() {
   try {
     const now = new Date();
 
@@ -43,6 +48,5 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
-  return POST(req);
-}
+export const GET = withCronAuth(run);
+export const POST = withCronAuth(run);
