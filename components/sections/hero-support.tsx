@@ -19,12 +19,12 @@ const capabilities = [
   {
     icon: Icons.inbox,
     title: "Unified inbox for every channel",
-    desc: "Chat and email in one view, with Slack notifications and bot replies in the same thread.",
+    desc: "Chat and email in one view, with bot replies in the same thread.",
   },
   {
     icon: Icons.automations,
-    title: "Automations that scale",
-    desc: "Rules run on new conversations, new messages and closed conversations, plus when a conversation goes unassigned. They can assign, tag, change status, send a message or notify Slack.",
+    title: "Automation rules (not running yet)",
+    desc: "Set rules for new conversations, new messages, closed conversations and unassigned ones, with an action to assign, tag, change status, send a message or notify Slack. GudDesk saves them but does not run them yet.",
   },
 ];
 

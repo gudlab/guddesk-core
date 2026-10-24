@@ -41,19 +41,19 @@ export const useCases: UseCase[] = [
       {
         title: "Self-service knowledge base",
         description:
-          "Build and publish help articles. The widget automatically suggests relevant articles before visitors start a conversation, deflecting up to 30% of tickets.",
+          "Build and publish help articles in a public help center that customers can search before they write in.",
         icon: "bookOpen",
       },
       {
         title: "Track customer health",
         description:
-          "See customer profiles, conversation history, and custom attributes in one sidebar. Identify at-risk accounts before they churn.",
+          "Each customer has a profile with their conversation history and your custom fields.",
         icon: "users",
       },
       {
         title: "Connect to your stack",
         description:
-          "Use webhooks, the REST API, or Slack integration to connect GudDesk to your CRM, billing system, or product analytics tool.",
+          "Use webhooks and the REST API to connect GudDesk to your CRM, billing system, or product analytics tool.",
         icon: "code",
       },
     ],
@@ -66,12 +66,12 @@ export const useCases: UseCase[] = [
       {
         title: "Customer reports a bug",
         description:
-          "An automation can tag the conversation as a bug and assign it to engineering, with an SLA timer running.",
+          "Tag the conversation as a bug and assign it to an engineer. The SLA timer keeps running.",
       },
       {
         title: "Renewal is approaching",
         description:
-          "Use automation rules to notify your team when high-value customers open a conversation. See their subscription status, usage data, and conversation history in one view.",
+          "Open the customer's profile to see their custom fields, such as plan or renewal date, and their past conversations before you reply.",
       },
     ],
     features: [
@@ -80,9 +80,9 @@ export const useCases: UseCase[] = [
       "Shared inbox",
       "Knowledge base",
       "SLA policies",
-      "CSAT surveys",
-      "Automation rules",
-      "Slack integration",
+      "CSAT settings and dashboard",
+      "Tags and assignment",
+      "Webhooks",
       "REST API",
       "Customer profiles",
     ],
@@ -95,7 +95,7 @@ export const useCases: UseCase[] = [
       {
         question: "Does it integrate with our billing system?",
         answer:
-          "Use the REST API or webhooks to sync customer data from Stripe, Paddle, or any billing system. Custom fields let you display plan info, MRR, and usage metrics directly in the conversation sidebar.",
+          "Use the REST API or webhooks to sync customer data from Stripe, Paddle, or any billing system. Custom fields let you store plan info, MRR, and usage on the customer profile.",
       },
       {
         question: "Can we embed it in our app?",
@@ -121,19 +121,19 @@ export const useCases: UseCase[] = [
       {
         title: "Handle order inquiries at scale",
         description:
-          "Connect your order system via webhooks. When a customer asks about their order, agents see order status, tracking info, and purchase history in the sidebar.",
+          "Connect your order system via webhooks. Push order details into custom fields so agents can check them on the customer profile when someone asks about an order.",
         icon: "package",
       },
       {
-        title: "Automate returns and exchanges",
+        title: "Canned replies for returns",
         description:
-          "Build automation rules for common requests. When a customer mentions a return, GudDesk can auto-tag, assign to your returns team, and send a templated response.",
+          "Save canned responses for return and exchange questions. Tag those conversations and assign them to whoever handles returns.",
         icon: "refreshCw",
       },
       {
-        title: "Measure customer satisfaction",
+        title: "Customer satisfaction (partly built)",
         description:
-          "Send CSAT surveys after conversations close. Track satisfaction scores per agent and per issue type to continuously improve your support experience.",
+          "CSAT settings and a Feedback dashboard are built. Visitors can't rate in the widget yet, so scores start once widget rating ships.",
         icon: "star",
       },
     ],
@@ -146,12 +146,12 @@ export const useCases: UseCase[] = [
       {
         title: "Customer needs to return an item",
         description:
-          "Automation detects the return intent, tags the conversation, sends the return policy, and routes it to your returns specialist. Resolution time drops by 60%.",
+          "Tag the conversation as a return, send the return policy as a canned response, and assign it to your returns specialist.",
       },
       {
         title: "VIP customer reaches out",
         description:
-          "Customer segments identify high-value buyers. When a VIP starts a conversation, it's automatically prioritized and assigned to your senior support team.",
+          "Put high-value buyers in a customer segment so your team can see who they are.",
       },
     ],
     features: [
@@ -159,11 +159,11 @@ export const useCases: UseCase[] = [
       "Agent API (reply as BOT)",
       "Shared inbox",
       "Knowledge base",
-      "Automation rules",
+      "SLA policies",
       "Customer segments",
-      "CSAT surveys",
+      "CSAT settings and dashboard",
       "Canned responses",
-      "Tags and priority",
+      "Tags",
       "Webhooks",
     ],
     faqs: [
@@ -195,7 +195,7 @@ export const useCases: UseCase[] = [
       {
         title: "Cloud Free: 2 members",
         description:
-          "No credit card, no trial period. Get live chat, knowledge base, automations and the agent API at zero cost while you're getting started.",
+          "No credit card, no trial period. Get live chat, the shared inbox, knowledge base and the agent API at zero cost while you're getting started.",
         icon: "sparkles",
       },
       {
@@ -221,12 +221,12 @@ export const useCases: UseCase[] = [
       {
         title: "Solo founder handling support",
         description:
-          "Your own agent can take first replies as BOT. Slack can notify you when a human is needed. Canned responses let you answer quickly when you do step in.",
+          "Your own agent can take first replies as BOT. Canned responses let you answer quickly when you do step in.",
       },
       {
         title: "Scaling to your first support hire",
         description:
-          "Add a second member for free. The shared inbox and assignment rules help you avoid duplicate work, and collision detection helps too when you add Pusher keys.",
+          "Add a second member for free. Assigning each conversation shows who owns it, so you don't both reply.",
       },
       {
         title: "Investor demo or launch day",
@@ -240,17 +240,17 @@ export const useCases: UseCase[] = [
       "Two-line widget snippet",
       "Shared inbox",
       "Knowledge base",
-      "Slack notifications",
+      "Webhooks",
       "Canned responses",
       "Customer profiles",
-      "CSAT surveys",
+      "CSAT settings and dashboard",
       "Open source",
     ],
     faqs: [
       {
         question: "What's the catch with the free plan?",
         answer:
-          "There is no catch. Cloud Free includes live chat, inbox, knowledge base, automations and the agent API. Caps are 2 members and 500 conversations a month. Pro is a flat $29/mo with no per-seat pricing.",
+          "There is no catch. Cloud Free includes live chat, inbox, knowledge base and the agent API. Caps are 2 members and 500 conversations a month. Pro is a flat $29/mo with no per-seat pricing.",
       },
       {
         question: "Can I self-host GudDesk?",
@@ -260,7 +260,7 @@ export const useCases: UseCase[] = [
       {
         question: "Will I have to migrate later?",
         answer:
-          "No. GudDesk is built to scale. The same platform that serves your first 10 customers will serve your first 10,000. If you self-host, you control the infrastructure entirely.",
+          "No. Free and Pro run on the same platform, so upgrading keeps your data where it is. If you self-host, you control the infrastructure entirely.",
       },
     ],
   },
@@ -281,19 +281,19 @@ export const useCases: UseCase[] = [
       {
         title: "White-label the widget",
         description:
-          "Customize the chat widget's colors, logo, welcome message, and positioning to match each client's brand. No GudDesk branding on the Pro plan.",
+          "Set the chat widget's color, display name, welcome message and position to match each client's brand. No GudDesk branding on the Pro plan.",
         icon: "palette",
       },
       {
         title: "Team permissions and roles",
         description:
-          "Assign agents to specific workspaces with role-based access. Junior agents handle L1, senior agents handle escalations, and admins manage settings.",
+          "Invite people to each workspace as an owner, admin, agent or viewer. Only owners and admins can change settings.",
         icon: "shieldCheck",
       },
       {
         title: "Report to clients with data",
         description:
-          "Built-in analytics show conversation volume, response times, resolution times, and CSAT scores.",
+          "Built-in analytics show conversation volume, response times and resolution times.",
         icon: "analytics",
       },
     ],
@@ -311,7 +311,7 @@ export const useCases: UseCase[] = [
       {
         title: "Monthly client reporting",
         description:
-          "Pull analytics per workspace: conversations handled, average response time, CSAT scores. Present the data to prove your team's value.",
+          "Pull analytics per workspace: conversations handled, average response time and resolution time. Present the data to prove your team's value.",
       },
     ],
     features: [
@@ -367,7 +367,7 @@ export const useCases: UseCase[] = [
       {
         title: "Triage with rules",
         description:
-          "Automation rules can tag a message as a bug or a feature request and route it to the right maintainer.",
+          "Tag a message as a bug or a feature request and assign it to the right maintainer.",
         icon: "bot",
       },
       {
@@ -381,7 +381,7 @@ export const useCases: UseCase[] = [
       {
         title: "User finds a bug in your library",
         description:
-          "They click the chat widget on your docs site. An automation can tag it as a bug and open a conversation. You review it when you are ready.",
+          "They click the chat widget on your docs site and open a conversation. You tag it as a bug and review it when you are ready.",
       },
       {
         title: "New contributor needs guidance",
@@ -402,9 +402,9 @@ export const useCases: UseCase[] = [
       "Widget for docs sites",
       "REST API",
       "Webhooks",
-      "Automation rules",
-      "Tags and routing",
-      "CSAT feedback",
+      "Canned responses",
+      "Tags and assignment",
+      "CSAT settings and dashboard",
     ],
     faqs: [
       {
@@ -415,7 +415,7 @@ export const useCases: UseCase[] = [
       {
         question: "Can I connect it to GitHub Issues?",
         answer:
-          "Not natively yet, but you can use webhooks to sync conversations to GitHub Issues. When a conversation is tagged as a bug, a webhook can trigger a GitHub Action that creates an issue.",
+          "Not natively yet, but you can use webhooks to sync conversations to GitHub Issues. A webhook can call a GitHub Action when a message arrives or a conversation closes, and that Action can create an issue.",
       },
       {
         question: "How is this different from Discord for community support?",

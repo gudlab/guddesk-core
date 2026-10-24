@@ -9,20 +9,20 @@ The GudDesk shared inbox brings every chat and email conversation into one place
 
 When a customer sends a message through any channel (chat widget, email, or bot), it appears in your shared inbox as a **conversation**. Each conversation has:
 
-- **A status:** Open, Snoozed, or Resolved
+- **A status:** Open, Snoozed, or Closed
 - **An assignee:** The team member responsible (or unassigned)
-- **Tags:** Labels for organization and automation
-- **Priority:** Low, Normal, High, or Urgent
+- **Tags:** Free-form labels
+- **Priority:** A number from 0 to 3, set through the REST API
 
 ## Inbox Views
 
-The inbox provides several views to help you stay organized:
+The conversation list has three tabs:
 
-- **Mine**: Conversations assigned to you
-- **Unassigned**: Conversations that need someone to pick them up
-- **All**: Every open conversation across the team
-- **Snoozed**: Conversations set to reopen at a specific time
-- **Resolved**: Closed conversations (searchable for reference)
+- **Open**: Conversations that need a reply
+- **Snoozed**: Conversations set aside until someone reopens them or the customer replies
+- **Closed**: Finished conversations
+
+Next to the tabs, the assignee filter shows all agents, only unassigned conversations, or one teammate's conversations.
 
 ## Replying to Conversations
 
@@ -31,9 +31,9 @@ Click any conversation to open the detail view. You can:
 - **Reply**: Send a message back to the customer
 - **Add a note**: Leave an internal note for your team (customers don't see this)
 - **Assign**: Hand the conversation to a specific team member
-- **Tag**: Add labels for filtering and automation
-- **Snooze**: Hide the conversation and bring it back at a scheduled time
-- **Resolve**: Mark the conversation as complete
+- **Tag**: Add or remove labels
+- **Snooze**: Move the conversation to the Snoozed tab. It reopens when the customer replies
+- **Close**: Mark the conversation as finished
 
 ## Live collaboration with Pusher keys configured
 
@@ -41,18 +41,16 @@ When you add Pusher keys, teammates viewing the same conversation see each other
 
 ## Keyboard Shortcuts
 
-Navigate your inbox faster with keyboard shortcuts:
-
 | Shortcut | Action |
 |---|---|
-| `j` / `k` | Next / Previous conversation |
-| `r` | Reply |
-| `n` | Add internal note |
-| `e` | Resolve conversation |
-| `a` | Assign to team member |
-| `/` | Search conversations |
+| `Enter` | Send the reply |
+| `Shift` + `Enter` | New line in the reply |
+| `/` in an empty reply box | Open canned responses |
+| `Cmd` / `Ctrl` + `K` | Open the dashboard command menu |
+
+The inbox does not have conversation search yet.
 
 ## Next Steps
 
 - [Learn about assignments and workflows](/docs/inbox/assignments)
-- [Set up automations](/docs/agents/overview) to auto-route conversations
+- [Connect your own agent](/docs/agents/overview) to reply as BOT

@@ -1,69 +1,42 @@
 ---
 title: Assignments & Workflows
-description: Assign conversations to team members, use tags for organization, and snooze conversations for follow-up.
+description: Assign conversations to team members, tag them, and snooze them for follow-up.
 ---
 
-Efficient support means getting the right conversation to the right person at the right time. GudDesk provides several tools to make this happen.
+GudDesk gives you a few simple tools to show who owns each conversation and what it is about.
 
 ## Manual Assignment
 
 To assign a conversation:
 
 1. Open the conversation from your inbox
-2. Click the **Assign** button (or press `a`)
-3. Select a team member from the dropdown
-4. The conversation moves to their "Mine" view
+2. Pick a team member in the **Assigned To** dropdown in the sidebar
+3. Use the assignee filter at the top of the conversation list to see one person's conversations, or the unassigned ones
 
-When you assign a conversation, the assignee receives a notification (email and/or in-app, based on their settings).
+Assigning a conversation sends the `conversation.assigned` webhook event to any endpoint or agent that subscribes to it. GudDesk does not email or notify the assignee yet.
 
-## Round-Robin Assignment
-
-For teams that want to distribute workload evenly, enable round-robin in **Settings > Inbox**:
-
-- New conversations are automatically assigned to available team members in rotation
-- Team members marked as "away" are skipped
-- You can set maximum concurrent conversations per agent
+Assignment is manual today. Round-robin assignment and skill-based routing are planned (see the [roadmap](/roadmap)).
 
 ## Tags
 
-Tags help you categorize and filter conversations:
+Tags are free-form labels on a conversation:
 
-- **Create tags** in **Settings > Tags** (e.g., "billing", "bug", "feature-request", "enterprise")
-- **Apply tags** from the conversation detail view or via automations
-- **Filter by tags** using the sidebar filters in your inbox
+- **Add a tag** from the conversation sidebar. Type a word such as "billing" or "bug" and press Enter
+- **Remove a tag** from the same place
+- Agents can also set tags through the REST API with `PATCH /api/v1/conversations/:id`
 
-Tags are also useful as automation triggers, for example auto-escalating any conversation tagged "urgent" to a senior agent.
+The inbox does not filter by tag yet.
 
 ## Snooze
 
-Sometimes you need to wait for a customer to respond or follow up later:
+Set a conversation's status to **Snoozed** from the sidebar to move it out of the Open tab. It stays in the Snoozed tab until someone changes the status, or until the customer replies in the widget, which reopens it.
 
-1. Click the **Snooze** button on any conversation
-2. Choose when to bring it back: Later today, Tomorrow, Next week, or a custom date
-3. The conversation disappears from your inbox until the snooze time
-4. When it unsnoozes, it reappears at the top of your inbox as "Open"
+The REST API accepts a `snoozedUntil` date, but GudDesk does not reopen conversations on a timer yet.
 
-If the customer replies while a conversation is snoozed, it automatically unsnoozes and reopens.
+## Priority
 
-## Priority Levels
+Each conversation has a priority from 0 to 3, with 0 as the default. Set it through the REST API. SLA policies can target a specific priority, so higher-priority conversations can have tighter deadlines. The inbox does not show or edit priority yet.
 
-Set conversation priority to help your team focus on what matters:
+## Automation Rules
 
-| Priority | Use Case |
-|---|---|
-| **Urgent** | Production issues, security reports |
-| **High** | Enterprise customers, billing problems |
-| **Normal** | General inquiries (default) |
-| **Low** | Feature requests, feedback |
-
-Priority can be set manually or automatically via [automations and AI agents](/docs/agents/overview).
-
-## Automation Integration
-
-All assignment features can be automated. For example:
-
-- Route conversations containing "billing" to the billing team
-- Auto-tag conversations from enterprise customers as "High" priority
-- Assign product feedback to your product team
-
-See the [AI Agents documentation](/docs/agents/overview) for setting up automated workflows.
+You can create automation rules in **Automations**, with a trigger, conditions and one action. GudDesk saves these rules but does not run them yet, so they won't assign, tag or reply on their own. To act on conversations automatically today, [connect your own agent](/docs/agents/overview) and use the REST API.
