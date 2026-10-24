@@ -95,6 +95,7 @@ See the [Quickstart guide](/docs/quickstart) for the full list of environment va
 | `AUTH_SECRET` | Session encryption secret (generate with `openssl rand -base64 32`) |
 | `NEXT_PUBLIC_APP_URL` | Your public URL (e.g., `https://support.yourdomain.com`) |
 | `RESEND_API_KEY` | Email delivery API key |
+| `RESEND_FROM` | **Set this when you self-host.** Sender for invites, password resets, sign-in links and notifications, for example `GudDesk <support@yourdomain.com>`. It must be on a domain you have verified in Resend, or Resend rejects every email. If unset, the app sends from `noreply@` your `NEXT_PUBLIC_APP_URL` host and logs a warning |
 | `ANTHROPIC_API_KEY` | Required for AI agent features |
 | `PUSHER_APP_ID` | Optional. Pusher app ID (server only) |
 | `PUSHER_SECRET` | Optional. Pusher secret (server only, keep it private) |

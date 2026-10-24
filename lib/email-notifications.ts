@@ -1,8 +1,8 @@
-import { Resend } from "resend";
 
 import { prisma } from "@/lib/db";
+import { emailFrom } from "@/lib/email/from";
+import { sendEmail } from "@/lib/email/send";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const brandColor = "#3ECF8E";
 
 export async function sendAgentNotificationEmail(
@@ -33,8 +33,8 @@ export async function sendAgentNotificationEmail(
   const inboxUrl = `${appUrl}/workspace/${conversation.workspace.slug}/inbox?c=${conversationId}`;
 
   try {
-    await resend.emails.send({
-      from: `${conversation.workspace.name} <notifications@guddesk.com>`,
+    await sendEmail("inbox-notification", {
+      from: emailFrom(conversation.workspace.name),
       to: conversation.assignee.user.email,
       subject: `New message from ${visitorLabel}`,
       replyTo: `reply+${conversationId}@mail.guddesk.com`,
@@ -106,8 +106,8 @@ export async function sendSlaBreachNotification(
   const inboxUrl = `${appUrl}/workspace/${conversation.workspace.slug}/inbox?c=${conversationId}`;
 
   try {
-    await resend.emails.send({
-      from: `${conversation.workspace.name} <notifications@guddesk.com>`,
+    await sendEmail("sla-breach", {
+      from: emailFrom(conversation.workspace.name),
       to: conversation.assignee.user.email,
       subject: `[SLA Breach] ${breachLabel} — ${visitorLabel}`,
       html: `

@@ -3,7 +3,9 @@
 import crypto from "crypto";
 
 import { prisma } from "@/lib/db";
-import { resend } from "@/lib/email";
+import { emailFrom } from "@/lib/email/from";
+import { sendEmail } from "@/lib/email/send";
+import { PASSWORD_RESET_NEUTRAL_MESSAGE } from "@/lib/password-reset-neutral";
 import { env } from "@/env.mjs";
 import { forgotPasswordSchema } from "@/lib/validations/auth";
 
@@ -21,12 +23,10 @@ export async function forgotPassword(values: { email: string }) {
     where: { email: normalizedEmail },
   });
 
-  // Always return success to prevent email enumeration
+  // The same answer whether or not the account exists or the email went
+  // out, so the form can't be used to find accounts.
   if (!user || !user.password) {
-    return {
-      success:
-        "If an account with that email exists, we sent a password reset link.",
-    };
+    return { success: PASSWORD_RESET_NEUTRAL_MESSAGE };
   }
 
   // Delete existing tokens for this email
@@ -48,14 +48,12 @@ export async function forgotPassword(values: { email: string }) {
 
   const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
 
-  try {
-    await resend.emails.send({
-      from: "GudDesk <onboarding@resend.dev>",
-      to:
-        process.env.NODE_ENV === "development"
-          ? "delivered@resend.dev"
-          : normalizedEmail,
-      subject: "Reset your GudDesk password",
+  // A failed send is logged, redacted, inside sendEmail. The answer stays
+  // the same either way.
+  await sendEmail("password-reset", {
+    from: emailFrom(),
+    to: normalizedEmail,
+    subject: "Reset your GudDesk password",
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 0;">
           <div style="background-color: #3ECF8E; border-radius: 8px 8px 0 0; padding: 20px 24px; text-align: center;">
@@ -81,13 +79,7 @@ export async function forgotPassword(values: { email: string }) {
           </p>
         </div>
       `,
-    });
-  } catch {
-    return { error: "Failed to send email. Please try again." };
-  }
+  });
 
-  return {
-    success:
-      "If an account with that email exists, we sent a password reset link.",
-  };
+  return { success: PASSWORD_RESET_NEUTRAL_MESSAGE };
 }

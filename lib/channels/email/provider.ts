@@ -13,14 +13,13 @@ import type {
   OutboundContext,
 } from "../types";
 import { prisma } from "@/lib/db";
+import { cleanDisplayName, emailFrom } from "@/lib/email/from";
+import { sendEmail } from "@/lib/email/send";
 import { safeTrigger, safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { computeSlaDeadlines } from "@/lib/sla/compute";
 import { generateMessageId, buildReplyHeaders } from "./threading";
 import { renderOutboundEmail } from "./templates";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export class EmailChannelProvider implements ChannelProvider {
   channel: ConversationChannel = "EMAIL";
@@ -86,7 +85,10 @@ export class EmailChannelProvider implements ChannelProvider {
     });
 
     const fromName = config.fromName ?? "Support";
-    const fromAddress = config.fromAddress ?? "support@mail.guddesk.com";
+    // The workspace's own verified address, else the instance sender (RESEND_FROM).
+    const from = config.fromAddress
+      ? `${cleanDisplayName(fromName) || "Support"} <${config.fromAddress}>`
+      : emailFrom(fromName);
     const replyTo = `reply+${context.conversationId}@mail.guddesk.com`;
 
     const subjectLine = context.subject
@@ -99,29 +101,23 @@ export class EmailChannelProvider implements ChannelProvider {
       signature: config.signature ?? undefined,
     });
 
-    try {
-      await resend.emails.send({
-        from: `${fromName} <${fromAddress}>`,
-        to: context.visitorEmail,
-        subject: subjectLine,
-        replyTo,
-        html,
-        headers: {
-          "Message-ID": messageId,
-          ...(replyHeaders.inReplyTo && {
-            "In-Reply-To": replyHeaders.inReplyTo,
-          }),
-          ...(replyHeaders.references && {
-            References: replyHeaders.references,
-          }),
-        },
-      });
-    } catch (error) {
-      console.error(
-        `Failed to send outbound email for conversation ${context.conversationId}:`,
-        error,
-      );
-    }
+    // A failed send is logged, redacted, inside sendEmail.
+    await sendEmail("email-channel-reply", {
+      from,
+      to: context.visitorEmail,
+      subject: subjectLine,
+      replyTo,
+      html,
+      headers: {
+        "Message-ID": messageId,
+        ...(replyHeaders.inReplyTo && {
+          "In-Reply-To": replyHeaders.inReplyTo,
+        }),
+        ...(replyHeaders.references && {
+          References: replyHeaders.references,
+        }),
+      },
+    });
   }
 
   // ── Private helpers ──────────────────────────────────────────────
