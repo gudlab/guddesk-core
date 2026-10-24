@@ -2,15 +2,20 @@
  * POST /api/email/inbound, without the Next.js wrapper so it can be tested.
  *
  * Order: verify the Svix signature on the raw body (401 on any failure),
- * drop a repeated svix-id (200, nothing done), then parse and route.
+ * claim the svix-id (a finished id is a 200 no-op, one still running gets
+ * a 409 so Svix retries later), then parse and route.
  *
  * Two modes, by recipient:
- * 1. reply+{conversationId}@...  An agent replying by email to a
- *    notification. Posted as that agent only when the conversation exists
- *    and the sender is an active member of the conversation's workspace
- *    (and DMARC passed, when Resend reports it). Anything else is ignored,
- *    never posted as a customer message: the reply+ address only goes to
- *    agents, so another sender there is a forward or a spoof.
+ * 1. reply+{conversationId}@...  The Reply-To on agent notifications and
+ *    on agent emails to customers, so both agents and customers write to
+ *    it. Needs an existing conversation. Then:
+ *    - The sender is a member of the conversation's workspace: an agent
+ *      reply, only if the email authenticates (DMARC pass, or DMARC gray
+ *      and DKIM pass). Otherwise it is a spoof of that member and is
+ *      ignored, never filed as a customer message.
+ *    - Anyone else: a customer message in that conversation, only if it
+ *      is an email-channel conversation with the channel on. Never an
+ *      agent message.
  * 2. support+{appId}@...  A customer emailing support.
  *
  * Verified requests that can't be used get a 200 with { ignored }, because
@@ -22,8 +27,11 @@ import type { prisma } from "@/lib/db";
 import type { safeTriggerBatch } from "@/lib/pusher-server";
 
 import { fromReceivedEmail, parseInboundPayload, type InboundEmail } from "./payload";
-import { claimWebhookId, releaseWebhookId } from "./replay";
-import { SIGNATURE_TOLERANCE_MS, verifySvixSignature } from "./signature";
+import { claimWebhookId, finishWebhookId, releaseWebhookId } from "./replay";
+import { verifySvixSignature } from "./signature";
+
+/** resend.emails.receiving.get gets this long before the attempt fails (500, retried). */
+export const FETCH_TIMEOUT_MS = 10_000;
 
 export type InboundDb = Pick<
   typeof prisma,
@@ -45,6 +53,8 @@ export interface InboundDeps {
   broadcast: typeof safeTriggerBatch;
   now?: () => Date;
   log?: (line: string) => void;
+  /** For tests. Defaults to FETCH_TIMEOUT_MS. */
+  fetchTimeoutMs?: number;
 }
 
 export interface InboundRequest {
@@ -64,7 +74,8 @@ export type IgnoreReason =
   | "unknown_recipient"
   | "unknown_conversation"
   | "sender_not_authenticated"
-  | "sender_not_member"
+  | "sender_banned"
+  | "not_email_conversation"
   | "unknown_app"
   | "channel_disabled";
 
@@ -97,43 +108,20 @@ export async function handleInboundEmail(
   }
   const id = logId(verified.id);
 
-  // A repeat of a delivery already accepted. 200 so Svix stops retrying it.
-  if (!(await claimWebhookId(deps.db, verified.id, SIGNATURE_TOLERANCE_MS, now))) {
-    return ignored("replayed_id", log, id);
+  const claim = await claimWebhookId(deps.db, verified.id, now);
+  // Finished before: 200 so Svix stops retrying it.
+  if (claim === "done") return ignored("replayed_id", log, id);
+  // The first attempt is still running and may yet fail: not a 2xx, so
+  // Svix tries again later.
+  if (claim === "in_flight") {
+    log(`[inbound-email] deferred reason=in_flight svix_id=${id}`);
+    return { status: 409, body: { error: "Already processing this delivery" } };
   }
 
   try {
-    let json: unknown;
-    try {
-      json = JSON.parse(req.rawBody);
-    } catch {
-      log(`[inbound-email] rejected reason=invalid_json svix_id=${id}`);
-      return { status: 400, body: { error: "Invalid payload" } };
-    }
-
-    const parsed = parseInboundPayload(json);
-    if (parsed.kind === "invalid") {
-      log(`[inbound-email] rejected reason=invalid_payload svix_id=${id}`);
-      return { status: 400, body: { error: "Invalid payload" } };
-    }
-    if (parsed.kind === "ignored_event") return ignored("event_type", log, id);
-
-    let email: InboundEmail | null;
-    if (parsed.kind === "received") {
-      email = fromReceivedEmail(await deps.fetchReceivedEmail(parsed.emailId), parsed.recipients);
-    } else {
-      email = parsed.email;
-    }
-    if (!email) return ignored("empty_email", log, id);
-
-    const recipients = email.recipients.map((r) => r.toLowerCase());
-    const reply = recipients.map((r) => /reply\+([a-z0-9]+)@/.exec(r)?.[1]).find(Boolean);
-    if (reply) return await handleAgentReply(reply, email, deps, log, id);
-
-    const appId = email.recipients.map((r) => /support\+([a-z0-9]+)@/i.exec(r)?.[1]).find(Boolean);
-    if (appId) return await handleCustomerEmail(appId, email, deps, log, id);
-
-    return ignored("unknown_recipient", log, id);
+    const response = await processVerified(req.rawBody, deps, log, id);
+    await finishWebhookId(deps.db, verified.id, deps.now?.() ?? new Date());
+    return response;
   } catch (error) {
     // Let Svix's retry (same svix-id) through.
     await releaseWebhookId(deps.db, verified.id).catch(() => {});
@@ -143,9 +131,80 @@ export async function handleInboundEmail(
   }
 }
 
-// ── Mode 1: agent replying to a notification email ─────────────
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(`Timed out after ${ms} ms`);
+      error.name = "timeout";
+      reject(error);
+    }, ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
-async function handleAgentReply(
+async function processVerified(
+  rawBody: string,
+  deps: InboundDeps,
+  log: (line: string) => void,
+  id: string,
+): Promise<InboundResponse> {
+  let json: unknown;
+  try {
+    json = JSON.parse(rawBody);
+  } catch {
+    log(`[inbound-email] rejected reason=invalid_json svix_id=${id}`);
+    return { status: 400, body: { error: "Invalid payload" } };
+  }
+
+  const parsed = parseInboundPayload(json);
+  if (parsed.kind === "invalid") {
+    log(`[inbound-email] rejected reason=invalid_payload svix_id=${id}`);
+    return { status: 400, body: { error: "Invalid payload" } };
+  }
+  if (parsed.kind === "ignored_event") return ignored("event_type", log, id);
+
+  let email: InboundEmail | null;
+  if (parsed.kind === "received") {
+    const received = await withTimeout(deps.fetchReceivedEmail(parsed.emailId), deps.fetchTimeoutMs ?? FETCH_TIMEOUT_MS);
+    email = fromReceivedEmail(received, parsed.recipients);
+  } else {
+    email = parsed.email;
+  }
+  if (!email) return ignored("empty_email", log, id);
+
+  const recipients = email.recipients.map((r) => r.toLowerCase());
+  const reply = recipients.map((r) => /reply\+([a-z0-9]+)@/.exec(r)?.[1]).find(Boolean);
+  if (reply) return await handleReplyAddress(reply, email, deps, log, id);
+
+  const appId = email.recipients.map((r) => /support\+([a-z0-9]+)@/i.exec(r)?.[1]).find(Boolean);
+  if (appId) return await handleCustomerEmail(appId, email, deps, log, id);
+
+  return ignored("unknown_recipient", log, id);
+}
+
+// ── Mode 1: reply+{conversationId} ─────────────────────────────
+
+/**
+ * DMARC pass, or DMARC gray (anything but pass or fail, e.g. none) with
+ * DKIM pass. Without results (the legacy payload) the sender is not
+ * authenticated.
+ */
+export function senderAuthenticated(email: Pick<InboundEmail, "dmarc" | "dkim">): boolean {
+  if (email.dmarc === "pass") return true;
+  if (email.dmarc === "fail") return false;
+  return email.dkim === "pass";
+}
+
+type ReplyConversation = {
+  id: string;
+  workspaceId: string;
+  status: string;
+  channel: string;
+  firstResponseAt: Date | null;
+};
+
+async function handleReplyAddress(
   conversationId: string,
   email: InboundEmail,
   deps: InboundDeps,
@@ -153,51 +212,80 @@ async function handleAgentReply(
   id: string,
 ): Promise<InboundResponse> {
   const { db } = deps;
-  const conversation = await db.conversation.findUnique({
+  const conversation: ReplyConversation | null = await db.conversation.findUnique({
     where: { id: conversationId },
-    select: { id: true, workspaceId: true, status: true, firstResponseAt: true },
+    select: { id: true, workspaceId: true, status: true, channel: true, firstResponseAt: true },
   });
   if (!conversation) return ignored("unknown_conversation", log, id);
-
-  // Resend reports SPF/DKIM/DMARC for received mail. A From an agent's
-  // domain doesn't vouch for is not that agent.
-  if (email.dmarc !== undefined && email.dmarc !== "pass") {
-    return ignored("sender_not_authenticated", log, id);
-  }
 
   const user = await db.user.findFirst({
     where: { email: { equals: email.from, mode: "insensitive" } },
     select: { id: true, name: true, isBanned: true },
   });
-  if (!user || user.isBanned) return ignored("sender_not_member", log, id);
-
   // Membership in the conversation's own workspace. Removed members have
-  // no row, so they can't post.
-  const membership = await db.workspaceMember.findUnique({
-    where: { workspaceId_userId: { workspaceId: conversation.workspaceId, userId: user.id } },
-    select: { id: true },
-  });
-  if (!membership) return ignored("sender_not_member", log, id);
+  // no row, so they count as anyone else.
+  const membership = user
+    ? await db.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId: conversation.workspaceId, userId: user.id } },
+        select: { id: true },
+      })
+    : null;
 
+  if (user && membership) {
+    // A member's address that doesn't authenticate is a spoof of that
+    // member: neither an agent reply nor a customer message.
+    if (!senderAuthenticated(email)) return ignored("sender_not_authenticated", log, id);
+    if (user.isBanned) return ignored("sender_banned", log, id);
+    return postReply(conversation, email, deps, {
+      type: "AGENT",
+      senderId: user.id,
+      senderName: user.name ?? "Agent",
+    });
+  }
+
+  // Anyone else is the customer side of the thread (the customer answering
+  // an agent's email, or someone they forwarded it to). Only on an email
+  // conversation whose workspace still has the email channel on.
+  if (conversation.channel !== "EMAIL") return ignored("not_email_conversation", log, id);
+  const config = await db.emailChannelConfig.findUnique({
+    where: { workspaceId: conversation.workspaceId },
+    select: { isEnabled: true },
+  });
+  if (!config?.isEnabled) return ignored("channel_disabled", log, id);
+
+  return postReply(conversation, email, deps, {
+    type: "VISITOR",
+    senderId: null,
+    senderName: email.fromName ?? email.from,
+  });
+}
+
+async function postReply(
+  conversation: ReplyConversation,
+  email: InboundEmail,
+  deps: InboundDeps,
+  sender: { type: "AGENT" | "VISITOR"; senderId: string | null; senderName: string },
+): Promise<InboundResponse> {
+  const { db } = deps;
+  const conversationId = conversation.id;
   const text = email.text.trim();
   const message = await db.message.create({
     data: {
       conversationId,
-      type: "AGENT",
+      type: sender.type,
       body: text,
-      senderId: user.id,
-      senderName: user.name ?? "Agent",
+      senderId: sender.senderId,
+      senderName: sender.senderName,
     },
   });
 
-  const preview = text.slice(0, 200);
   const at = deps.now?.() ?? new Date();
   await db.conversation.update({
     where: { id: conversationId },
     data: {
       lastMessageAt: at,
-      lastMessagePreview: preview,
-      ...(conversation.firstResponseAt ? {} : { firstResponseAt: at }),
+      lastMessagePreview: text.slice(0, 200),
+      ...(sender.type === "AGENT" && !conversation.firstResponseAt ? { firstResponseAt: at } : {}),
       ...(conversation.status === "CLOSED" ? { status: "OPEN" as const, closedAt: null } : {}),
     },
   });

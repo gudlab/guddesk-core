@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import type { InboundPayload } from "../channels/types";
-import { handleInboundEmail, type InboundDb, type InboundDeps } from "./handler";
+import { handleInboundEmail, senderAuthenticated, type InboundDb, type InboundDeps } from "./handler";
 import { htmlToText, parseInboundPayload } from "./payload";
-import { replayKey } from "./replay";
+import { DONE, FINISHED_TTL_MS, IN_FLIGHT_TTL_MS, PROCESSING, replayKey, sweepExpiredWebhookIds } from "./replay";
 import { signSvixPayload, verifySvixSignature } from "./signature";
 
 const SECRET = "whsec_" + Buffer.from("test-signing-key-0123456789abcdef").toString("base64");
@@ -20,7 +20,8 @@ interface Member {
 }
 
 function fakeDb() {
-  const tokens = new Map<string, Date>();
+  const tokens = new Map<string, { identifier: string; expires: Date }>();
+  const disabledChannels = new Set<string>();
   const messages: Array<Record<string, unknown>> = [];
   const conversationUpdates: Array<Record<string, unknown>> = [];
   const messageLookups: Array<Record<string, unknown>> = [];
@@ -36,26 +37,42 @@ function fakeDb() {
     { workspaceId: "ws_b", userId: "u_other" },
   ];
   const conversations = [
-    { id: "conva", workspaceId: "ws_a", status: "CLOSED", firstResponseAt: null },
-    { id: "convb", workspaceId: "ws_b", status: "OPEN", firstResponseAt: null },
+    { id: "conva", workspaceId: "ws_a", status: "CLOSED", channel: "EMAIL", firstResponseAt: null },
+    { id: "convb", workspaceId: "ws_b", status: "OPEN", channel: "EMAIL", firstResponseAt: null },
+    { id: "convchat", workspaceId: "ws_a", status: "OPEN", channel: "WIDGET", firstResponseAt: null },
   ];
   const db = {
     verificationToken: {
-      async updateMany({ where, data }: { where: { token: string; expires: { lte: Date } }; data: { expires: Date } }) {
+      async updateMany({ where, data }: { where: { token: string; expires?: { lte: Date } }; data: { identifier: string; expires: Date } }) {
         const current = tokens.get(where.token);
-        if (current && current <= where.expires.lte) {
-          tokens.set(where.token, data.expires);
+        if (current && (!where.expires || current.expires <= where.expires.lte)) {
+          tokens.set(where.token, { ...data });
           return { count: 1 };
         }
         return { count: 0 };
       },
-      async create({ data }: { data: { token: string; expires: Date } }) {
+      async create({ data }: { data: { identifier: string; token: string; expires: Date } }) {
         if (tokens.has(data.token)) throw Object.assign(new Error("unique"), { code: "P2002" });
-        tokens.set(data.token, data.expires);
+        tokens.set(data.token, { identifier: data.identifier, expires: data.expires });
         return data;
       },
-      async deleteMany({ where }: { where: { token: string } }) {
-        return { count: tokens.delete(where.token) ? 1 : 0 };
+      async findUnique({ where }: { where: { token: string } }) {
+        const row = tokens.get(where.token);
+        return row ? { identifier: row.identifier } : null;
+      },
+      async deleteMany({ where }: { where: { token: string | { startsWith: string }; expires?: { lt: Date } } }) {
+        let count = 0;
+        for (const [token, row] of [...tokens]) {
+          const match =
+            typeof where.token === "string"
+              ? token === where.token
+              : token.startsWith(where.token.startsWith) && (!where.expires || row.expires < where.expires.lt);
+          if (match) {
+            tokens.delete(token);
+            count++;
+          }
+        }
+        return { count };
       },
     },
     conversation: {
@@ -87,8 +104,8 @@ function fakeDb() {
       },
     },
     emailChannelConfig: {
-      async findUnique() {
-        return { isEnabled: true };
+      async findUnique({ where }: { where: { workspaceId: string } }) {
+        return { isEnabled: !disabledChannels.has(where.workspaceId) };
       },
     },
     message: {
@@ -103,7 +120,7 @@ function fakeDb() {
       },
     },
   };
-  return { db: db as unknown as InboundDb, tokens, messages, conversationUpdates, messageLookups };
+  return { db: db as unknown as InboundDb, tokens, messages, conversationUpdates, messageLookups, disabledChannels };
 }
 
 function setup(overrides: Partial<InboundDeps> = {}) {
@@ -164,14 +181,14 @@ const customerEmail = {
   authentication: { spf: "pass", dkim: "pass", dmarc: "pass" },
 };
 
-const agentEmail = (from: string, conversationId: string, dmarc = "pass") => ({
+const agentEmail = (from: string, conversationId: string, dmarc = "pass", dkim = "pass") => ({
   ...customerEmail,
   id: "em_2",
   from,
   to: [`reply+${conversationId}@mail.guddesk.com`],
   text: "Agent reply text",
   headers: { from },
-  authentication: { spf: "pass", dkim: "pass", dmarc },
+  authentication: { spf: "pass", dkim, dmarc },
 });
 
 function assertCleanLogs(logs: string[]) {
@@ -245,7 +262,7 @@ describe("POST /api/email/inbound: rejections", () => {
     assert.match(t.logs[0], /rejected reason=stale_timestamp/);
   });
 
-  it("replayed id: the repeat is a 200 no-op", async () => {
+  it("replayed id: a finished id is a 200 no-op, kept for days", async () => {
     const t = setup();
     t.received.em_1 = customerEmail;
     const request = signed(receivedEvent("em_1", ["support+appa@mail.guddesk.com"]), { id: "msg_replay" });
@@ -255,9 +272,43 @@ describe("POST /api/email/inbound: rejections", () => {
     assert.deepEqual(second, { status: 200, body: { ignored: "replayed_id" } });
     assert.equal(t.customer.length, 1);
     assert.equal(t.fetched.length, 1);
-    assert.deepEqual([...t.tokens.keys()], [replayKey("msg_replay")]);
-    assert.equal(t.tokens.get("inbound:svix:msg_replay")?.getTime(), NOW.getTime() + 5 * 60 * 1000);
+    const row = t.tokens.get(replayKey("msg_replay"));
+    assert.equal(row?.identifier, DONE);
+    assert.equal(row?.expires.getTime(), NOW.getTime() + FINISHED_TTL_MS);
+    assert.ok(FINISHED_TTL_MS >= 2 * 24 * 60 * 60 * 1000, "longer than Svix's ~27 h of retries");
     assert.match(t.logs.at(-1) ?? "", /ignored reason=replayed_id svix_id=msg_replay/);
+  });
+
+  it("a duplicate while the first attempt is still running gets a 409, so Svix retries", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const t = setup({
+      async fetchReceivedEmail() {
+        await gate;
+        return customerEmail;
+      },
+    });
+    const request = signed(receivedEvent("em_1", ["support+appa@mail.guddesk.com"]), { id: "msg_slow" });
+    const first = handleInboundEmail(request, t.deps);
+    await new Promise((resolve) => setImmediate(resolve));
+    const row = t.tokens.get(replayKey("msg_slow"));
+    assert.equal(row?.identifier, PROCESSING);
+    assert.equal(row?.expires.getTime(), NOW.getTime() + IN_FLIGHT_TTL_MS);
+    const duplicate = await handleInboundEmail(request, t.deps);
+    assert.equal(duplicate.status, 409);
+    assert.match(t.logs.at(-1) ?? "", /deferred reason=in_flight svix_id=msg_slow/);
+    release();
+    assert.equal((await first).status, 200);
+    assert.deepEqual(await handleInboundEmail(request, t.deps), { status: 200, body: { ignored: "replayed_id" } });
+    assert.equal(t.customer.length, 1);
+  });
+
+  it("a hung receiving.get times out: 500 and the id is freed", async () => {
+    const t = setup({ fetchTimeoutMs: 20, fetchReceivedEmail: () => new Promise(() => {}) });
+    const res = await handleInboundEmail(signed(receivedEvent("em_1", ["support+appa@x.test"]), { id: "msg_hang" }), t.deps);
+    assert.equal(res.status, 500);
+    assert.match(t.logs[0], /failed reason=processing_error error=timeout svix_id=msg_hang/);
+    assert.equal(t.tokens.size, 0);
   });
 
   it("a processing failure returns 500 and frees the id for Svix's retry", async () => {
@@ -271,6 +322,19 @@ describe("POST /api/email/inbound: rejections", () => {
     const retry = await handleInboundEmail(request, t.deps);
     assert.equal(retry.status, 200);
     assert.equal(t.customer.length, 1);
+  });
+
+  it("the sweep deletes only expired inbound:svix rows", async () => {
+    const t = setup();
+    const past = new Date(NOW.getTime() - 1000);
+    const future = new Date(NOW.getTime() + 1000);
+    t.tokens.set(replayKey("old"), { identifier: DONE, expires: past });
+    t.tokens.set(replayKey("live"), { identifier: DONE, expires: future });
+    t.tokens.set("throttle:sla:ws_a", { identifier: "throttle:sla:ws_a", expires: past });
+    assert.equal(await sweepExpiredWebhookIds(t.db, NOW), 1);
+    assert.deepEqual([...t.tokens.keys()].sort(), [replayKey("live"), "throttle:sla:ws_a"].sort());
+    const cron = readFileSync(join(__dirname, "..", "..", "app", "api", "cron", "sla-check", "route.ts"), "utf8");
+    assert.match(cron, /sweepExpiredWebhookIds\(prisma\)/);
   });
 });
 
@@ -355,50 +419,112 @@ describe("POST /api/email/inbound: valid requests", () => {
   });
 });
 
-describe("POST /api/email/inbound: agent-reply checks", () => {
-  async function agentReply(from: string, conversationId: string, dmarc = "pass") {
+describe("POST /api/email/inbound: reply+ address", () => {
+  async function replyTo(from: string, conversationId: string, dmarc = "pass", dkim = "pass", prep?: (t: ReturnType<typeof setup>) => void) {
     const t = setup();
-    t.received.em_2 = agentEmail(from, conversationId, dmarc);
+    prep?.(t);
+    t.received.em_2 = agentEmail(from, conversationId, dmarc, dkim);
     const res = await handleInboundEmail(signed(receivedEvent("em_2", [`reply+${conversationId}@mail.guddesk.com`])), t.deps);
     return { t, res };
   }
 
-  it("cross-workspace conversation id: a member of another workspace can't post", async () => {
-    const { t, res } = await agentReply("agent@acme.test", "convb");
-    assert.deepEqual(res, { status: 200, body: { ignored: "sender_not_member" } });
-    assert.equal(t.messages.length, 0);
-    assert.equal(t.customer.length, 0, "not filed as a customer message either");
+  it("member with DMARC pass: agent reply", async () => {
+    const { t, res } = await replyTo("agent@acme.test", "conva");
+    assert.equal(res.status, 200);
+    assert.equal(t.messages[0].type, "AGENT");
+  });
+
+  it("member with gray DMARC (none) and DKIM pass: agent reply", async () => {
+    const { t } = await replyTo("agent@acme.test", "conva", "none", "pass");
+    assert.equal(t.messages[0].type, "AGENT");
+  });
+
+  it("member with DMARC fail: ignored as a spoof, not filed as anything", async () => {
+    const { t, res } = await replyTo("agent@acme.test", "conva", "fail", "pass");
+    assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
+    assert.equal(t.messages.length + t.customer.length, 0);
     assertCleanLogs(t.logs);
   });
 
-  it("removed member: ignored", async () => {
-    const { t, res } = await agentReply("removed@acme.test", "conva");
-    assert.deepEqual(res.body, { ignored: "sender_not_member" });
-    assert.equal(t.messages.length + t.customer.length, 0);
-  });
-
-  it("banned user: ignored", async () => {
-    const { t, res } = await agentReply("banned@acme.test", "conva");
-    assert.deepEqual(res.body, { ignored: "sender_not_member" });
+  it("member with gray DMARC and no DKIM pass: ignored as a spoof", async () => {
+    const { t, res } = await replyTo("agent@acme.test", "conva", "none", "fail");
+    assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
     assert.equal(t.messages.length, 0);
   });
 
-  it("unknown sender: ignored, not posted as a visitor", async () => {
-    const { t, res } = await agentReply("stranger@example.com", "conva");
-    assert.deepEqual(res.body, { ignored: "sender_not_member" });
-    assert.equal(t.messages.length + t.customer.length, 0);
+  it("member through the legacy shape (no auth results): ignored as a spoof", async () => {
+    const t = setup();
+    const res = await handleInboundEmail(
+      signed({ from: "agent@acme.test", to: ["reply+conva@mail.guddesk.com"], text: "Agent reply text" }),
+      t.deps,
+    );
+    assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
+    assert.equal(t.messages.length, 0);
+  });
+
+  it("the customer's usual address: filed as a customer message in that conversation", async () => {
+    const { t, res } = await replyTo("Jane.Customer@example.com", "conva", "none", "none");
+    assert.equal(res.status, 200);
+    assert.equal(t.messages.length, 1);
+    assert.equal(t.messages[0].type, "VISITOR");
+    assert.equal(t.messages[0].conversationId, "conva");
+    assert.equal(t.messages[0].senderId, null);
+    const update = t.conversationUpdates[0] as { data: Record<string, unknown> };
+    assert.equal(update.data.status, "OPEN", "a closed conversation reopens");
+    assert.equal(update.data.firstResponseAt, undefined, "a customer message is not a first response");
+    assertCleanLogs(t.logs);
+  });
+
+  it("a stranger: filed as a customer message, never as an agent", async () => {
+    const { t } = await replyTo("stranger@example.com", "conva");
+    assert.equal(t.messages.length, 1);
+    assert.equal(t.messages[0].type, "VISITOR");
+  });
+
+  it("a member of another workspace (cross-workspace id): a customer message, never an agent", async () => {
+    const { t } = await replyTo("agent@acme.test", "convb");
+    assert.equal(t.messages.length, 1);
+    assert.equal(t.messages[0].type, "VISITOR");
+    assert.equal(t.messages[0].senderId, null);
+  });
+
+  it("a removed member: no longer a member, so a customer message", async () => {
+    const { t } = await replyTo("removed@acme.test", "conva");
+    assert.equal(t.messages[0].type, "VISITOR");
+  });
+
+  it("a banned member: ignored", async () => {
+    const { t, res } = await replyTo("banned@acme.test", "conva");
+    assert.deepEqual(res.body, { ignored: "sender_banned" });
+    assert.equal(t.messages.length, 0);
+  });
+
+  it("a non-email-channel conversation: a non-member's email is ignored", async () => {
+    const { t, res } = await replyTo("stranger@example.com", "convchat");
+    assert.deepEqual(res.body, { ignored: "not_email_conversation" });
+    assert.equal(t.messages.length, 0);
+  });
+
+  it("email channel turned off: a non-member's email is ignored", async () => {
+    const { t, res } = await replyTo("stranger@example.com", "conva", "pass", "pass", (x) => x.disabledChannels.add("ws_a"));
+    assert.deepEqual(res.body, { ignored: "channel_disabled" });
+    assert.equal(t.messages.length, 0);
   });
 
   it("unknown conversation: ignored", async () => {
-    const { t, res } = await agentReply("agent@acme.test", "nosuch");
+    const { t, res } = await replyTo("agent@acme.test", "nosuch");
     assert.deepEqual(res.body, { ignored: "unknown_conversation" });
     assert.equal(t.messages.length, 0);
   });
 
-  it("a forged From that fails DMARC: ignored", async () => {
-    const { t, res } = await agentReply("agent@acme.test", "conva", "fail");
-    assert.deepEqual(res.body, { ignored: "sender_not_authenticated" });
-    assert.equal(t.messages.length, 0);
+  it("senderAuthenticated: DMARC pass, or gray DMARC plus DKIM pass", () => {
+    assert.equal(senderAuthenticated({ dmarc: "pass" }), true);
+    assert.equal(senderAuthenticated({ dmarc: "none", dkim: "pass" }), true);
+    assert.equal(senderAuthenticated({ dmarc: "temperror", dkim: "pass" }), true);
+    assert.equal(senderAuthenticated({ dkim: "pass" }), true);
+    assert.equal(senderAuthenticated({ dmarc: "fail", dkim: "pass" }), false);
+    assert.equal(senderAuthenticated({ dmarc: "none", dkim: "fail" }), false);
+    assert.equal(senderAuthenticated({}), false);
   });
 });
 

@@ -29,8 +29,9 @@ export interface InboundEmail {
   subject?: string;
   text: string;
   headers: Record<string, string>;
-  /** DMARC result Resend reports for the received email, when it reports one. */
+  /** DMARC and DKIM results Resend reports for the received email, when it reports them. */
   dmarc?: string;
+  dkim?: string;
 }
 
 export type ParsedInbound =
@@ -148,5 +149,6 @@ export function fromReceivedEmail(
     text,
     headers,
     ...(typeof auth.dmarc === "string" ? { dmarc: auth.dmarc.toLowerCase() } : {}),
+    ...(typeof auth.dkim === "string" ? { dkim: auth.dkim.toLowerCase() } : {}),
   };
 }

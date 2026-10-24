@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { withCronAuth } from "@/lib/cron-auth";
+import { prisma } from "@/lib/db";
+import { sweepExpiredWebhookIds } from "@/lib/inbound-email/replay";
 import { processSlaBreaches } from "@/lib/sla/process";
 
 /**
@@ -16,12 +18,25 @@ import { processSlaBreaches } from "@/lib/sla/process";
  *   2. Sends notification email to assignee
  *   3. Marks conversation as breached (prevents re-notification)
  *
+ * It also deletes expired inbound-email svix-id records (lib/inbound-email/replay.ts).
+ *
  * Protected by CRON_SECRET.
  */
+async function sweepInboundIds(): Promise<number | null> {
+  try {
+    return await sweepExpiredWebhookIds(prisma);
+  } catch (error) {
+    console.error("Inbound id sweep error:", error instanceof Error ? error.name : "error");
+    return null;
+  }
+}
+
 async function run() {
+  // Independent of the SLA run, so one failing doesn't skip the other.
+  const inboundIdsSwept = await sweepInboundIds();
   try {
     const result = await processSlaBreaches();
-    return NextResponse.json({ success: true, ...result });
+    return NextResponse.json({ success: true, ...result, inboundIdsSwept });
   } catch (error) {
     console.error("SLA check cron error:", error);
     return NextResponse.json({ error: "SLA check failed" }, { status: 500 });
