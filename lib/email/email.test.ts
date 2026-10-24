@@ -111,7 +111,13 @@ describe("sendEmail errors", () => {
         warn: warn.log,
       },
     );
-    assert.deepEqual(outcome, { status: "failed", error: { name: "validation_error", statusCode: 422 } });
+    assert.equal(outcome.status, "failed");
+    if (outcome.status !== "failed") return;
+    assert.equal(outcome.error.name, "validation_error");
+    assert.equal(outcome.error.statusCode, 422);
+    // The message comes back for classifying, redacted like the log.
+    assert.match(outcome.error.message, /domain is not verified \(re_\*\*\*\)/);
+    for (const leaked of ["owner.only", KEY]) assert.ok(!outcome.error.message.includes(leaked), leaked);
     assert.equal(lines.length, 1);
     assert.match(lines[0], /template=password-reset to=j\*\*\*@example\.com error=validation_error \(422\)/);
     for (const leaked of ["jane.doe", "owner.only", KEY, "secret body"]) {
@@ -169,6 +175,48 @@ describe("sendEmail errors", () => {
     await sendEmail("workspace-invitation", MESSAGE, { client, warn: warn.log, error: () => {} });
     assert.equal(warn.lines.length, 1);
     assert.match(warn.lines[0], /Resend refused the send \(403 validation_error\).*RESEND_FROM domain is verified/);
+  });
+
+  it("a workspace address refused (403) doesn't fire the RESEND_FROM warning or use up the key warning", async () => {
+    const warn = recorder();
+    const refused = clientReturning({
+      data: null,
+      error: { name: "validation_error", statusCode: 403, message: "The acme.test domain is not verified" },
+    } as SendResult);
+    for (let i = 0; i < 3; i++) {
+      await sendEmail("email-channel-reply", MESSAGE, { client: refused, sender: "workspace", warn: warn.log, error: () => {} });
+    }
+    assert.equal(warn.lines.length, 0);
+    // A real key problem afterwards still warns.
+    const badKey = clientReturning({
+      data: null,
+      error: { name: "invalid_api_key", statusCode: 401, message: "bad" },
+    } as SendResult);
+    await sendEmail("email-channel-reply", MESSAGE, { client: badKey, sender: "workspace", warn: warn.log, error: () => {} });
+    assert.equal(warn.lines.length, 1);
+    assert.match(warn.lines[0], /rejected the API key \(401 invalid_api_key\)/);
+  });
+
+  it("key and sender warnings have their own once-flags", async () => {
+    const warn = recorder();
+    const sender = clientReturning({
+      data: null,
+      error: { name: "validation_error", statusCode: 403, message: "The domain is not verified" },
+    } as SendResult);
+    const key = clientReturning({
+      data: null,
+      error: { name: "restricted_api_key", statusCode: 403, message: "nope" },
+    } as SendResult);
+    for (const client of [sender, sender, key, key]) {
+      await sendEmail("inbox-notification", MESSAGE, { client, warn: warn.log, error: () => {} });
+    }
+    assert.equal(warn.lines.length, 2);
+    assert.match(warn.lines[0], /RESEND_FROM domain is verified/);
+    assert.match(warn.lines[1], /rejected the API key/);
+  });
+
+  it("the email-channel reply sends as the workspace", () => {
+    assert.match(read("lib/channels/email/provider.ts"), /\}, \{ sender: "workspace" \}\);/);
   });
 
   it("other errors (422, 429, 500) don't fire the health warning", async () => {

@@ -20,7 +20,11 @@ export type EmailTemplate =
 
 export type SendOutcome =
   | { status: "sent"; id: string | null }
-  | { status: "failed"; error: { name: string; statusCode: number | null } };
+  | {
+      status: "failed";
+      /** message is Resend's error text, redacted and cut short. */
+      error: { name: string; statusCode: number | null; message: string };
+    };
 
 /** "jane@example.com" becomes "j***@example.com". Display names are dropped. */
 export function redactEmail(address: string): string {
@@ -45,11 +49,20 @@ const KEY_ERRORS = new Set([
   "invalid_api_key",
   "restricted_api_key",
 ]);
+// Separate once-flags, so a sender problem can't use up the key warning
+// (or the other way round).
 let keyWarningShown = false;
+let senderWarningShown = false;
 
-/** For tests: lets the once-per-process key warning fire again. */
+/** For tests: lets the once-per-process warnings fire again. */
 export function resetEmailKeyWarning() {
   keyWarningShown = false;
+  senderWarningShown = false;
+}
+
+/** A rejected or missing key, as opposed to a refused sender address. */
+function isKeyRejection(problem: { statusCode: number | null; name: string }): boolean {
+  return KEY_ERRORS.has(problem.name) || problem.statusCode === 401;
 }
 
 /**
@@ -65,13 +78,18 @@ export function warnAboutResendKeyOnce(
   problem: "missing" | { statusCode: number | null; name: string },
   warn: (line: string) => void = console.warn,
 ) {
-  if (keyWarningShown) return;
-  keyWarningShown = true;
+  if (problem !== "missing" && !isKeyRejection(problem)) {
+    if (senderWarningShown) return;
+    senderWarningShown = true;
+  } else {
+    if (keyWarningShown) return;
+    keyWarningShown = true;
+  }
   if (problem === "missing") {
     warn(
       "[email] RESEND_API_KEY is not set, so no email can be sent. Set it to a Resend API key.",
     );
-  } else if (KEY_ERRORS.has(problem.name) || problem.statusCode === 401) {
+  } else if (isKeyRejection(problem)) {
     warn(
       `[email] Resend rejected the API key (${problem.statusCode ?? "no status"} ${problem.name}). Emails are not being sent. Check RESEND_API_KEY.`,
     );
@@ -109,6 +127,13 @@ function getClient() {
 }
 
 export interface SendEmailOptions {
+  /**
+   * "workspace" when `from` is a workspace's own address (email-channel
+   * replies). Resend refusing that address is the workspace's setup, not
+   * RESEND_FROM, so it doesn't fire the RESEND_FROM health warning. Key
+   * problems still warn.
+   */
+  sender?: "app" | "workspace";
   /** For tests. Defaults to a Resend client using RESEND_API_KEY. */
   client?: { emails: Pick<Resend["emails"], "send"> };
   /** For tests. Defaults to process.env.RESEND_API_KEY being set. */
@@ -136,7 +161,11 @@ export async function sendEmail(
     );
     return {
       status: "failed",
-      error: { name: "missing_api_key", statusCode: null },
+      error: {
+        name: "missing_api_key",
+        statusCode: null,
+        message: "RESEND_API_KEY is not set",
+      },
     };
   }
   try {
@@ -154,7 +183,9 @@ export async function sendEmail(
         statusCode: raw.statusCode ?? null,
         message: raw.message ?? "",
       };
-      if (isKeyProblem(failure.statusCode, failure.name)) {
+      const forWorkspace =
+        options.sender === "workspace" && !isKeyRejection(failure);
+      if (isKeyProblem(failure.statusCode, failure.name) && !forWorkspace) {
         warnAboutResendKeyOnce(
           { statusCode: failure.statusCode, name: failure.name },
           options.warn,
@@ -163,7 +194,11 @@ export async function sendEmail(
       logFailedEmail({ template, to: email.to }, failure, options.error);
       return {
         status: "failed",
-        error: { name: failure.name, statusCode: failure.statusCode },
+        error: {
+          name: failure.name,
+          statusCode: failure.statusCode,
+          message: redactErrorText(failure.message),
+        },
       };
     }
     return { status: "sent", id: response.data?.id ?? null };
@@ -174,7 +209,14 @@ export async function sendEmail(
       { name: "exception", statusCode: null, message },
       options.error,
     );
-    return { status: "failed", error: { name: "exception", statusCode: null } };
+    return {
+      status: "failed",
+      error: {
+        name: "exception",
+        statusCode: null,
+        message: redactErrorText(message),
+      },
+    };
   }
 }
 

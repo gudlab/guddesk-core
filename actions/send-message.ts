@@ -6,7 +6,7 @@ import { safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { requireWorkspaceMember } from "@/lib/workspace";
 import { getChannelProvider } from "@/lib/channels/registry";
-import { deliveryNotice } from "@/lib/email/delivery-notice";
+import { deliveryNotice, withSendTimeout } from "@/lib/email/delivery-notice";
 import { revalidatePath } from "next/cache";
 
 export async function sendMessage(
@@ -160,15 +160,19 @@ export async function sendMessage(
         });
         if (fullMessage) {
           try {
-            const delivery = await provider.sendOutbound(
-              {
-                conversationId,
-                workspaceId: conversation.workspaceId,
-                visitorEmail: conversation.visitor?.email ?? null,
-                visitorName: conversation.visitor?.name ?? null,
-                subject: conversation.subject ?? null,
-              },
-              fullMessage,
+            // At most ~8s: the reply is already saved, and a slow send
+            // becomes a "not confirmed" notice instead of a hung box.
+            const delivery = await withSendTimeout(
+              provider.sendOutbound(
+                {
+                  conversationId,
+                  workspaceId: conversation.workspaceId,
+                  visitorEmail: conversation.visitor?.email ?? null,
+                  visitorName: conversation.visitor?.name ?? null,
+                  subject: conversation.subject ?? null,
+                },
+                fullMessage,
+              ),
             );
             emailError = deliveryNotice(delivery);
           } catch (err) {

@@ -8,6 +8,7 @@ import { deleteSharedDraft } from "@/actions/manage-shared-draft";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
 import { publishLocalMessage } from "@/lib/local-messages";
+import { claimSubmit, releaseSubmit } from "@/lib/submit-guard";
 
 interface Props {
   conversationId: string;
@@ -25,6 +26,8 @@ export function SharedDraftEditor({
   onSent,
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Set synchronously, so a second click in the same tick can't send twice.
+  const inFlight = useRef(false);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -33,33 +36,42 @@ export function SharedDraftEditor({
 
   function handleSendAsReply() {
     const trimmed = body.trim();
-    if (!trimmed) return;
+    if (!trimmed || isPending) return;
+    if (!claimSubmit(inFlight)) return;
 
     startTransition(async () => {
-      const result = await sendMessage(conversationId, {
-        body: trimmed,
-        type: "AGENT",
-      });
-
-      if (result.status === "error") {
-        toast.error(result.message ?? "Failed to send");
-        return;
+      try {
+        await send(trimmed);
+      } finally {
+        releaseSubmit(inFlight);
       }
-
-      // Show it in the thread now, same as ReplyBox.
-      if ("sentMessage" in result && result.sentMessage) {
-        publishLocalMessage(conversationId, result.sentMessage);
-      }
-
-      // Saved, but the email to the customer didn't go out.
-      if ("emailError" in result && result.emailError) {
-        toast.error(result.emailError, { duration: 10000 });
-      }
-
-      // Delete the draft after sending
-      await deleteSharedDraft(conversationId);
-      onSent();
     });
+  }
+
+  async function send(trimmed: string) {
+    const result = await sendMessage(conversationId, {
+      body: trimmed,
+      type: "AGENT",
+    });
+
+    if (result.status === "error") {
+      toast.error(result.message ?? "Failed to send");
+      return;
+    }
+
+    // Show it in the thread now, same as ReplyBox.
+    if ("sentMessage" in result && result.sentMessage) {
+      publishLocalMessage(conversationId, result.sentMessage);
+    }
+
+    // Saved, but the email to the customer didn't go out.
+    if ("emailError" in result && result.emailError) {
+      toast.error(result.emailError, { duration: 10000 });
+    }
+
+    // Delete the draft after sending
+    await deleteSharedDraft(conversationId);
+    onSent();
   }
 
   function handleDiscard() {

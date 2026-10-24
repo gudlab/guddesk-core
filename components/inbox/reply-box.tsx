@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Icons } from "@/components/shared/icons";
 import { publishLocalMessage } from "@/lib/local-messages";
+import { claimSubmit, releaseSubmit } from "@/lib/submit-guard";
 import { CannedResponsePicker } from "./canned-response-picker";
 
 interface CannedResponse {
@@ -32,6 +33,8 @@ export function ReplyBox({
   const [isPending, startTransition] = useTransition();
   const [showCanned, setShowCanned] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Set synchronously, so a second Enter in the same tick can't send twice.
+  const inFlight = useRef(false);
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -39,33 +42,42 @@ export function ReplyBox({
 
   function handleSubmit() {
     const trimmed = body.trim();
-    if (!trimmed) return;
+    if (!trimmed || isPending) return;
+    if (!claimSubmit(inFlight)) return;
 
     startTransition(async () => {
-      const result = await sendMessage(conversationId, {
-        body: trimmed,
-        type: mode === "note" ? "NOTE" : "AGENT",
-      });
-
-      if (result.status === "error") {
-        toast.error(result.message || "Failed to send message");
-        return;
+      try {
+        await submit(trimmed);
+      } finally {
+        releaseSubmit(inFlight);
       }
-
-      // Show the reply in the thread now. With Pusher on, the matching
-      // message:created event is merged by id and doesn't add a second copy.
-      if ("sentMessage" in result && result.sentMessage) {
-        publishLocalMessage(conversationId, result.sentMessage);
-      }
-
-      // Saved, but the email to the customer didn't go out.
-      if ("emailError" in result && result.emailError) {
-        toast.error(result.emailError, { duration: 10000 });
-      }
-
-      setBody("");
-      textareaRef.current?.focus();
     });
+  }
+
+  async function submit(trimmed: string) {
+    const result = await sendMessage(conversationId, {
+      body: trimmed,
+      type: mode === "note" ? "NOTE" : "AGENT",
+    });
+
+    if (result.status === "error") {
+      toast.error(result.message || "Failed to send message");
+      return;
+    }
+
+    // Show the reply in the thread now. With Pusher on, the matching
+    // message:created event is merged by id and doesn't add a second copy.
+    if ("sentMessage" in result && result.sentMessage) {
+      publishLocalMessage(conversationId, result.sentMessage);
+    }
+
+    // Saved, but the email to the customer didn't go out.
+    if ("emailError" in result && result.emailError) {
+      toast.error(result.emailError, { duration: 10000 });
+    }
+
+    setBody("");
+    textareaRef.current?.focus();
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
