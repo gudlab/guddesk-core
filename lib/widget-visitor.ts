@@ -7,6 +7,13 @@
  * new anonymous visitor, as before.
  */
 
+/**
+ * Error code for a valid token whose visitor no longer exists. The widget
+ * (packages/widget/src/api/first-message.ts) drops the token and retries
+ * once when it sees it.
+ */
+export const VISITOR_NOT_FOUND = "VISITOR_NOT_FOUND";
+
 export interface VisitorTokenClaims {
   visitorId: string;
   workspaceId: string;

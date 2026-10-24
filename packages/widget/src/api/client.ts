@@ -2,6 +2,7 @@ import {
   config,
   configLoaded,
   conversationId,
+  isLoading,
   messages,
   persistState,
   visitorEmail,
@@ -14,6 +15,11 @@ import {
   buildIdentifyPayload,
   type IdentifyVisitorInfo,
 } from "./identify-payload";
+import {
+  createFirstMessageQueue,
+  WidgetRequestError,
+  withStaleTokenRetry,
+} from "./first-message";
 import { widgetRequestHeaders } from "./request-headers";
 
 let appId = "";
@@ -34,7 +40,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${baseUrl}${path}`, { ...options, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Request failed" }));
-    throw new Error(err.error || "Request failed");
+    throw new WidgetRequestError(err.error || "Request failed", res.status, err.code);
   }
   return res.json();
 }
@@ -90,40 +96,56 @@ function replaceOptimistic(tempId: string, real: Message | null) {
   }
 }
 
+async function postConversation(body: string) {
+  return request<{
+    conversationId: string;
+    messages: Message[];
+    visitorId: string;
+    visitorToken: string;
+  }>("/api/widget/conversations", {
+    method: "POST",
+    body: JSON.stringify({
+      appId,
+      visitorToken: visitorToken.value,
+      message: body,
+      visitorName: null,
+      visitorEmail: visitorEmail.value,
+    }),
+  });
+}
+
 export async function startConversation(body: string): Promise<void> {
   const tempId = addOptimisticMessage(body);
+  isLoading.value = true;
   try {
-    const data = await request<{
-      conversationId: string;
-      messages: Message[];
-      visitorId: string;
-      visitorToken: string;
-    }>("/api/widget/conversations", {
-      method: "POST",
-      body: JSON.stringify({
-        appId,
-        visitorToken: visitorToken.value,
-        message: body,
-        visitorName: null,
-        visitorEmail: visitorEmail.value,
-      }),
+    // A cached token whose visitor was deleted gets a 401. Drop it and
+    // start once more as a new visitor.
+    const data = await withStaleTokenRetry(() => postConversation(body), {
+      has: () => Boolean(visitorToken.value),
+      drop: () => {
+        visitorToken.value = null;
+        visitorId.value = null;
+        persistState();
+      },
     });
     conversationId.value = data.conversationId;
     visitorId.value = data.visitorId;
     visitorToken.value = data.visitorToken;
-    // Replace optimistic with the server messages
-    messages.value = data.messages;
+    // Replace optimistic with the server messages, keeping any other
+    // message still being sent.
+    messages.value = [
+      ...data.messages,
+      ...messages.value.filter((m) => m._sending && m.id !== tempId),
+    ];
     persistState();
   } catch {
     replaceOptimistic(tempId, null);
+  } finally {
+    isLoading.value = false;
   }
 }
 
-export async function sendMessage(body: string): Promise<void> {
-  if (!conversationId.value) {
-    return startConversation(body);
-  }
-
+async function postMessage(body: string): Promise<void> {
   const tempId = addOptimisticMessage(body);
   try {
     const data = await request<Message>(
@@ -134,6 +156,18 @@ export async function sendMessage(body: string): Promise<void> {
   } catch {
     replaceOptimistic(tempId, null);
   }
+}
+
+// The first message creates the visitor and conversation. Sends made
+// while it is in flight wait for it instead of creating a second one.
+const firstMessage = createFirstMessageQueue({
+  hasConversation: () => Boolean(conversationId.value),
+  start: startConversation,
+  post: postMessage,
+});
+
+export function sendMessage(body: string): Promise<void> {
+  return firstMessage.send(body);
 }
 
 export async function fetchMessages(): Promise<void> {
