@@ -180,7 +180,7 @@ export const features: Feature[] = [
     tagline: "One inbox for your entire support team",
     headline: "Every conversation, every channel, one inbox.",
     description:
-      "Live chat, email and bot conversations all flow into a single shared inbox. Assign, tag, prioritize and resolve conversations as a team, with collision detection when you add Pusher keys.",
+      "Chat and email conversations land in one shared inbox, next to any BOT replies. Assign, tag, prioritize and resolve conversations as a team, with collision detection when you add Pusher keys.",
     icon: "inbox",
     highlights: [
       {

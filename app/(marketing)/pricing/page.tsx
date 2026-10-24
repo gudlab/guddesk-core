@@ -209,7 +209,7 @@ export default function PricingPage() {
               Pricing
             </div>
             <h1 className="font-heading text-3xl md:text-4xl lg:text-5xl">
-              Free is not a trial.{" "}
+              Free has no time limit.{" "}
               <span className="text-muted-foreground">It&apos;s the plan.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">

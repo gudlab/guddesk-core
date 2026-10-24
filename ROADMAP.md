@@ -6,7 +6,7 @@
 
 ## Vision
 
-Most support platforms charge per-agent, lock AI behind expensive add-ons, and take months to set up. GudDesk takes a different approach: workspace-based pricing and a two-line widget snippet. The goal is to be the platform teams actually enjoy using, both the support team and the customers reaching out.
+Most support platforms charge per-agent, and lock AI behind expensive add-ons. GudDesk takes a different approach: workspace-based pricing and a two-line widget snippet. The goal is to be the platform teams actually enjoy using, both the support team and the customers reaching out.
 
 ---
 
@@ -139,7 +139,8 @@ _Scale from a small team to a full support organization._
 - [x] **Side conversations**: discuss a ticket with another team without the customer seeing
 
 ### Workforce Management
-- [x] **Agent availability**: online/away/offline status with auto-routing
+- [x] **Agent availability**: manual online/away/offline status (live presence needs Pusher keys)
+- [ ] **Availability routing**: route new conversations by agent status
 - [ ] **Shift scheduling**: define agent schedules and auto-assign based on availability
 - [x] **Performance dashboards**: per-agent metrics (response time, resolution time, CSAT, volume)
 - [x] **Workload monitoring**: live view of team capacity (needs Pusher keys)

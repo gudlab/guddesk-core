@@ -30,7 +30,7 @@ export const useCases: UseCase[] = [
     tagline: "Customer support built for SaaS",
     headline: "Support that scales with your SaaS",
     description:
-      "SaaS teams need fast response times, intelligent routing and self-service options. GudDesk combines live chat, a shared inbox and an agent API so your support team can handle more conversations.",
+      "SaaS teams need fast replies and good self-service. GudDesk puts live chat and a shared inbox in one place, and your own agent can answer first through the API.",
     benefits: [
       {
         title: "Reduce churn with fast responses",
@@ -115,7 +115,7 @@ export const useCases: UseCase[] = [
       {
         title: "Answer pre-sale questions on the page",
         description:
-          "Visitors browsing your store can ask about sizing, availability, or shipping without leaving the page. Your own agent can reply as BOT if you connected one.",
+          "Visitors browsing your store can ask about sizing or shipping without leaving the page. Your own agent can reply as BOT if you connected one.",
         icon: "messageCircle",
       },
       {
@@ -293,7 +293,7 @@ export const useCases: UseCase[] = [
       {
         title: "Report to clients with data",
         description:
-          "Built-in analytics show conversation volume, response times, resolution times, and CSAT scores to share in client reviews.",
+          "Built-in analytics show conversation volume, response times, resolution times, and CSAT scores.",
         icon: "analytics",
       },
     ],
@@ -350,7 +350,7 @@ export const useCases: UseCase[] = [
     tagline: "Community support for open-source maintainers",
     headline: "Support your community, not just your customers",
     description:
-      "Open-source projects need a way to help users, triage bugs, and answer questions without a budget. GudDesk is free, open source, and self-hostable, making it ideal for maintainers who want structured support alongside GitHub Issues.",
+      "Open-source projects need a way to help users and triage bugs without a budget. GudDesk is free and open source, which makes it a good fit for maintainers who want structured support alongside GitHub Issues.",
     benefits: [
       {
         title: "Completely free and open source",
@@ -420,7 +420,7 @@ export const useCases: UseCase[] = [
       {
         question: "How is this different from Discord for community support?",
         answer:
-          "Discord is great for community chat, but messages get lost in channels. GudDesk gives you a structured inbox where every conversation is tracked, assigned and resolvable.",
+          "Discord is great for community chat, but messages get lost in channels. GudDesk gives you a structured inbox where every conversation is tracked and assigned until someone resolves it.",
       },
     ],
   },
