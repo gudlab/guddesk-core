@@ -78,9 +78,13 @@ describe("emailFrom", () => {
     const { lines, log } = recorder();
     const env = { NEXT_PUBLIC_APP_URL: "https://b.test" };
     emailFrom(undefined, env, log);
+    // The flag lives on globalThis, which every copy of the module shares.
+    const flags = globalThis as unknown as Record<symbol, boolean | undefined>;
+    assert.equal(flags[Symbol.for("guddesk.email.fromWarningShown")], true);
     // A second copy of the module, as Next.js dev makes per bundle or reload.
+    // (Some loaders ignore the query and return the same module; the flag
+    // check above covers that case.)
     const copy = (await import(`./from.ts?copy=${Date.now()}`)) as typeof import("./from");
-    assert.notEqual(copy.emailFrom, emailFrom);
     copy.emailFrom(undefined, env, log);
     emailFrom(undefined, env, log);
     assert.equal(lines.length, 1);
