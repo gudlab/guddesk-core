@@ -1,19 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
+import { withCronAuth } from "@/lib/cron-auth";
 import { prisma } from "@/lib/db";
 import { generateDailySnapshot } from "@/lib/analytics";
 
-// GET /api/cron/analytics
+// GET or POST /api/cron/analytics
 // Called daily by a cron job (e.g. Vercel Cron) to generate analytics snapshots
-export async function GET(req: NextRequest) {
-  // Verify cron secret (Vercel sends Authorization: Bearer <CRON_SECRET>)
-  const authHeader = req.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET || process.env.AUTH_SECRET;
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+async function run() {
   try {
     const workspaces = await prisma.workspace.findMany({
       select: { id: true },
@@ -43,3 +36,6 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export const GET = withCronAuth(run);
+export const POST = withCronAuth(run);

@@ -1,15 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
+import { withCronAuth } from "@/lib/cron-auth";
 import { prisma } from "@/lib/db";
 import { triggerCsatSurvey } from "@/lib/surveys/trigger";
 
-export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+/**
+ * GET or POST /api/cron/surveys
+ *
+ * Cron job for delayed CSAT surveys. vercel.json runs it once a day (Hobby plan).
+ * Finds conversations closed X minutes ago where CSAT config has AFTER_DELAY
+ * trigger and no survey has been sent yet.
+ */
+async function run() {
   try {
+    // Find all workspaces with AFTER_DELAY CSAT configs
     const configs = await prisma.surveyConfig.findMany({
       where: {
         type: "CSAT",
@@ -25,8 +29,9 @@ export async function POST(req: NextRequest) {
     let triggered = 0;
 
     for (const config of configs) {
+      // Find conversations closed after (now - delay) that don't have a survey yet
       const delayAgo = new Date(Date.now() - config.delayMinutes * 60 * 1000);
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000); // don't go too far back
 
       const conversations = await prisma.conversation.findMany({
         where: {
@@ -36,6 +41,7 @@ export async function POST(req: NextRequest) {
             gte: twoHoursAgo,
             lte: delayAgo,
           },
+          // Exclude conversations that already have a survey message
           messages: {
             none: {
               type: "SYSTEM",
@@ -44,7 +50,7 @@ export async function POST(req: NextRequest) {
           },
         },
         select: { id: true },
-        take: 50,
+        take: 50, // batch limit
       });
 
       for (const conv of conversations) {
@@ -67,6 +73,5 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
-  return POST(req);
-}
+export const GET = withCronAuth(run);
+export const POST = withCronAuth(run);
