@@ -1,47 +1,68 @@
 /**
- * Server-side dedupe for agent replies.
+ * Server-side dedupe for agent replies, step by step.
  *
- * The composer makes one key per reply (a UUID when it opens or resets,
- * reused on retry) and sends it with sendMessage. Before the message is
- * created, the server claims (conversationId, key) atomically in the
- * verification_tokens table, the same way the inbound replay store does
- * (no schema change):
+ * The composer makes one key per reply and keeps it in sessionStorage until
+ * the reply is finished, so a retry (a second click, a reload, a dropped
+ * connection) sends the same key. The server keeps one row per
+ * (conversationId, userId, key) in verification_tokens (no schema change):
  *
- *   token      = reply-idem:<conversationId>:<key>   (unique)
- *   identifier = reply-idem:sending                  while the first attempt runs
- *              = reply-idem:done:<messageId>         once the message exists
- *   expires    = claim time + 10 minutes
+ *   token      = reply-idem:<conversationId>:<userId>:<key>   (unique)
+ *   identifier = one of
+ *     reply-idem:sending:<leaseUntilMs>
+ *         an attempt holds the lease and the message doesn't exist yet
+ *     reply-idem:saved:<messageId>:<steps>:<leaseUntilMs>
+ *         the message exists; <steps> lists the follow-up steps already
+ *         done (n = conversation updated and realtime sent, w = webhooks).
+ *         leaseUntilMs is 0 when no attempt is running.
+ *     reply-idem:delivered:<messageId>:<email>
+ *         every step is done; <email> is the email outcome (sent, skipped,
+ *         sender_rejected, recipient_rejected), so a repeat answers the same
+ *   expires    = last change + 24 hours (the hourly sla-check cron deletes
+ *                expired rows; after that the key starts a new reply)
  *
- * Within those 10 minutes the same key returns the existing message (no
- * second message, no second email), or "sending" while the first attempt
- * hasn't created it yet. After that the key can be used again. Expired
- * rows are deleted by the hourly sla-check cron (sweepExpiredReplyKeys).
+ * An attempt holds a 45 second lease. While it is held, a second attempt
+ * with the same key gets "busy" and changes nothing. Once it runs out (the
+ * first attempt crashed or hung), the next attempt takes it over with a
+ * compare-and-set on the identifier, so only one of several takes it.
  *
- * The messageId lives in identifier because that is the only free column;
- * identifier isn't unique on its own, token is.
+ * A retry re-runs only the steps that are missing, on the existing message.
+ * A message is never created twice, and a reply whose email didn't go out
+ * is never reported as done: a temporary email failure leaves the row in
+ * "saved" so the next retry sends the email again (Resend also gets an
+ * idempotency key per message, so a send that timed out but went through
+ * is not sent twice). A permanent failure (Resend refused the sender or the
+ * recipient) is final and is returned to the client every time.
  */
 
 export interface ReplyIdemDb {
   verificationToken: {
     updateMany(args: {
-      where: { token: string; expires?: { lte: Date } };
+      where: { token: string; identifier?: string; expires?: { lte: Date } };
       data: { identifier: string; expires?: Date };
     }): Promise<{ count: number }>;
     create(args: { data: { identifier: string; token: string; expires: Date } }): Promise<unknown>;
-    findUnique(args: { where: { token: string }; select: { identifier: true } }): Promise<{ identifier: string } | null>;
+    findUnique(args: {
+      where: { token: string };
+      select: { identifier: true; expires: true };
+    }): Promise<{ identifier: string; expires: Date } | null>;
     deleteMany(args: {
-      where: { token: string } | { token: { startsWith: string }; expires: { lt: Date } };
+      where: { token: string; identifier?: string } | { token: { startsWith: string }; expires: { lt: Date } };
     }): Promise<{ count: number }>;
   };
 }
 
 export const REPLY_IDEM_PREFIX = "reply-idem:";
-export const REPLY_IDEM_TTL_MS = 10 * 60 * 1000;
-const SENDING = `${REPLY_IDEM_PREFIX}sending`;
-const DONE = `${REPLY_IDEM_PREFIX}done:`;
+/** How long a row (and so the key) is kept after its last change. */
+export const REPLY_IDEM_TTL_MS = 24 * 60 * 60 * 1000;
+/** How long one attempt may run before another attempt may take over. */
+export const REPLY_LEASE_MS = 45 * 1000;
 
-export function replyIdemToken(conversationId: string, key: string): string {
-  return `${REPLY_IDEM_PREFIX}${conversationId}:${key}`;
+const SENDING = `${REPLY_IDEM_PREFIX}sending:`;
+const SAVED = `${REPLY_IDEM_PREFIX}saved:`;
+const DELIVERED = `${REPLY_IDEM_PREFIX}delivered:`;
+
+export function replyIdemToken(conversationId: string, userId: string, key: string): string {
+  return `${REPLY_IDEM_PREFIX}${conversationId}:${userId}:${key}`;
 }
 
 /** A client key we accept (UUID-like), or null to skip dedupe. */
@@ -49,83 +70,295 @@ export function normalizeIdempotencyKey(value: unknown): string | null {
   return typeof value === "string" && /^[A-Za-z0-9-]{8,64}$/.test(value) ? value : null;
 }
 
-/** A fresh key for a newly opened or reset composer. */
+/** A fresh key for a new reply. */
 export function newReplyKey(): string {
   const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
   if (c?.randomUUID) return c.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
-export type ReplyClaim = { state: "claimed" } | { state: "done"; messageId: string } | { state: "sending" };
+// ── States ─────────────────────────────────────────────────────────
+
+/** Follow-up steps after the message is created, in order. */
+export type ReplyStep = "n" | "w";
+
+export type EmailCode = "sent" | "skipped" | "sender_rejected" | "recipient_rejected";
+
+export type ReplyState =
+  | { state: "sending"; leaseUntil: number }
+  | { state: "saved"; messageId: string; steps: string; leaseUntil: number }
+  | { state: "delivered"; messageId: string; email: EmailCode };
+
+const EMAIL_CODES: readonly EmailCode[] = ["sent", "skipped", "sender_rejected", "recipient_rejected"];
+
+export function formatReplyState(s: ReplyState): string {
+  switch (s.state) {
+    case "sending":
+      return `${SENDING}${s.leaseUntil}`;
+    case "saved":
+      return `${SAVED}${s.messageId}:${s.steps}:${s.leaseUntil}`;
+    case "delivered":
+      return `${DELIVERED}${s.messageId}:${s.email}`;
+  }
+}
+
+/** Parse an identifier. Anything unknown counts as a "sending" row whose lease has run out. */
+export function parseReplyState(identifier: string): ReplyState {
+  if (identifier.startsWith(SENDING)) {
+    const leaseUntil = Number(identifier.slice(SENDING.length));
+    return { state: "sending", leaseUntil: Number.isFinite(leaseUntil) ? leaseUntil : 0 };
+  }
+  if (identifier.startsWith(SAVED)) {
+    const [messageId, steps = "", lease = "0"] = identifier.slice(SAVED.length).split(":");
+    const leaseUntil = Number(lease);
+    if (messageId) return { state: "saved", messageId, steps, leaseUntil: Number.isFinite(leaseUntil) ? leaseUntil : 0 };
+  }
+  if (identifier.startsWith(DELIVERED)) {
+    const [messageId, email] = identifier.slice(DELIVERED.length).split(":");
+    if (messageId) {
+      return {
+        state: "delivered",
+        messageId,
+        email: (EMAIL_CODES as readonly string[]).includes(email) ? (email as EmailCode) : "sent",
+      };
+    }
+  }
+  return { state: "sending", leaseUntil: 0 };
+}
+
+// ── Claiming ───────────────────────────────────────────────────────
+
+export type ReplyClaim =
+  /** This attempt holds the lease and must create the message. */
+  | { kind: "new"; identifier: string }
+  /** This attempt holds the lease on an existing message and must run the missing steps. */
+  | { kind: "resume"; identifier: string; messageId: string; steps: string }
+  /** Another attempt holds the lease. */
+  | { kind: "busy" }
+  /** Already finished. */
+  | { kind: "delivered"; messageId: string; email: EmailCode };
 
 function isUniqueViolation(error: unknown): boolean {
   return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "P2002";
 }
 
-export async function claimReplyKey(
-  db: ReplyIdemDb,
-  conversationId: string,
-  key: string,
-  now: Date = new Date(),
-): Promise<ReplyClaim> {
-  const token = replyIdemToken(conversationId, key);
+/**
+ * Claim the key for one attempt. Every write is a compare-and-set on the
+ * row's current identifier, so of several concurrent attempts exactly one
+ * gets the lease.
+ */
+export async function claimReplyKey(db: ReplyIdemDb, token: string, now: Date): Promise<ReplyClaim> {
   const expires = new Date(now.getTime() + REPLY_IDEM_TTL_MS);
-  // An expired row from an earlier use of this key: take it over.
-  const reclaimed = await db.verificationToken.updateMany({
-    where: { token, expires: { lte: now } },
-    data: { identifier: SENDING, expires },
-  });
-  if (reclaimed.count > 0) return { state: "claimed" };
-  try {
-    await db.verificationToken.create({ data: { identifier: SENDING, token, expires } });
-    return { state: "claimed" };
-  } catch (error) {
-    if (!isUniqueViolation(error)) throw error;
-    const row = await db.verificationToken.findUnique({ where: { token }, select: { identifier: true } });
-    if (row?.identifier.startsWith(DONE)) return { state: "done", messageId: row.identifier.slice(DONE.length) };
-    return { state: "sending" };
+  const leaseUntil = now.getTime() + REPLY_LEASE_MS;
+  const fresh = formatReplyState({ state: "sending", leaseUntil });
+
+  // A few rounds: a row can vanish (sweep, released claim) between reads.
+  for (let round = 0; round < 3; round++) {
+    const row = await db.verificationToken.findUnique({
+      where: { token },
+      select: { identifier: true, expires: true },
+    });
+
+    if (!row || row.expires <= now) {
+      if (row) {
+        // An expired row is a finished, abandoned or forgotten reply: start over.
+        const took = await db.verificationToken.updateMany({
+          where: { token, identifier: row.identifier, expires: { lte: now } },
+          data: { identifier: fresh, expires },
+        });
+        if (took.count > 0) return { kind: "new", identifier: fresh };
+        continue;
+      }
+      try {
+        await db.verificationToken.create({ data: { identifier: fresh, token, expires } });
+        return { kind: "new", identifier: fresh };
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error;
+        continue;
+      }
+    }
+
+    const state = parseReplyState(row.identifier);
+    if (state.state === "delivered") {
+      return { kind: "delivered", messageId: state.messageId, email: state.email };
+    }
+    if (state.leaseUntil > now.getTime()) return { kind: "busy" };
+
+    // The lease ran out (or was released): take it over.
+    const next =
+      state.state === "sending"
+        ? fresh
+        : formatReplyState({ ...state, leaseUntil });
+    const took = await db.verificationToken.updateMany({
+      where: { token, identifier: row.identifier },
+      data: { identifier: next, expires },
+    });
+    if (took.count === 0) continue;
+    return state.state === "sending"
+      ? { kind: "new", identifier: next }
+      : { kind: "resume", identifier: next, messageId: state.messageId, steps: state.steps };
   }
+  return { kind: "busy" };
 }
 
-export type ReplyOnce<T> =
-  | { kind: "created"; message: T }
-  | { kind: "duplicate"; messageId: string }
-  | { kind: "sending" };
+// ── Running a reply ────────────────────────────────────────────────
+
+/** What the email step reports. */
+export type EmailResult =
+  | { status: "sent" }
+  | { status: "skipped" }
+  | { status: "failed"; reason: string; permanent: boolean };
+
+export interface ReplySteps<T extends { id: string }> {
+  /** Create the message. */
+  create(): Promise<T>;
+  /** Load a message an earlier attempt created, or null if it is gone. */
+  load(messageId: string): Promise<T | null>;
+  /** Update the conversation and send the realtime events. */
+  notify(message: T): Promise<void>;
+  /** Dispatch the message.created webhooks. */
+  webhooks(message: T): Promise<void>;
+  /** Email the customer. Must not throw; report a failure instead. */
+  email(message: T): Promise<EmailResult>;
+}
+
+export type ReplyRun<T> =
+  /** Every step is done. email says whether the email went out. */
+  | { kind: "delivered"; message: T; email: EmailResult; repeat: boolean }
+  /**
+   * The message is saved but a step didn't finish. A retry with the same
+   * key runs the missing steps only.
+   */
+  | { kind: "incomplete"; message: T; failedStep: "notify" | "webhooks" | "email"; email?: EmailResult }
+  /** Another attempt with this key is running. */
+  | { kind: "busy" }
+  /** The key's message no longer exists (deleted). */
+  | { kind: "gone" };
+
+function emailCode(result: EmailResult): EmailCode {
+  if (result.status !== "failed") return result.status;
+  return result.reason === "recipient_rejected" ? "recipient_rejected" : "sender_rejected";
+}
+
+/** The EmailResult a finished row stands for. */
+export function emailFromCode(code: EmailCode): EmailResult {
+  if (code === "sent" || code === "skipped") return { status: code };
+  return { status: "failed", reason: code, permanent: true };
+}
 
 /**
- * Create the reply at most once per (conversationId, key) within 10
- * minutes. Without a key it just creates. If creating throws, the claim is
- * released so a retry can try again.
+ * Run a reply: claim the key, create the message (once), then the steps
+ * that haven't been done yet. Without a key it just runs every step.
  */
-export async function createReplyOnce<T extends { id: string }>(
+export async function runReplyOnce<T extends { id: string }>(
   db: ReplyIdemDb,
-  input: { conversationId: string; key: string | null; now?: Date },
-  create: () => Promise<T>,
+  input: { conversationId: string; userId: string; key: string | null; now?: () => Date },
+  steps: ReplySteps<T>,
   log: (line: string) => void = console.warn,
-): Promise<ReplyOnce<T>> {
-  const { conversationId, key } = input;
-  if (!key) return { kind: "created", message: await create() };
+): Promise<ReplyRun<T>> {
+  const clock = input.now ?? (() => new Date());
 
-  const claim = await claimReplyKey(db, conversationId, key, input.now ?? new Date());
-  if (claim.state === "done") return { kind: "duplicate", messageId: claim.messageId };
-  if (claim.state === "sending") return { kind: "sending" };
+  if (!input.key) {
+    const message = await steps.create();
+    try {
+      await steps.notify(message);
+    } catch {
+      return { kind: "incomplete", message, failedStep: "notify" };
+    }
+    await steps.webhooks(message).catch(() => {});
+    const email = await steps.email(message);
+    if (email.status === "failed" && !email.permanent) {
+      return { kind: "incomplete", message, failedStep: "email", email };
+    }
+    return { kind: "delivered", message, email, repeat: false };
+  }
 
-  const token = replyIdemToken(conversationId, key);
+  const token = replyIdemToken(input.conversationId, input.userId, input.key);
+  const claim = await claimReplyKey(db, token, clock());
+
+  if (claim.kind === "busy") return { kind: "busy" };
+  if (claim.kind === "delivered") {
+    const message = await steps.load(claim.messageId);
+    if (!message) return { kind: "gone" };
+    return { kind: "delivered", message, email: emailFromCode(claim.email), repeat: true };
+  }
+
+  // This attempt holds the lease from here on. `current` is the row's
+  // identifier as this attempt last wrote it; every write checks it, so an
+  // attempt whose lease was taken over can't overwrite the new owner. Each
+  // step that finishes renews the lease.
+  let current = claim.identifier;
+  async function move(next: ReplyState): Promise<boolean> {
+    const identifier = formatReplyState(next);
+    const { count } = await db.verificationToken.updateMany({
+      where: { token, identifier: current },
+      data: { identifier, expires: new Date(clock().getTime() + REPLY_IDEM_TTL_MS) },
+    });
+    if (count > 0) current = identifier;
+    return count > 0;
+  }
+  function saved(messageId: string, steps: string, held: boolean): ReplyState {
+    return { state: "saved", messageId, steps, leaseUntil: held ? clock().getTime() + REPLY_LEASE_MS : 0 };
+  }
+  async function record(next: ReplyState, what: string) {
+    // One retry: these are single-row updates, and a lost "saved" would let
+    // a takeover create the message again.
+    const ok = await move(next).catch(() => move(next).catch(() => false));
+    if (!ok) log(`[reply-idem] could not record ${what}`);
+  }
+  async function release(messageId: string, steps: string) {
+    await record(saved(messageId, steps, false), "the released lease");
+  }
+
   let message: T;
-  try {
-    message = await create();
-  } catch (error) {
-    await db.verificationToken.deleteMany({ where: { token } }).catch(() => {});
-    throw error;
+  let done: string;
+  if (claim.kind === "new") {
+    try {
+      message = await steps.create();
+    } catch (error) {
+      // Nothing was saved: free the key so a retry starts over.
+      await db.verificationToken.deleteMany({ where: { token, identifier: current } }).catch(() => {});
+      throw error;
+    }
+    done = "";
+    await record(saved(message.id, done, true), "the saved message");
+  } else {
+    const existing = await steps.load(claim.messageId);
+    if (!existing) {
+      await db.verificationToken.deleteMany({ where: { token, identifier: current } }).catch(() => {});
+      return { kind: "gone" };
+    }
+    message = existing;
+    done = claim.steps;
   }
-  try {
-    await db.verificationToken.updateMany({ where: { token }, data: { identifier: `${DONE}${message.id}` } });
-  } catch (error) {
-    // The message exists; a retry sees "sending" until the claim expires
-    // instead of a second message.
-    log(`[reply-idem] mark failed: ${error instanceof Error ? error.name : "error"}`);
+
+  const followUps: Array<[ReplyStep, "notify" | "webhooks", (m: T) => Promise<void>]> = [
+    ["n", "notify", (m) => steps.notify(m)],
+    ["w", "webhooks", (m) => steps.webhooks(m)],
+  ];
+  for (const [flag, name, run] of followUps) {
+    if (done.includes(flag)) continue;
+    try {
+      await run(message);
+    } catch (error) {
+      log(`[reply-idem] ${name} failed: ${error instanceof Error ? error.name : "error"}`);
+      await release(message.id, done);
+      return { kind: "incomplete", message, failedStep: name };
+    }
+    done += flag;
+    await record(saved(message.id, done, true), `step ${name}`);
   }
-  return { kind: "created", message };
+
+  const email = await steps.email(message);
+  if (email.status === "failed" && !email.permanent) {
+    // Not delivered: leave it "saved" with the lease released, so the next
+    // retry sends the email again.
+    await release(message.id, done);
+    return { kind: "incomplete", message, failedStep: "email", email };
+  }
+
+  await record({ state: "delivered", messageId: message.id, email: emailCode(email) }, "the delivered reply");
+  return { kind: "delivered", message, email, repeat: false };
 }
 
 /** Delete expired reply-idem:* rows. Returns how many. */

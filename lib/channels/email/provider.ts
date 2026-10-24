@@ -121,7 +121,7 @@ export class EmailChannelProvider implements ChannelProvider {
           References: replyHeaders.references,
         }),
       },
-    }, { sender: "workspace" });
+    }, { sender: "workspace", idempotencyKey: `email-channel-reply/${message.id}` });
     return sent.status === "failed" ? deliveryFailure(sent.error) : { status: "sent" };
   }
 

@@ -134,6 +134,12 @@ export interface SendEmailOptions {
    * problems still warn.
    */
   sender?: "app" | "workspace";
+  /**
+   * Sent as Resend's Idempotency-Key, so a retry of the same email (for
+   * example after a timeout that did go through) is not delivered twice.
+   * Resend keeps keys for 24 hours.
+   */
+  idempotencyKey?: string;
   /** For tests. Defaults to a Resend client using RESEND_API_KEY. */
   client?: { emails: Pick<Resend["emails"], "send"> };
   /** For tests. Defaults to process.env.RESEND_API_KEY being set. */
@@ -171,7 +177,7 @@ export async function sendEmail(
   try {
     const response: ResendResult = await (
       options.client ?? getClient()
-    ).emails.send(email);
+    ).emails.send(email, options.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined);
     if (response.error) {
       const raw = response.error as {
         name?: string;

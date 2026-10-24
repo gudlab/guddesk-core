@@ -6,9 +6,15 @@ import { safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { requireWorkspaceMember } from "@/lib/workspace";
 import { getChannelProvider } from "@/lib/channels/registry";
-import { deliveryNotice, withSendTimeout } from "@/lib/email/delivery-notice";
+import {
+  deliveryNotice,
+  isPermanentFailure,
+  withSendTimeout,
+  type OutboundDelivery,
+} from "@/lib/email/delivery-notice";
 import { revalidatePath } from "next/cache";
-import { createReplyOnce, normalizeIdempotencyKey } from "@/lib/reply-idempotency";
+import { normalizeIdempotencyKey, runReplyOnce, type EmailResult } from "@/lib/reply-idempotency";
+import type { Message } from "@prisma/client";
 
 export async function sendMessage(
   conversationId: string,
@@ -46,139 +52,128 @@ export async function sendMessage(
 
     await requireWorkspaceMember(conversation.workspaceId, session.user.id);
 
-    // Create the message, at most once per composed reply: the composer's
-    // idempotency key is claimed first (lib/reply-idempotency.ts), so a
-    // double send or a retry returns the first message and sends no second
-    // email.
-    const once = await createReplyOnce(
-      prisma,
-      { conversationId, key: normalizeIdempotencyKey(data.idempotencyKey) },
-      () =>
-        prisma.message.create({
-          data: {
-            conversationId,
-            type,
-            body,
-            senderId: session.user.id,
-            senderName: session.user.name ?? "Agent",
-            mentions,
-          },
-        }),
-    );
-    if (once.kind === "sending") {
-      return { status: "sending", message: "Your reply is still sending." };
-    }
-    if (once.kind === "duplicate") {
-      return existingReply(conversationId, once.messageId);
-    }
-    const message = once.message;
-
-    // Update conversation metadata + track first response for SLA
+    const senderName = session.user.name ?? "Agent";
     const preview = body.length > 100 ? body.slice(0, 100) + "..." : body;
-    const conversationUpdate: Record<string, unknown> = {
-      lastMessageAt: new Date(),
-      lastMessagePreview: type === "NOTE" ? `[Note] ${preview}` : preview,
-    };
 
-    // Track first agent/bot response for SLA
-    if (type === "AGENT" && !conversation.firstResponseAt) {
-      conversationUpdate.firstResponseAt = new Date();
-    }
-
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: conversationUpdate,
-    });
-
-    // Trigger real-time events — batched into a single HTTPS round-trip
-    // so we don't serialize 3-6 sequential ~100ms calls on the reply path.
-    const messagePayload = {
-      id: message.id,
-      type: message.type,
-      body: message.body,
-      senderId: message.senderId,
-      senderName: message.senderName,
-      createdAt: message.createdAt,
-    };
-
-    const events: Array<{ channel: string; name: string; data: unknown }> = [
-      {
-        channel: `private-conversation-${conversationId}`,
-        name: "message:created",
-        data: messagePayload,
-      },
-      {
-        channel: `private-workspace-${conversation.workspaceId}`,
-        name: "conversation:new-message",
-        data: {
-          conversationId,
-          lastMessageAt: new Date(),
-          lastMessagePreview: preview,
-        },
-      },
-    ];
-
-    if (type === "AGENT") {
-      events.push(
+    const realtimeEvents = (message: Message) => {
+      // Batched into a single HTTPS round-trip so we don't serialize 3-6
+      // sequential ~100ms calls on the reply path.
+      const messagePayload = {
+        id: message.id,
+        type: message.type,
+        body: message.body,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        createdAt: message.createdAt,
+      };
+      const events: Array<{ channel: string; name: string; data: unknown }> = [
         {
-          channel: `private-visitor-${conversationId}`,
-          name: "typing:stop",
-          data: {},
-        },
-        {
-          channel: `private-visitor-${conversationId}`,
+          channel: `private-conversation-${conversationId}`,
           name: "message:created",
           data: messagePayload,
         },
-      );
-    }
-
-    if (type === "NOTE" && mentions.length > 0) {
-      const mentionPreview = body.length > 80 ? body.slice(0, 80) + "..." : body;
-      for (const mentionedUserId of mentions) {
-        events.push({
+        {
           channel: `private-workspace-${conversation.workspaceId}`,
-          name: "mention:created",
+          name: "conversation:new-message",
           data: {
             conversationId,
-            messageId: message.id,
-            mentionedUserId,
-            senderName: session.user.name ?? "Agent",
-            preview: mentionPreview,
+            lastMessageAt: new Date(),
+            lastMessagePreview: preview,
           },
-        });
+        },
+      ];
+      if (message.type === "AGENT") {
+        events.push(
+          {
+            channel: `private-visitor-${conversationId}`,
+            name: "typing:stop",
+            data: {},
+          },
+          {
+            channel: `private-visitor-${conversationId}`,
+            name: "message:created",
+            data: messagePayload,
+          },
+        );
       }
-    }
+      if (message.type === "NOTE" && mentions.length > 0) {
+        const mentionPreview = body.length > 80 ? body.slice(0, 80) + "..." : body;
+        for (const mentionedUserId of mentions) {
+          events.push({
+            channel: `private-workspace-${conversation.workspaceId}`,
+            name: "mention:created",
+            data: {
+              conversationId,
+              messageId: message.id,
+              mentionedUserId,
+              senderName,
+              preview: mentionPreview,
+            },
+          });
+        }
+      }
+      return events;
+    };
 
-    await safeTriggerBatch(events, "sendMessage");
-
-    // Dispatch webhooks (awaited — required for Vercel serverless)
-    if (type !== "NOTE") {
-      await dispatchWebhooks(conversation.workspaceId, "message.created", {
-        conversationId,
-        messageId: message.id,
-        type: message.type,
-        body: message.body,
-        senderName: message.senderName,
-        workspaceId: conversation.workspaceId,
-      });
-    }
-
-    // Email the reply for email-channel conversations. Awaited so the agent
-    // learns when it did not go out (for example Resend rejecting an
-    // unverified from address). The message is saved either way.
-    let emailError: string | null = null;
-    if (type === "AGENT" && conversation.channel === "EMAIL") {
-      const provider = getChannelProvider("EMAIL");
-      if (provider) {
-        const fullMessage = await prisma.message.findUnique({
-          where: { id: message.id },
-        });
-        if (fullMessage) {
+    // Create the message at most once per composed reply, then run the
+    // steps after it. The composer's key is claimed first
+    // (lib/reply-idempotency.ts): a double send waits for the first, and a
+    // retry runs only the steps that didn't finish (for example the email)
+    // on the message that already exists.
+    const run = await runReplyOnce<Message>(
+      prisma,
+      { conversationId, userId: session.user.id, key: normalizeIdempotencyKey(data.idempotencyKey) },
+      {
+        create: () =>
+          prisma.message.create({
+            data: {
+              conversationId,
+              type,
+              body,
+              senderId: session.user.id,
+              senderName,
+              mentions,
+            },
+          }),
+        load: (messageId) => prisma.message.findFirst({ where: { id: messageId, conversationId } }),
+        notify: async (message) => {
+          // Update conversation metadata + track first response for SLA
+          const conversationUpdate: Record<string, unknown> = {
+            lastMessageAt: new Date(),
+            lastMessagePreview: type === "NOTE" ? `[Note] ${preview}` : preview,
+          };
+          if (message.type === "AGENT" && !conversation.firstResponseAt) {
+            conversationUpdate.firstResponseAt = new Date();
+          }
+          await prisma.conversation.update({
+            where: { id: conversationId },
+            data: conversationUpdate,
+          });
+          await safeTriggerBatch(realtimeEvents(message), "sendMessage");
+        },
+        webhooks: async (message) => {
+          // Awaited (required for Vercel serverless)
+          if (message.type === "NOTE") return;
+          await dispatchWebhooks(conversation.workspaceId, "message.created", {
+            conversationId,
+            messageId: message.id,
+            type: message.type,
+            body: message.body,
+            senderName: message.senderName,
+            workspaceId: conversation.workspaceId,
+          });
+        },
+        email: async (message) => {
+          // Email the reply for email-channel conversations. Awaited so the
+          // agent learns when it did not go out.
+          if (message.type !== "AGENT" || conversation.channel !== "EMAIL") return { status: "skipped" };
+          const provider = getChannelProvider("EMAIL");
+          if (!provider) return { status: "skipped" };
+          let delivery: OutboundDelivery | void;
           try {
             // At most ~8s: the reply is already saved, and a slow send
             // becomes a "not confirmed" notice instead of a hung box.
-            const delivery = await withSendTimeout(
+            delivery = await withSendTimeout(
               provider.sendOutbound(
                 {
                   conversationId,
@@ -187,23 +182,51 @@ export async function sendMessage(
                   visitorName: conversation.visitor?.name ?? null,
                   subject: conversation.subject ?? null,
                 },
-                fullMessage,
+                message,
               ),
             );
-            emailError = deliveryNotice(delivery);
           } catch (err) {
             console.error("Outbound email error:", err instanceof Error ? err.name : "error");
-            emailError = deliveryNotice({ status: "failed", reason: "send_failed" });
+            delivery = { status: "failed", reason: "send_failed" };
           }
-        }
-      }
+          return toEmailResult(delivery);
+        },
+      },
+    );
+
+    if (run.kind === "busy") {
+      return {
+        status: "sending",
+        message: "Your reply is still sending. Wait a moment, then send it again if it doesn't appear.",
+      };
     }
+    if (run.kind === "gone") {
+      return { status: "error", retryable: false, message: "This reply was deleted, so it wasn't sent again." };
+    }
+    if (run.kind === "incomplete" && run.failedStep !== "email") {
+      // Saved, but the conversation or webhooks didn't update. The same key
+      // finishes it on the next send without a second copy.
+      return {
+        status: "error",
+        retryable: true,
+        message: "Your reply was saved but not fully sent. Send it again to finish. It won't be posted twice.",
+      };
+    }
+
+    const message = run.message;
+    const email = run.email;
+    const emailError =
+      email?.status === "failed" ? deliveryNotice({ status: "failed", reason: email.reason as FailedReason }) : null;
 
     revalidatePath(`/workspace`);
     return {
       status: "success",
       messageId: message.id,
+      deduped: run.kind === "delivered" && run.repeat,
       emailError,
+      // True when the email failed for a reason a retry may fix. Sending
+      // again with the same key retries only the email.
+      emailRetryable: run.kind === "incomplete",
       // Same shape as GET /api/inbox/conversations/[id]/messages, so the
       // thread can render it before any refetch.
       sentMessage: {
@@ -220,36 +243,19 @@ export async function sendMessage(
       },
     };
   } catch (error) {
+    // Sending again with the same key is safe: it never adds a second copy.
     if (error instanceof Error) {
-      return { status: "error", message: error.message };
+      return { status: "error", retryable: true, message: error.message };
     }
-    return { status: "error", message: "Failed to send message" };
+    return { status: "error", retryable: true, message: "Failed to send message" };
   }
 }
 
-/** The message an earlier send with the same key created, in sendMessage's success shape. */
-async function existingReply(conversationId: string, messageId: string) {
-  const message = await prisma.message.findFirst({
-    where: { id: messageId, conversationId },
-    include: { sender: { select: { name: true, image: true } } },
-  });
-  if (!message) {
-    return { status: "error", message: "This reply was already sent." };
-  }
-  return {
-    status: "success",
-    messageId: message.id,
-    deduped: true,
-    // The first send already reported (or didn't) its email; none is sent now.
-    emailError: null,
-    sentMessage: {
-      id: message.id,
-      type: message.type,
-      body: message.body,
-      senderId: message.senderId,
-      senderName: message.senderName,
-      createdAt: message.createdAt.toISOString(),
-      sender: { name: message.sender?.name ?? null, image: message.sender?.image ?? null },
-    },
-  };
+type FailedReason = Extract<OutboundDelivery, { status: "failed" }>["reason"];
+
+/** The email step's outcome for the reply runner. */
+function toEmailResult(delivery: OutboundDelivery | void): EmailResult {
+  if (!delivery || delivery.status === "sent") return { status: "sent" };
+  if (delivery.status === "skipped") return { status: "skipped" };
+  return { status: "failed", reason: delivery.reason, permanent: isPermanentFailure(delivery) };
 }

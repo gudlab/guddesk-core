@@ -3,13 +3,11 @@
 import { useRef, useEffect, useTransition } from "react";
 import { toast } from "sonner";
 
-import { sendMessage } from "@/actions/send-message";
 import { deleteSharedDraft } from "@/actions/manage-shared-draft";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
-import { publishLocalMessage } from "@/lib/local-messages";
-import { newReplyKey } from "@/lib/reply-idempotency";
 import { claimSubmit, releaseSubmit } from "@/lib/submit-guard";
+import { deliverReply } from "./deliver-reply";
 
 interface Props {
   conversationId: string;
@@ -29,18 +27,10 @@ export function SharedDraftEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // Set synchronously, so a second click in the same tick can't send twice.
   const inFlight = useRef(false);
-  // One idempotency key per composed reply, reused on retry, so the server
-  // creates (and emails) it once (lib/reply-idempotency.ts).
-  const replyKey = useRef<string>(newReplyKey());
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     textareaRef.current?.focus();
-  }, [conversationId]);
-
-  // A different conversation is a new reply.
-  useEffect(() => {
-    replyKey.current = newReplyKey();
   }, [conversationId]);
 
   function handleSendAsReply() {
@@ -58,43 +48,28 @@ export function SharedDraftEditor({
   }
 
   async function send(trimmed: string) {
-    const result = await sendMessage(conversationId, {
-      body: trimmed,
-      idempotencyKey: replyKey.current,
-      type: "AGENT",
-    });
-
-    if (result.status === "error") {
-      toast.error(result.message ?? "Failed to send");
-      return;
-    }
-
-    // The first send with this key is still running: don't send it again.
-    if (result.status === "sending") {
-      toast.message(result.message ?? "Your reply is still sending.");
-      return;
-    }
-
-    // Show it in the thread now, same as ReplyBox.
-    if ("sentMessage" in result && result.sentMessage) {
-      publishLocalMessage(conversationId, result.sentMessage);
-    }
-
-    // Saved, but the email to the customer didn't go out.
-    if ("emailError" in result && result.emailError) {
-      toast.error(result.emailError, { duration: 10000 });
-    }
+    // deliverReply keeps the reply's idempotency key in sessionStorage, so
+    // sending the same text again after a failure can't post it twice.
+    const outcome = await deliverReply({ conversationId, body: trimmed, type: "AGENT" });
+    if (outcome !== "posted") return;
 
     // Delete the draft after sending
-    await deleteSharedDraft(conversationId);
+    try {
+      await deleteSharedDraft(conversationId);
+    } catch {
+      toast.error("Your reply was sent, but the shared draft couldn't be cleared. Discard it when you're back online.");
+    }
     onSent();
-    replyKey.current = newReplyKey();
   }
 
   function handleDiscard() {
     startTransition(async () => {
-      await deleteSharedDraft(conversationId);
-      onBodyChange("");
+      try {
+        await deleteSharedDraft(conversationId);
+        onBodyChange("");
+      } catch {
+        toast.error("The draft couldn't be discarded. Check your connection and try again.");
+      }
     });
   }
 
