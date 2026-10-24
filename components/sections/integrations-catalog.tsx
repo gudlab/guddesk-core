@@ -91,7 +91,7 @@ const integrations: Integration[] = [
     category: "channels",
     icon: "mail",
     tier: "free",
-    status: "coming-soon",
+    status: "available",
   },
   {
     name: "WhatsApp",
@@ -117,15 +117,6 @@ const integrations: Integration[] = [
     name: "HubSpot",
     description:
       "Push contacts and conversation activity to HubSpot CRM. Map custom fields and trigger workflows.",
-    category: "crm",
-    icon: "database",
-    tier: "pro",
-    status: "coming-soon",
-  },
-  {
-    name: "Pipedrive",
-    description:
-      "Create deals from conversations. Sync contact data and conversation history to Pipedrive.",
     category: "crm",
     icon: "database",
     tier: "pro",
@@ -196,16 +187,7 @@ const integrations: Integration[] = [
   {
     name: "JavaScript SDK",
     description:
-      "Client library for browser and Node.js. Type-safe methods for all API endpoints with built-in auth.",
-    category: "developer",
-    icon: "code",
-    tier: "free",
-    status: "coming-soon",
-  },
-  {
-    name: "CLI Tool",
-    description:
-      "Manage conversations, deploy agents, and configure settings from the command line.",
+      "An npm package for the widget and platform SDKs are planned (see the roadmap). Today you call the REST API directly.",
     category: "developer",
     icon: "code",
     tier: "free",
@@ -216,29 +198,11 @@ const integrations: Integration[] = [
   {
     name: "Built-in Analytics",
     description:
-      "Conversation volume, response times, resolution times, agent performance, and CSAT scores, all built in.",
+      "Conversation volume, response times, resolution times and agent performance, all built in.",
     category: "analytics",
     icon: "analytics",
     tier: "free",
     status: "available",
-  },
-  {
-    name: "Google Analytics",
-    description:
-      "Track widget interactions as events in GA4. Measure conversation starts, article views, and CSAT submissions.",
-    category: "analytics",
-    icon: "lineChart",
-    tier: "free",
-    status: "coming-soon",
-  },
-  {
-    name: "PostHog",
-    description:
-      "Send GudDesk events to PostHog for product analytics. Correlate support conversations with user behavior.",
-    category: "analytics",
-    icon: "lineChart",
-    tier: "free",
-    status: "coming-soon",
   },
 ];
 

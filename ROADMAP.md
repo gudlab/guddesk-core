@@ -59,9 +59,10 @@ _Fill the gaps that every competitor already covers._
 - [x] **Customer segments**: filter and group customers by attributes
 
 ### CSAT & Feedback
-- [x] **CSAT surveys**: post-conversation satisfaction rating
+- [x] **CSAT surveys**: survey settings and the Feedback dashboard. Visitors can't rate in the widget yet
+- [ ] **Widget CSAT rating**: let visitors rate a closed conversation in the widget
 - [x] **NPS surveys**: survey settings and score reporting. Sending NPS surveys to visitors is not built yet
-- [x] **Survey triggers**: auto-send on conversation close or after X days
+- [x] **Survey triggers**: a CSAT survey message is created on close or after a delay. The widget can't show the rating yet
 - [x] **Feedback dashboard**: aggregate scores, trends, per-agent breakdown
 
 ---
@@ -142,7 +143,7 @@ _Scale from a small team to a full support organization._
 - [x] **Agent availability**: manual online/away/offline status (live presence needs Pusher keys)
 - [ ] **Availability routing**: route new conversations by agent status
 - [ ] **Shift scheduling**: define agent schedules and auto-assign based on availability
-- [x] **Performance dashboards**: per-agent metrics (response time, resolution time, CSAT, volume)
+- [x] **Performance dashboards**: per-agent metrics (response time, resolution time, volume). Per-agent CSAT needs widget rating first
 - [x] **Workload monitoring**: live view of team capacity (needs Pusher keys)
 
 ### Advanced Reporting

@@ -80,7 +80,7 @@ export const useCases: UseCase[] = [
       "Shared inbox",
       "Knowledge base",
       "SLA policies",
-      "CSAT surveys",
+      "CSAT settings and dashboard",
       "Tags and assignment",
       "Webhooks",
       "REST API",
@@ -131,9 +131,9 @@ export const useCases: UseCase[] = [
         icon: "refreshCw",
       },
       {
-        title: "Measure customer satisfaction",
+        title: "Customer satisfaction (partly built)",
         description:
-          "Send CSAT surveys after conversations close. Track satisfaction scores over time and per agent.",
+          "CSAT settings and a Feedback dashboard are built. Visitors can't rate in the widget yet, so scores start once widget rating ships.",
         icon: "star",
       },
     ],
@@ -161,7 +161,7 @@ export const useCases: UseCase[] = [
       "Knowledge base",
       "SLA policies",
       "Customer segments",
-      "CSAT surveys",
+      "CSAT settings and dashboard",
       "Canned responses",
       "Tags",
       "Webhooks",
@@ -243,7 +243,7 @@ export const useCases: UseCase[] = [
       "Webhooks",
       "Canned responses",
       "Customer profiles",
-      "CSAT surveys",
+      "CSAT settings and dashboard",
       "Open source",
     ],
     faqs: [
@@ -293,7 +293,7 @@ export const useCases: UseCase[] = [
       {
         title: "Report to clients with data",
         description:
-          "Built-in analytics show conversation volume, response times, resolution times, and CSAT scores.",
+          "Built-in analytics show conversation volume, response times and resolution times.",
         icon: "analytics",
       },
     ],
@@ -311,7 +311,7 @@ export const useCases: UseCase[] = [
       {
         title: "Monthly client reporting",
         description:
-          "Pull analytics per workspace: conversations handled, average response time, CSAT scores. Present the data to prove your team's value.",
+          "Pull analytics per workspace: conversations handled, average response time and resolution time. Present the data to prove your team's value.",
       },
     ],
     features: [
@@ -404,7 +404,7 @@ export const useCases: UseCase[] = [
       "Webhooks",
       "Canned responses",
       "Tags and assignment",
-      "CSAT feedback",
+      "CSAT settings and dashboard",
     ],
     faqs: [
       {

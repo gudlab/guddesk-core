@@ -399,10 +399,10 @@ export const features: Feature[] = [
   {
     slug: "analytics",
     name: "Analytics & Reporting",
-    tagline: "Reports on volume, response times and CSAT",
+    tagline: "Reports on volume, response and resolution times",
     headline: "See how your support team is doing.",
     description:
-      "Built-in analytics show conversation volume, response times, resolution times, per-agent numbers and CSAT results.",
+      "Built-in analytics show conversation volume, response times, resolution times and per-agent numbers. CSAT settings and a CSAT dashboard are there, but visitors can't rate in the widget yet.",
     icon: "analytics",
     highlights: [
       {
@@ -414,13 +414,13 @@ export const features: Feature[] = [
       {
         title: "Agent performance",
         description:
-          "Per-agent metrics: conversations handled, average response time, resolution time, and CSAT score.",
+          "Per-agent metrics: conversations handled, average response time and resolution time.",
         icon: "users",
       },
       {
-        title: "CSAT surveys",
+        title: "CSAT settings and dashboard",
         description:
-          "Automatic customer satisfaction surveys after conversation close. Track scores over time and per agent.",
+          "Set up a CSAT survey in Settings and see results on the Feedback page. Visitors can't rate in the widget yet, so there are no scores until widget rating ships.",
         icon: "star",
       },
       {
@@ -435,7 +435,7 @@ export const features: Feature[] = [
       "Response time analytics",
       "Resolution time tracking",
       "Agent performance dashboards",
-      "CSAT survey system",
+      "CSAT settings and dashboard (no widget rating yet)",
       "NPS survey settings and score dashboard",
       "Workload monitoring",
       "Daily analytics snapshots",
@@ -446,7 +446,7 @@ export const features: Feature[] = [
       {
         title: "Monthly team review",
         description:
-          "Pull up the performance dashboard for the past month. See who handled the most conversations, who has the best CSAT scores, and where bottlenecks are forming.",
+          "Pull up the performance dashboard for the past month. See who handled the most conversations, how fast each person replied, and where bottlenecks are forming.",
       },
       {
         title: "Identify documentation gaps",
@@ -458,7 +458,7 @@ export const features: Feature[] = [
       {
         question: "Is analytics included in the free plan?",
         answer:
-          "Yes. All analytics features (conversation metrics, agent performance, CSAT surveys) are included in the free plan.",
+          "Yes. All analytics features (conversation metrics, agent performance, CSAT and NPS settings and dashboards) are included in the free plan.",
       },
       {
         question: "Do you support NPS?",
