@@ -340,7 +340,7 @@ export const features: Feature[] = [
       {
         title: "Actions",
         description:
-          "Each rule has one action: assign to an agent, add or remove a tag, change status, send a canned response, or post to Slack.",
+          "Each rule has one action: assign to an agent, add or remove a tag, change status, send a message, or post to Slack.",
         icon: "automations",
       },
       {
