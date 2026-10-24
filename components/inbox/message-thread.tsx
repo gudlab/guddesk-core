@@ -4,6 +4,7 @@ import { useRef, useEffect } from "react";
 import { useMessages } from "@/hooks/use-messages";
 import { MessageBubble } from "./message-bubble";
 import { Icons } from "@/components/shared/icons";
+import { LoadError } from "./load-error";
 
 interface MessageThreadProps {
   conversationId: string;
@@ -16,7 +17,7 @@ export function MessageThread({
   isAgentTyping,
   typingUser,
 }: MessageThreadProps) {
-  const { messages, isLoading } = useMessages(conversationId);
+  const { messages, isLoading, loadError, refetch } = useMessages(conversationId);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,8 +32,17 @@ export function MessageThread({
     );
   }
 
+  if (loadError && messages.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <LoadError what="this conversation" onRetry={refetch} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      {loadError && <LoadError what="messages" onRetry={refetch} compact />}
       {messages.map((msg) => (
         <MessageBubble key={msg.id} message={msg} />
       ))}

@@ -3,10 +3,14 @@
 import type { ConversationListItem } from "@/hooks/use-conversations";
 import { ConversationListItemComponent } from "./conversation-list-item";
 import { Icons } from "@/components/shared/icons";
+import { LoadError } from "./load-error";
 
 interface ConversationListProps {
   conversations: ConversationListItem[];
   isLoading: boolean;
+  /** The last load failed; the list may be stale or empty. */
+  loadError?: boolean;
+  onRetry?: () => void;
   status: "OPEN" | "SNOOZED" | "CLOSED";
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -15,6 +19,8 @@ interface ConversationListProps {
 export function ConversationList({
   conversations,
   isLoading,
+  loadError = false,
+  onRetry = () => {},
   status,
   selectedId,
   onSelect,
@@ -26,6 +32,10 @@ export function ConversationList({
         <Icons.spinner className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (loadError && conversations.length === 0) {
+    return <LoadError what="conversations" onRetry={onRetry} />;
   }
 
   if (conversations.length === 0) {
@@ -41,6 +51,7 @@ export function ConversationList({
 
   return (
     <div className="divide-y overflow-y-auto">
+      {loadError && <LoadError what="conversations" onRetry={onRetry} compact />}
       {conversations.map((conversation) => (
         <ConversationListItemComponent
           key={conversation.id}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { usePusher, usePusherReconnect } from "./use-pusher";
 import { usePollingFallback } from "./use-polling-fallback";
+import { onBackOnline } from "@/lib/network";
 import {
   CONVERSATION_LIST_POLL_MS,
   appendConversationPage,
@@ -47,6 +48,8 @@ export function useConversations({
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
+  // The last list load failed (offline, server down or an error answer).
+  const [loadError, setLoadError] = useState(false);
   const nextCursorRef = useRef<string | null>(null);
   // True once "load more" has appended a second page.
   const extraPagesRef = useRef(false);
@@ -84,9 +87,13 @@ export function useConversations({
         setHasMore(data.hasMore ?? false);
         setTotal(data.total ?? 0);
         nextCursorRef.current = data.nextCursor ?? null;
+        setLoadError(false);
+      } else {
+        setLoadError(true);
       }
     } catch (error) {
-      console.error("Failed to fetch conversations:", error);
+      console.error("Failed to fetch conversations:", error instanceof Error ? error.name : "error");
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +127,9 @@ export function useConversations({
   // Resync after reconnect — events that fired while disconnected are lost.
   usePusherReconnect(refresh);
 
+  // And when the browser itself comes back online.
+  useEffect(() => onBackOnline(refresh), [refresh]);
+
   // Without Pusher, poll the first page. One request per poll, same
   // endpoint and filters. Rows from "load more" are kept.
   const pollConversations = useCallback(async () => {
@@ -140,6 +150,7 @@ export function useConversations({
         mergeConversationPage(prev, data.conversations ?? [], PAGE_SIZE),
       );
       setTotal(data.total ?? 0);
+      setLoadError(false);
       if (!extraPagesRef.current) {
         setHasMore(data.hasMore ?? false);
         nextCursorRef.current = data.nextCursor ?? null;
@@ -151,5 +162,5 @@ export function useConversations({
 
   usePollingFallback(pollConversations, CONVERSATION_LIST_POLL_MS);
 
-  return { conversations, isLoading, hasMore, total, loadMore, refetch: refresh };
+  return { conversations, isLoading, loadError, hasMore, total, loadMore, refetch: refresh };
 }

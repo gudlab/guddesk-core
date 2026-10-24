@@ -47,7 +47,7 @@ export function InboxLayout({
   // The only useConversations instance in the inbox. ConversationList gets
   // the list as props, so there is one list poller and one set of Pusher
   // bindings.
-  const { conversations, isLoading } = useConversations({
+  const { conversations, isLoading, loadError, refetch } = useConversations({
     workspaceId,
     status,
     assigneeId: assigneeFilter === "all" || assigneeFilter === "unassigned"
@@ -90,6 +90,8 @@ export function InboxLayout({
           <ConversationList
             conversations={conversations}
             isLoading={isLoading}
+            loadError={loadError}
+            onRetry={refetch}
             status={status}
             selectedId={selectedId}
             onSelect={setSelectedId}

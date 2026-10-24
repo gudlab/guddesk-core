@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Icons } from "@/components/shared/icons";
+import { callAction } from "@/lib/network";
+import { LoadError } from "./load-error";
 
 interface Member {
   id: string;
@@ -30,7 +32,7 @@ interface Props {
 }
 
 export function SideConversationPanel({ conversationId, members, currentUserId, onClose }: Props) {
-  const { sideConversations, isLoading } = useSideConversations(conversationId);
+  const { sideConversations, isLoading, loadError, refetch } = useSideConversations(conversationId);
   const [selectedThread, setSelectedThread] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -83,7 +85,10 @@ export function SideConversationPanel({ conversationId, members, currentUserId, 
         {isLoading && (
           <p className="p-4 text-center text-xs text-muted-foreground">Loading...</p>
         )}
-        {!isLoading && sideConversations.length === 0 && (
+        {!isLoading && loadError && (
+          <LoadError what="side conversations" onRetry={refetch} compact={sideConversations.length > 0} />
+        )}
+        {!isLoading && !loadError && sideConversations.length === 0 && (
           <p className="p-4 text-center text-xs text-muted-foreground">
             No side conversations yet
           </p>
@@ -136,10 +141,15 @@ function CreateForm({
     if (!subject.trim()) return;
 
     startTransition(async () => {
-      const result = await createSideConversation(conversationId, {
-        subject: subject.trim(),
-        participantIds: members.map((m) => m.userId),
-      });
+      const result = await callAction(
+        () =>
+          createSideConversation(conversationId, {
+            subject: subject.trim(),
+            participantIds: members.map((m) => m.userId),
+          }),
+        toast.error,
+      );
+      if (!result) return;
       if (result.status === "error") {
         toast.error(result.message);
       } else {
@@ -195,7 +205,8 @@ function ThreadView({
     if (!trimmed) return;
 
     startTransition(async () => {
-      const result = await sendSideMessage(thread.id, trimmed);
+      const result = await callAction(() => sendSideMessage(thread.id, trimmed), toast.error);
+      if (!result) return;
       if (result.status === "error") {
         toast.error(result.message);
       } else {
@@ -206,8 +217,8 @@ function ThreadView({
 
   function handleClose() {
     startTransition(async () => {
-      const result = await closeSideConversation(thread.id);
-      if (result.status === "error") toast.error(result.message);
+      const result = await callAction(() => closeSideConversation(thread.id), toast.error);
+      if (result?.status === "error") toast.error(result.message);
     });
   }
 

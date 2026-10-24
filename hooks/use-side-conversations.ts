@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { usePusher } from "./use-pusher";
+import { onBackOnline } from "@/lib/network";
 
 interface SideMessage {
   id: string;
@@ -28,6 +29,7 @@ export interface SideConversationItem {
 export function useSideConversations(conversationId: string | null) {
   const [sideConversations, setSideConversations] = useState<SideConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchSideConversations = useCallback(async () => {
     if (!conversationId) {
@@ -41,9 +43,13 @@ export function useSideConversations(conversationId: string | null) {
       if (res.ok) {
         const data = await res.json();
         setSideConversations(data.sideConversations ?? []);
+        setLoadError(false);
+      } else {
+        setLoadError(true);
       }
     } catch (error) {
-      console.error("Failed to fetch side conversations:", error);
+      console.error("Failed to fetch side conversations:", error instanceof Error ? error.name : "error");
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -52,6 +58,8 @@ export function useSideConversations(conversationId: string | null) {
   useEffect(() => {
     fetchSideConversations();
   }, [fetchSideConversations]);
+
+  useEffect(() => onBackOnline(fetchSideConversations), [fetchSideConversations]);
 
   // Listen for new side conversations
   usePusher(
@@ -98,5 +106,5 @@ export function useSideConversations(conversationId: string | null) {
     handleClosed,
   );
 
-  return { sideConversations, isLoading, refetch: fetchSideConversations };
+  return { sideConversations, isLoading, loadError, refetch: fetchSideConversations };
 }

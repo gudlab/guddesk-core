@@ -12,6 +12,7 @@ import {
   type MessagesPollCursor,
 } from "@/lib/inbox-polling";
 import { subscribeLocalMessages } from "@/lib/local-messages";
+import { onBackOnline } from "@/lib/network";
 
 export interface MessageItem {
   id: string;
@@ -29,6 +30,8 @@ export interface MessageItem {
 export function useMessages(conversationId: string | null) {
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // The last thread load failed (offline, server down or an error answer).
+  const [loadError, setLoadError] = useState(false);
 
   // Which conversation the messages in state belong to, and the latest
   // messages, for the poller. Refs so the poll callback never goes stale.
@@ -53,15 +56,20 @@ export function useMessages(conversationId: string | null) {
       if (!silent) setIsLoading(true);
       try {
         const res = await fetch(`/api/inbox/conversations/${conversationId}/messages`);
-        if (res.ok && currentIdRef.current === conversationId && generation.isCurrent(gen)) {
+        if (currentIdRef.current !== conversationId || !generation.isCurrent(gen)) return;
+        if (res.ok) {
           const data = await res.json();
           if (!generation.isCurrent(gen)) return;
           setMessages(data.messages);
           loadedForRef.current = conversationId;
           pollCursorRef.current = null;
+          setLoadError(false);
+        } else {
+          setLoadError(true);
         }
       } catch (error) {
-        console.error("Failed to fetch messages:", error);
+        console.error("Failed to fetch messages:", error instanceof Error ? error.name : "error");
+        if (generation.isCurrent(gen)) setLoadError(true);
       } finally {
         if (!silent) setIsLoading(false);
       }
@@ -73,6 +81,7 @@ export function useMessages(conversationId: string | null) {
 
   useEffect(() => {
     generation.next();
+    setLoadError(false);
     loadedForRef.current = null;
     pollCursorRef.current = null;
     fetchMessages();
@@ -101,6 +110,9 @@ export function useMessages(conversationId: string | null) {
   // Resync after reconnect — any message:created fired while we were
   // disconnected is gone forever.
   usePusherReconnect(fetchMessages);
+
+  // And when the browser itself comes back online.
+  useEffect(() => onBackOnline(() => void loadMessages(true)), [loadMessages]);
 
   // The agent's own reply or note, published by ReplyBox once sendMessage
   // succeeds. Merged by id, so a later Pusher or poll copy is ignored.
@@ -136,6 +148,7 @@ export function useMessages(conversationId: string | null) {
       const page: MessageItem[] = data.messages ?? [];
       pollCursorRef.current = cursorAfterPage(page);
       setMessages((prev) => mergeMessagesById(prev, page));
+      setLoadError(false);
     } catch {
       // Next poll retries.
     }
@@ -143,5 +156,5 @@ export function useMessages(conversationId: string | null) {
 
   usePollingFallback(pollMessages, THREAD_POLL_MS, conversationId !== null);
 
-  return { messages, isLoading, refetch: fetchMessages };
+  return { messages, isLoading, loadError, refetch: fetchMessages };
 }

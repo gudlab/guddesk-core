@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { callAction } from "@/lib/network";
 import { updateAvailability } from "@/actions/update-agent-availability";
 import {
   Select,
@@ -38,9 +39,15 @@ export function AvailabilitySelector({ workspaceId, initialStatus = "OFFLINE", s
 
   function handleChange(value: string) {
     const status = value as AgentAvailability;
+    const previous = currentStatus;
     setCurrentStatus(status);
     startTransition(async () => {
-      const result = await updateAvailability(workspaceId, status);
+      const result = await callAction(() => updateAvailability(workspaceId, status), toast.error);
+      if (!result) {
+        // Not saved: show the status the server still has.
+        setCurrentStatus(previous);
+        return;
+      }
       if (result.status === "error") {
         toast.error(result.message);
       }
