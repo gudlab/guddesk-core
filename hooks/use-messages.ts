@@ -6,8 +6,10 @@ import { usePollingFallback } from "./use-polling-fallback";
 import {
   THREAD_POLL_MS,
   createRequestGeneration,
+  cursorAfterPage,
   mergeMessagesById,
-  messagesAfterParam,
+  messagesPollQuery,
+  type MessagesPollCursor,
 } from "@/lib/inbox-polling";
 import { subscribeLocalMessages } from "@/lib/local-messages";
 
@@ -32,6 +34,9 @@ export function useMessages(conversationId: string | null) {
   // messages, for the poller. Refs so the poll callback never goes stale.
   const loadedForRef = useRef<string | null>(null);
   const messagesRef = useRef<MessageItem[]>(messages);
+  // Set after a full page of poll results: the next poll continues from the
+  // last message of that page instead of stepping back the overlap window.
+  const pollCursorRef = useRef<MessagesPollCursor | null>(null);
   messagesRef.current = messages;
   const currentIdRef = useRef(conversationId);
   currentIdRef.current = conversationId;
@@ -53,6 +58,7 @@ export function useMessages(conversationId: string | null) {
           if (!generation.isCurrent(gen)) return;
           setMessages(data.messages);
           loadedForRef.current = conversationId;
+          pollCursorRef.current = null;
         }
       } catch (error) {
         console.error("Failed to fetch messages:", error);
@@ -68,6 +74,7 @@ export function useMessages(conversationId: string | null) {
   useEffect(() => {
     generation.next();
     loadedForRef.current = null;
+    pollCursorRef.current = null;
     fetchMessages();
   }, [fetchMessages, generation]);
 
@@ -113,20 +120,22 @@ export function useMessages(conversationId: string | null) {
       await loadMessages(true);
       return;
     }
-    const after = messagesAfterParam(messagesRef.current);
-    if (!after) {
+    const query = messagesPollQuery(messagesRef.current, pollCursorRef.current);
+    if (!query) {
       await loadMessages(true);
       return;
     }
     try {
       const res = await fetch(
-        `/api/inbox/conversations/${conversationId}/messages?after=${encodeURIComponent(after)}`,
+        `/api/inbox/conversations/${conversationId}/messages?${query}`,
         { cache: "no-store" },
       );
       if (!res.ok || currentIdRef.current !== conversationId || !generation.isCurrent(gen)) return;
       const data = await res.json();
       if (!generation.isCurrent(gen)) return;
-      setMessages((prev) => mergeMessagesById(prev, data.messages ?? []));
+      const page: MessageItem[] = data.messages ?? [];
+      pollCursorRef.current = cursorAfterPage(page);
+      setMessages((prev) => mergeMessagesById(prev, page));
     } catch {
       // Next poll retries.
     }

@@ -19,7 +19,9 @@ export const THREAD_POLL_MS = 4_000;
  * Incremental thread polls ask for messages created at or after the newest
  * message we hold, minus this window. The overlap catches a message whose
  * createdAt is slightly older than one we already have but which committed
- * later. mergeMessagesById drops the repeats.
+ * later. mergeMessagesById drops the repeats. When a poll comes back as a
+ * full page, the next one continues from that page's last message instead
+ * (see cursorAfterPage).
  */
 export const THREAD_POLL_OVERLAP_MS = 10_000;
 
@@ -323,6 +325,52 @@ export function createRequestGeneration() {
 /** Most messages one `?after=` request returns. */
 export const MESSAGES_AFTER_TAKE = 200;
 
+/** Where the next thread poll continues after a full page. */
+export interface MessagesPollCursor {
+  /** createdAt of the last message in the full page, ISO-8601. */
+  after: string;
+  /** id of that message, the tie-break for equal createdAt. */
+  afterId: string;
+}
+
+/**
+ * After an `?after=` poll: when the response is a full page there may be
+ * more waiting, so the next poll continues right after its last message
+ * (by createdAt, then id). Stepping back by the overlap window instead would
+ * ask for the same oldest page again whenever more than a page of messages
+ * landed within the window. Returns null when the page wasn't full, and
+ * polling goes back to "newest held minus the overlap".
+ */
+export function cursorAfterPage(
+  page: IdentifiedMessage[],
+  take: number = MESSAGES_AFTER_TAKE,
+): MessagesPollCursor | null {
+  if (page.length < take || page.length === 0) return null;
+  const last = page[page.length - 1];
+  return { after: new Date(toTime(last.createdAt)).toISOString(), afterId: last.id };
+}
+
+/**
+ * Query string for the next incremental thread poll, or null when there
+ * are no messages yet (the caller should do a full fetch instead).
+ */
+export function messagesPollQuery(
+  messages: IdentifiedMessage[],
+  cursor: MessagesPollCursor | null,
+  overlapMs: number = THREAD_POLL_OVERLAP_MS,
+): string | null {
+  const params = new URLSearchParams();
+  if (cursor) {
+    params.set("after", cursor.after);
+    params.set("afterId", cursor.afterId);
+    return params.toString();
+  }
+  const after = messagesAfterParam(messages, overlapMs);
+  if (!after) return null;
+  params.set("after", after);
+  return params.toString();
+}
+
 // Postgres timestamps go far past these, but a real `after` from the
 // poller is always a recent time. Anything outside is clamped.
 const AFTER_MIN_MS = Date.UTC(1970, 0, 1);
@@ -330,9 +378,12 @@ const AFTER_MAX_MS = Date.UTC(9999, 11, 31, 23, 59, 59, 999);
 
 /**
  * Parses the messages route `?after=` value. Returns null when it's missing
- * or not a date (the route then returns the full thread, as before). A
- * valid JavaScript date outside 1970-01-01 to 9999-12-31 is clamped to that
- * range, so the query never sends Postgres a timestamp it rejects.
+ * or not a date; the route then treats the request as having no `after`
+ * and returns the full, uncapped thread. A valid JavaScript date outside
+ * 1970-01-01 to 9999-12-31 is clamped to that range, so the query never
+ * sends Postgres a timestamp it rejects. A clamped early date is still an
+ * `after`, so it returns the oldest MESSAGES_AFTER_TAKE messages, not the
+ * full thread.
  */
 export function parseMessagesAfter(value: string | null): Date | null {
   if (!value) return null;
@@ -341,15 +392,56 @@ export function parseMessagesAfter(value: string | null): Date | null {
   return new Date(Math.min(Math.max(time, AFTER_MIN_MS), AFTER_MAX_MS));
 }
 
+/** `?afterId=`: a message id, or null when missing or implausible. */
+export function parseMessagesAfterId(value: string | null): string | null {
+  if (!value || value.length > 128) return null;
+  return value;
+}
+
 /**
- * The findMany arguments (minus `include`) for the messages route. Full
- * thread without a usable `after`; otherwise messages since then, capped.
+ * The findMany arguments (minus `include`) for the messages route.
+ * - No usable `after`: the full thread, uncapped, oldest first (the initial
+ *   load needs the whole thread, so it isn't capped).
+ * - `after` only: messages created at or after it, capped.
+ * - `after` + `afterId`: messages strictly after that (createdAt, id)
+ *   position, capped. Used to continue after a full page.
+ * Capped queries order by createdAt then id, so pages are stable when
+ * several messages share a createdAt.
  */
-export function messagesQueryArgs(conversationId: string, afterParam: string | null) {
+export interface MessagesQueryArgs {
+  where: {
+    conversationId: string;
+    createdAt?: { gte: Date };
+    OR?: Array<{ createdAt: { gt: Date } | Date; id?: { gt: string } }>;
+  };
+  orderBy: Array<{ createdAt: "asc" } | { id: "asc" }>;
+  take?: number;
+}
+
+export function messagesQueryArgs(
+  conversationId: string,
+  afterParam: string | null,
+  afterIdParam: string | null = null,
+): MessagesQueryArgs {
   const after = parseMessagesAfter(afterParam);
+  if (!after) {
+    return {
+      where: { conversationId },
+      orderBy: [{ createdAt: "asc" }],
+    };
+  }
+  const afterId = parseMessagesAfterId(afterIdParam);
   return {
-    where: after ? { conversationId, createdAt: { gte: after } } : { conversationId },
-    orderBy: { createdAt: "asc" as const },
-    ...(after ? { take: MESSAGES_AFTER_TAKE } : {}),
+    where: afterId
+      ? {
+          conversationId,
+          OR: [
+            { createdAt: { gt: after } },
+            { createdAt: after, id: { gt: afterId } },
+          ],
+        }
+      : { conversationId, createdAt: { gte: after } },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    take: MESSAGES_AFTER_TAKE,
   };
 }

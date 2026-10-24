@@ -13,6 +13,9 @@ import {
   mergeMessagesById,
   messagesAfterParam,
   messagesQueryArgs,
+  cursorAfterPage,
+  messagesPollQuery,
+  type MessagesPollCursor,
   parseMessagesAfter,
   startPollingFallback,
   type RealtimeConnection,
@@ -571,14 +574,133 @@ describe("messages route ?after=", () => {
       assert.equal(parseMessagesAfter(value), null, String(value));
       const args = messagesQueryArgs("conv_1", value);
       assert.deepEqual(args.where, { conversationId: "conv_1" });
-      assert.equal("take" in args, false);
+      assert.equal(args.take, undefined);
     }
   });
 
-  it("caps an incremental poll at a sane size", () => {
+  it("caps an incremental poll at a sane size, ordered by createdAt then id", () => {
     assert.equal(MESSAGES_AFTER_TAKE, 200);
-    assert.deepEqual(messagesQueryArgs("conv_1", "2026-10-20T08:00:00.000Z").orderBy, {
-      createdAt: "asc",
+    assert.deepEqual(messagesQueryArgs("conv_1", "2026-10-20T08:00:00.000Z").orderBy, [
+      { createdAt: "asc" },
+      { id: "asc" },
+    ]);
+  });
+
+  it("continues strictly after (createdAt, id) when afterId is sent", () => {
+    const value = "2026-10-20T08:00:00.000Z";
+    const args = messagesQueryArgs("conv_1", value, "msg_200");
+    assert.deepEqual(args.where, {
+      conversationId: "conv_1",
+      OR: [
+        { createdAt: { gt: new Date(value) } },
+        { createdAt: new Date(value), id: { gt: "msg_200" } },
+      ],
     });
+    assert.equal(args.take, MESSAGES_AFTER_TAKE);
+  });
+
+  it("ignores afterId without a usable after, or when it's implausible", () => {
+    assert.deepEqual(messagesQueryArgs("conv_1", "garbage", "msg_1").where, { conversationId: "conv_1" });
+    assert.deepEqual(messagesQueryArgs("conv_1", "2026-10-20T08:00:00.000Z", "x".repeat(200)).where, {
+      conversationId: "conv_1",
+      createdAt: { gte: new Date("2026-10-20T08:00:00.000Z") },
+    });
+  });
+});
+
+describe("thread polling after a burst of messages", () => {
+  type Row = { id: string; conversationId: string; createdAt: Date };
+  type Item = { id: string; createdAt: string };
+
+  /**
+   * Runs messagesQueryArgs against an in-memory table the way Postgres
+   * would: the where clause (gte, gt, OR with an id tie-break), the
+   * (createdAt, id) order and the take.
+   */
+  function serve(rows: Row[], query: string): Item[] {
+    const params = new URLSearchParams(query);
+    const args = messagesQueryArgs("conv_1", params.get("after"), params.get("afterId"));
+    const where = args.where as {
+      conversationId: string;
+      createdAt?: { gte: Date };
+      OR?: [{ createdAt: { gt: Date } }, { createdAt: Date; id: { gt: string } }];
+    };
+    const matches = (r: Row) => {
+      if (r.conversationId !== where.conversationId) return false;
+      if (where.createdAt) return r.createdAt >= where.createdAt.gte;
+      if (where.OR) {
+        const [later, tie] = where.OR;
+        return (
+          r.createdAt > later.createdAt.gt ||
+          (r.createdAt.getTime() === tie.createdAt.getTime() && r.id > tie.id.gt)
+        );
+      }
+      return true;
+    };
+    const sorted = rows
+      .filter(matches)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const page = args.take === undefined ? sorted : sorted.slice(0, args.take);
+    return page.map((r) => ({ id: r.id, createdAt: r.createdAt.toISOString() }));
+  }
+
+  /** The useMessages poll loop: query, merge, keep the cursor. */
+  function poll(rows: Row[], state: { thread: Item[]; cursor: MessagesPollCursor | null }, useCursor = true) {
+    const query = messagesPollQuery(state.thread, useCursor ? state.cursor : null);
+    assert.ok(query);
+    const page = serve(rows, query);
+    state.cursor = cursorAfterPage(page);
+    state.thread = mergeMessagesById(state.thread, page);
+  }
+
+  const base = Date.UTC(2026, 9, 20, 8, 0, 0);
+  const id = (n: number) => `msg_${String(n).padStart(4, "0")}`;
+  const row = (n: number, ms: number): Row => ({ id: id(n), conversationId: "conv_1", createdAt: new Date(ms) });
+
+  function setup(burst: (n: number) => number) {
+    const history = Array.from({ length: 5 }, (_, n) => row(n, base + n * 1_000));
+    const state = { thread: serve(history, ""), cursor: null as MessagesPollCursor | null };
+    // 300 messages land within 10s of the newest one we hold.
+    const rows = [...history, ...Array.from({ length: 300 }, (_, i) => row(100 + i, burst(i)))];
+    return { rows, state };
+  }
+
+  for (const [label, burst] of [
+    ["spread over 3 seconds", (i: number) => base + 5_000 + i * 10],
+    ["all with the same createdAt", () => base + 5_000],
+  ] as const) {
+    it(`gets all 300 of a burst ${label} within a few polls`, () => {
+      const { rows, state } = setup(burst);
+      assert.equal(state.thread.length, 5);
+      let polls = 0;
+      while (state.thread.length < 305 && polls < 10) {
+        poll(rows, state);
+        polls += 1;
+      }
+      assert.equal(state.thread.length, 305);
+      assert.ok(polls <= 3, `took ${polls} polls`);
+      assert.equal(new Set(state.thread.map((m) => m.id)).size, 305, "no duplicates");
+      // Later polls add nothing and repeat nothing.
+      for (let i = 0; i < 5; i++) poll(rows, state);
+      assert.equal(state.thread.length, 305);
+    });
+  }
+
+  it("used to stall at 200 without the cursor (what QA saw)", () => {
+    const { rows, state } = setup((i) => base + 5_000 + i * 10);
+    for (let i = 0; i < 19; i++) poll(rows, state, false);
+    // Every poll asked for the same window and got the same first 200 rows
+    // (the 5 older messages plus 195 of the burst).
+    assert.equal(state.thread.length, 200);
+  });
+
+  it("only sets a cursor for a full page", () => {
+    const full = Array.from({ length: MESSAGES_AFTER_TAKE }, (_, n) => ({ id: id(n), createdAt: new Date(base + n).toISOString() }));
+    assert.deepEqual(cursorAfterPage(full), {
+      after: new Date(base + MESSAGES_AFTER_TAKE - 1).toISOString(),
+      afterId: id(MESSAGES_AFTER_TAKE - 1),
+    });
+    assert.equal(cursorAfterPage(full.slice(1)), null);
+    assert.equal(cursorAfterPage([]), null);
   });
 });
