@@ -21,7 +21,7 @@
  *   the email for the existing message and posts nothing new. Edit the text
  *   to send it as a new reply;
  * - after a permanent email failure (Resend refused the sender or the
- *   recipient): 15 minutes, so a repeat shows the stored notice instead of
+ *   recipient): 24 hours, so a repeat shows the stored notice instead of
  *   posting a second message. After that the same text is a new reply.
  */
 import { newReplyKey } from "./reply-idempotency";
@@ -42,7 +42,7 @@ const PREFIX = "guddesk:reply-key:";
 /** The server forgets a key after 24 hours, so the client does too. */
 export const REPLY_KEY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 /** How long a reply whose email was refused for good keeps its key. */
-export const REPLY_KEY_FINAL_HOLD_MS = 15 * 60 * 1000;
+export const REPLY_KEY_FINAL_HOLD_MS = 24 * 60 * 60 * 1000;
 /** How long a new key settles before it is re-read (two tabs at once). */
 export const REPLY_KEY_SETTLE_MS = 150;
 

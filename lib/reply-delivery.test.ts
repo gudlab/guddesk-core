@@ -229,7 +229,7 @@ describe("permanent email failure keeps the key (M2 step 3)", () => {
     assert.equal(ui.toasts.filter((t) => t.kind === "error" && /from address/.test(t.text)).length, 2, "same notice again");
   });
 
-  it("the held key runs out after 15 minutes, and edited text is a new reply", async () => {
+  it("the held key runs out after 24 hours, and edited text is a new reply", async () => {
     const storage = memoryStorage();
     const key = replyKeyFor(storage, reply, T0);
     holdFinalReplyKey(storage, reply, key, T0);
