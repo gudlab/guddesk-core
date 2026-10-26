@@ -21,12 +21,15 @@ interface ReplyBoxProps {
   conversationId: string;
   cannedResponses: CannedResponse[];
   onTyping?: () => void;
+  /** The thread couldn't be loaded (offline, server down): no sending until it is. */
+  disabled?: boolean;
 }
 
 export function ReplyBox({
   conversationId,
   cannedResponses,
   onTyping,
+  disabled = false,
 }: ReplyBoxProps) {
   const [body, setBody] = useState("");
   const [mode, setMode] = useState<"reply" | "note">("reply");
@@ -37,10 +40,11 @@ export function ReplyBox({
   const inFlight = useRef(false);
 
   useEffect(() => {
-    textareaRef.current?.focus();
-  }, [conversationId]);
+    if (!disabled) textareaRef.current?.focus();
+  }, [conversationId, disabled]);
 
   function handleSubmit() {
+    if (disabled) return;
     const trimmed = body.trim();
     if (!trimmed || isPending) return;
     if (!claimSubmit(inFlight)) return;
@@ -148,16 +152,19 @@ export function ReplyBox({
           value={body}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
+          disabled={disabled}
         />
 
         <div className="mt-2 flex items-center justify-between">
           <span className="text-xs text-muted-foreground">
-            Press Enter to send, Shift+Enter for new line
+            {disabled
+              ? "Can't send until this conversation loads."
+              : "Press Enter to send, Shift+Enter for new line"}
           </span>
           <Button
             size="sm"
             onClick={handleSubmit}
-            disabled={!body.trim() || isPending}
+            disabled={!body.trim() || isPending || disabled}
           >
             {isPending && (
               <Icons.spinner className="mr-1.5 size-3 animate-spin" />

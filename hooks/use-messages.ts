@@ -79,8 +79,13 @@ export function useMessages(conversationId: string | null) {
 
   const fetchMessages = useCallback(() => loadMessages(false), [loadMessages]);
 
+  // A different conversation: drop the previous one's messages first, so a
+  // failed load (offline, server down) shows "Couldn't load" instead of the
+  // last conversation's thread.
   useEffect(() => {
     generation.next();
+    setMessages([]);
+    messagesRef.current = [];
     setLoadError(false);
     loadedForRef.current = null;
     pollCursorRef.current = null;
@@ -156,5 +161,10 @@ export function useMessages(conversationId: string | null) {
 
   usePollingFallback(pollMessages, THREAD_POLL_MS, conversationId !== null);
 
-  return { messages, isLoading, loadError, refetch: fetchMessages };
+  // Nothing shown belongs to another conversation: messages are cleared on
+  // every switch. unavailable = the thread couldn't be loaded and there is
+  // nothing to show, so the reply box should be disabled too.
+  const unavailable = loadError && messages.length === 0;
+
+  return { messages, isLoading, loadError, unavailable, refetch: fetchMessages };
 }

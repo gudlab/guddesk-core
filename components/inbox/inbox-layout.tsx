@@ -43,6 +43,8 @@ export function InboxLayout({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [status, setStatus] = useState<"OPEN" | "SNOOZED" | "CLOSED">("OPEN");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  // The open thread couldn't be loaded and shows "Couldn't load": no replies.
+  const [threadUnavailable, setThreadUnavailable] = useState(false);
 
   // The only useConversations instance in the inbox. ConversationList gets
   // the list as props, so there is one list poller and one set of Pusher
@@ -107,10 +109,12 @@ export function InboxLayout({
               conversationId={selectedId}
               isAgentTyping={isTyping}
               typingUser={typingUser}
+              onUnavailableChange={setThreadUnavailable}
             />
             <ReplyBox
               conversationId={selectedId}
               cannedResponses={cannedResponses}
+              disabled={threadUnavailable}
               onTyping={sendTyping}
             />
           </>

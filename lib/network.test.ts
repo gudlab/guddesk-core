@@ -3,7 +3,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 
-import { OFFLINE_MESSAGE, callAction, onBackOnline } from "./network";
+import {
+  OFFLINE_MESSAGE,
+  OFFLINE_NAV_MESSAGE,
+  callAction,
+  heldNavigationTarget,
+  onBackOnline,
+} from "./network";
 
 const read = (...p: string[]) => readFileSync(join(__dirname, "..", ...p), "utf8");
 
@@ -43,6 +49,7 @@ describe("inbox network errors", () => {
 
   it("the copy has no em dashes", () => {
     assert.ok(!OFFLINE_MESSAGE.includes("\u2014"));
+    assert.ok(!OFFLINE_NAV_MESSAGE.includes("\u2014"));
     for (const path of [
       ["components", "inbox", "load-error.tsx"],
       ["app", "(protected)", "workspace", "[workspaceSlug]", "inbox", "error.tsx"],
@@ -83,5 +90,73 @@ describe("inbox network wiring", () => {
     assert.match(src, /^"use client";/);
     assert.match(src, /reset\(\)/);
     assert.match(src, /onBackOnline\(/);
+  });
+});
+
+describe("offline link clicks", () => {
+  const here = { origin: "https://app.example.com", pathname: "/workspace/acme/customers", search: "" };
+  const click = (over: Partial<Parameters<typeof heldNavigationTarget>[0]> = {}) => ({
+    button: 0,
+    metaKey: false,
+    ctrlKey: false,
+    shiftKey: false,
+    altKey: false,
+    defaultPrevented: false,
+    ...over,
+  });
+  const anchor = (href: string, target = "", attrs: string[] = []) => ({
+    href,
+    target,
+    hasAttribute: (name: string) => attrs.includes(name),
+  });
+
+  it("holds a plain click on a dashboard link", () => {
+    assert.equal(
+      heldNavigationTarget(click(), anchor("https://app.example.com/workspace/acme/inbox?x=1#top"), here),
+      "/workspace/acme/inbox?x=1#top",
+    );
+    assert.equal(heldNavigationTarget(click(), anchor("/workspace/acme/inbox"), here), "/workspace/acme/inbox");
+  });
+
+  it("lets everything else through", () => {
+    const inbox = anchor("/workspace/acme/inbox");
+    assert.equal(heldNavigationTarget(click(), null, here), null);
+    assert.equal(heldNavigationTarget(click({ defaultPrevented: true }), inbox, here), null);
+    assert.equal(heldNavigationTarget(click({ button: 1 }), inbox, here), null);
+    for (const key of ["metaKey", "ctrlKey", "shiftKey", "altKey"] as const) {
+      assert.equal(heldNavigationTarget(click({ [key]: true }), inbox, here), null, key);
+    }
+    assert.equal(heldNavigationTarget(click(), anchor("/workspace/acme/inbox", "_blank"), here), null);
+    assert.equal(heldNavigationTarget(click(), anchor("/export.csv", "", ["download"]), here), null);
+    assert.equal(heldNavigationTarget(click(), anchor("https://docs.example.org/"), here), null);
+    assert.equal(heldNavigationTarget(click(), anchor("/workspace/acme/customers#notes"), here), null);
+  });
+});
+
+describe("offline switching", () => {
+  it("the thread and side conversations are cleared when another conversation opens", () => {
+    const messages = read("hooks", "use-messages.ts");
+    assert.match(messages, /generation\.next\(\);\s*setMessages\(\[\]\);/);
+    assert.match(messages, /const unavailable = loadError && messages\.length === 0;/);
+    assert.match(read("hooks", "use-side-conversations.ts"), /setSideConversations\(\[\]\);\s*setLoadError\(false\);\s*fetchSideConversations\(\);/);
+  });
+
+  it("the list is cleared on a filter change and ignores answers for an old filter", () => {
+    const src = read("hooks", "use-conversations.ts");
+    assert.match(src, /setIsLoading\(true\);\s*setConversations\(\[\]\);/);
+    assert.match(src, /if \(filterKeyRef\.current !== key\) return;/);
+  });
+
+  it("the reply box is disabled while the thread couldn't load", () => {
+    assert.match(read("components", "inbox", "message-thread.tsx"), /onUnavailableChange\?\.\(unavailable\)/);
+    assert.match(read("components", "inbox", "inbox-layout.tsx"), /disabled=\{threadUnavailable\}/);
+    const reply = read("components", "inbox", "reply-box.tsx");
+    assert.match(reply, /disabled=\{disabled\}/);
+    assert.match(reply, /function handleSubmit\(\) \{\s*if \(disabled\) return;/);
+  });
+
+  it("the dashboard holds offline link clicks", () => {
+    assert.match(read("app", "(protected)", "layout.tsx"), /<OfflineNavGuard \/>/);
+    assert.match(read("components", "layout", "offline-nav-guard.tsx"), /addEventListener\("click", onClick, true\)/);
   });
 });

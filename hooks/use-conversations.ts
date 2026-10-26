@@ -58,6 +58,7 @@ export function useConversations({
   filterKeyRef.current = filterKey;
 
   const fetchConversations = useCallback(async (cursor?: string) => {
+    const key = `${workspaceId}|${status}|${assigneeId ?? ""}`;
     try {
       const params = new URLSearchParams({
         workspaceId,
@@ -70,8 +71,12 @@ export function useConversations({
       const res = await fetch(`/api/inbox/conversations?${params}`, {
         cache: "no-store",
       });
+      // The filter changed while this was in flight: the answer is for a
+      // list that is no longer shown.
+      if (filterKeyRef.current !== key) return;
       if (res.ok) {
         const data = await res.json();
+        if (filterKeyRef.current !== key) return;
 
         if (cursor) {
           // Appending more results. A poll may already have pulled some of
@@ -93,16 +98,23 @@ export function useConversations({
       }
     } catch (error) {
       console.error("Failed to fetch conversations:", error instanceof Error ? error.name : "error");
-      setLoadError(true);
+      if (filterKeyRef.current === key) setLoadError(true);
     } finally {
-      setIsLoading(false);
+      if (filterKeyRef.current === key) setIsLoading(false);
     }
   }, [workspaceId, status, assigneeId]);
 
-  // Initial fetch + re-fetch on filter change
+  // Initial fetch + re-fetch on filter change. The previous filter's rows
+  // are dropped first, so a failed load (offline, server down) shows
+  // "Couldn't load" instead of the last filter's list.
   useEffect(() => {
     setIsLoading(true);
+    setConversations([]);
+    setHasMore(false);
+    setTotal(0);
+    setLoadError(false);
     nextCursorRef.current = null;
+    extraPagesRef.current = false;
     fetchConversations();
   }, [fetchConversations]);
 

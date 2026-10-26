@@ -33,3 +33,48 @@ export function onBackOnline(
   target.addEventListener("online", onOnline);
   return () => target.removeEventListener("online", onOnline);
 }
+
+/**
+ * Offline, a click on a dashboard link can't fetch the next page, and the
+ * browser falls back to a full load that ends on its own offline page. The
+ * dashboard holds such a click instead and opens the page once the browser
+ * is back online.
+ */
+export const OFFLINE_NAV_MESSAGE = "You're offline. We'll open that page when you're back online.";
+
+interface ClickLike {
+  button: number;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+  defaultPrevented: boolean;
+}
+
+interface AnchorLike {
+  href: string;
+  target: string;
+  hasAttribute(name: string): boolean;
+}
+
+/** The same-origin page a plain link click would open, or null when the click should go through untouched. */
+export function heldNavigationTarget(
+  click: ClickLike,
+  anchor: AnchorLike | null,
+  location: Pick<Location, "origin" | "pathname" | "search">,
+): string | null {
+  if (!anchor || click.defaultPrevented || click.button !== 0) return null;
+  if (click.metaKey || click.ctrlKey || click.shiftKey || click.altKey) return null;
+  if (anchor.target && anchor.target !== "_self") return null;
+  if (anchor.hasAttribute("download")) return null;
+  let url: URL;
+  try {
+    url = new URL(anchor.href, location.origin);
+  } catch {
+    return null;
+  }
+  if (url.origin !== location.origin) return null;
+  // Same page, maybe another #hash: nothing to fetch.
+  if (url.pathname === location.pathname && url.search === location.search) return null;
+  return `${url.pathname}${url.search}${url.hash}`;
+}

@@ -11,6 +11,7 @@ import {
 import { ModeToggle } from "@/components/layout/mode-toggle";
 import { UserAccountNav } from "@/components/layout/user-account-nav";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
+import { OfflineNavGuard } from "@/components/layout/offline-nav-guard";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -44,6 +45,7 @@ export default async function Dashboard({ children }: ProtectedLayoutProps) {
 
   return (
     <div className="relative flex min-h-screen w-full">
+      <OfflineNavGuard />
       <DashboardSidebar
         links={dashboardLinks}
         workspaceLinks={workspaceSidebarLinks}

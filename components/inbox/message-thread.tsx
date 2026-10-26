@@ -10,15 +10,22 @@ interface MessageThreadProps {
   conversationId: string;
   isAgentTyping?: boolean;
   typingUser?: string | null;
+  /** Told whether the thread couldn't be loaded and nothing is shown, so the reply box can be disabled. */
+  onUnavailableChange?: (unavailable: boolean) => void;
 }
 
 export function MessageThread({
   conversationId,
   isAgentTyping,
   typingUser,
+  onUnavailableChange,
 }: MessageThreadProps) {
-  const { messages, isLoading, loadError, refetch } = useMessages(conversationId);
+  const { messages, isLoading, loadError, unavailable, refetch } = useMessages(conversationId);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    onUnavailableChange?.(unavailable);
+  }, [unavailable, onUnavailableChange]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,7 +39,7 @@ export function MessageThread({
     );
   }
 
-  if (loadError && messages.length === 0) {
+  if (unavailable) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <LoadError what="this conversation" onRetry={refetch} />
