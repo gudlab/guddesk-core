@@ -369,7 +369,7 @@ describe("reply idempotency: per-step claim", () => {
   });
 });
 
-describe("reply key store (sessionStorage)", () => {
+describe("reply key store (localStorage)", () => {
   function memoryStorage(): KeyStorage & { map: Map<string, string> } {
     const map = new Map<string, string>();
     return {
@@ -441,16 +441,27 @@ describe("reply idempotency wiring", () => {
     assert.match(read("lib", "email", "send.ts"), /\.emails\.send\(email, options\.idempotencyKey \? \{ idempotencyKey: options\.idempotencyKey \} : undefined\)/);
   });
 
-  it("the client catches a failed submit and keeps the key in sessionStorage", () => {
-    const src = read("components", "inbox", "deliver-reply.ts");
-    assert.match(src, /replyKeyFor\(storage, reply\)/);
-    assert.match(src, /\} catch \{\s*\/\/ The request failed/);
-    assert.match(src, /label: "Retry email"/);
+  it("the client catches a failed submit, keeps the key in shared storage, and Retry email reuses its key", () => {
+    const flow = read("lib", "reply-delivery.ts");
+    assert.match(flow, /const key = await acquireKey\(deps\.storage\(\), reply, \{ now \}\)/);
+    assert.match(flow, /\} catch \{\s*\/\/ The request failed/);
+    assert.match(flow, /label: "Retry email"/);
+    assert.match(flow, /void retryEmail\(reply, key\)/);
+    assert.doesNotMatch(flow, /void deliverReply\(reply\)/, "Retry email never goes through key lookup");
+    assert.match(read("lib", "reply-key-store.ts"), /\(globalThis as \{ localStorage\?: KeyStorage \}\)\.localStorage/);
+    const wiring = read("components", "inbox", "deliver-reply.ts");
+    assert.match(wiring, /createReplyDelivery\(\{/);
+    assert.match(wiring, /storage: browserKeyStorage/);
+    assert.match(wiring, /new BroadcastChannel\(/);
     for (const file of ["reply-box.tsx", "shared-draft-editor.tsx"]) {
       const component = read("components", "inbox", file);
       assert.match(component, /await deliverReply\(\{/, file);
       assert.doesNotMatch(component, /sendMessage\(/, file);
     }
+  });
+
+  it("the email step threads from earlier messages only", () => {
+    assert.match(read("lib", "channels", "email", "provider.ts"), /buildReplyHeaders\(context\.conversationId, message\)/);
   });
 
   it("the hourly cron sweeps expired reply keys", () => {

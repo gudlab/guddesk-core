@@ -77,8 +77,9 @@ export class EmailChannelProvider implements ChannelProvider {
 
     if (!config?.isEnabled) return { status: "skipped" };
 
-    // Build threading headers
-    const replyHeaders = await buildReplyHeaders(context.conversationId);
+    // Build threading headers from the messages before this one, so a
+    // retry sends the same headers as the first attempt.
+    const replyHeaders = await buildReplyHeaders(context.conversationId, message);
     const messageId = generateMessageId(context.conversationId, message.id);
 
     // Store the email Message-ID on the message record

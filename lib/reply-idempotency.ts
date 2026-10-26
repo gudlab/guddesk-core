@@ -1,7 +1,7 @@
 /**
  * Server-side dedupe for agent replies, step by step.
  *
- * The composer makes one key per reply and keeps it in sessionStorage until
+ * The composer makes one key per reply and keeps it in localStorage (shared by its tabs) until
  * the reply is finished, so a retry (a second click, a reload, a dropped
  * connection) sends the same key. The server keeps one row per
  * (conversationId, userId, key) in verification_tokens (no schema change):

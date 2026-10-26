@@ -48,7 +48,7 @@ export function SharedDraftEditor({
   }
 
   async function send(trimmed: string) {
-    // deliverReply keeps the reply's idempotency key in sessionStorage, so
+    // deliverReply keeps the reply's idempotency key in localStorage (shared by tabs), so
     // sending the same text again after a failure can't post it twice.
     const outcome = await deliverReply({ conversationId, body: trimmed, type: "AGENT" });
     if (outcome !== "posted") return;

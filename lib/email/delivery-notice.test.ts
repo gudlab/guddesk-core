@@ -95,6 +95,7 @@ describe("email-channel reply delivery notice", () => {
     assert.match(action, /delivery = await withSendTimeout\(\s*provider\.sendOutbound\(/);
     assert.match(action, /deliveryNotice\(\{ status: "failed", reason: email\.reason as FailedReason \}\)/);
     assert.match(action, /messageId: message\.id,[\s\S]*?emailError,/);
-    assert.match(read("components/inbox/deliver-reply.ts"), /toast\.error\(result\.emailError/);
+    assert.match(read("lib/reply-delivery.ts"), /deps\.toast\.error\(result\.emailError/);
+    assert.match(read("components/inbox/deliver-reply.ts"), /createReplyDelivery\(/);
   });
 });
