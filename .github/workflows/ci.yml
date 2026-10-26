@@ -80,5 +80,7 @@ jobs:
           cache: pnpm
       - name: Install
         run: pnpm install
-      - name: prisma migrate deploy on an empty database, then upgrade one with data
+      - name: Prisma generate
+        run: pnpm exec prisma generate
+      - name: prisma migrate deploy on an empty database (no drift, smoke), then upgrade one with data
         run: bash scripts/ci-migrate-check.sh
