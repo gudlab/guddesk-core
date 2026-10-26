@@ -3,10 +3,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 
-import { deliveryFailure, deliveryNotice, withSendTimeout } from "./delivery-notice";
+import { deliveryFailure, deliveryNotice, isPermanentFailure, withSendTimeout } from "./delivery-notice";
 
 const read = (path: string) => readFileSync(join(__dirname, "..", "..", path), "utf8");
 const SAVED = /Your reply is saved in the conversation, so don't send it again\.$/;
+const RETRY = /Your reply is saved in the conversation\. Press Retry email to try again\. The reply won't be posted twice\.$/;
 
 describe("email-channel reply delivery notice", () => {
   it("an unverified from address is a sender rejection with its own notice", () => {
@@ -65,10 +66,27 @@ describe("email-channel reply delivery notice", () => {
     }
   });
 
-  it("every failure notice says the reply is saved and not to send it again", () => {
-    for (const reason of ["testing_mode", "sender_rejected", "recipient_rejected", "send_failed", "timeout"] as const) {
+  it("a permanent failure says not to send again; a temporary one offers a retry", () => {
+    for (const reason of ["testing_mode", "sender_rejected", "recipient_rejected"] as const) {
+      assert.equal(isPermanentFailure({ status: "failed", reason }), true, reason);
       assert.match(deliveryNotice({ status: "failed", reason }) ?? "", SAVED, reason);
     }
+    for (const reason of ["send_failed", "timeout"] as const) {
+      assert.equal(isPermanentFailure({ status: "failed", reason }), false, reason);
+      assert.match(deliveryNotice({ status: "failed", reason }) ?? "", RETRY, reason);
+    }
+    assert.equal(isPermanentFailure({ status: "sent" }), false);
+  });
+
+  it("a reused Resend idempotency key with a changed payload counts as already sent", () => {
+    assert.deepEqual(
+      deliveryFailure({ name: "invalid_idempotent_request", statusCode: 409, message: "Same key, different payload" }),
+      { status: "sent" },
+    );
+    assert.deepEqual(deliveryFailure({ name: "concurrent_idempotent_requests", statusCode: 409 }), {
+      status: "failed",
+      reason: "send_failed",
+    });
   });
 
   it("sent or skipped shows nothing", () => {
@@ -89,11 +107,10 @@ describe("email-channel reply delivery notice", () => {
     const provider = read("lib/channels/email/provider.ts");
     assert.match(provider, /return sent\.status === "failed" \? deliveryFailure\(sent\.error\) : \{ status: "sent" \};/);
     const action = read("actions/send-message.ts");
-    assert.match(action, /const delivery = await withSendTimeout\(\s*provider\.sendOutbound\(/);
-    assert.match(action, /emailError = deliveryNotice\(delivery\);/);
-    assert.match(action, /messageId: message\.id,\s*emailError,/);
-    for (const path of ["components/inbox/reply-box.tsx", "components/inbox/shared-draft-editor.tsx"]) {
-      assert.match(read(path), /toast\.error\(result\.emailError/, path);
-    }
+    assert.match(action, /delivery = await withSendTimeout\(\s*provider\.sendOutbound\(/);
+    assert.match(action, /deliveryNotice\(\{ status: "failed", reason: email\.reason as FailedReason \}\)/);
+    assert.match(action, /messageId: message\.id,[\s\S]*?emailError,/);
+    assert.match(read("lib/reply-delivery.ts"), /deps\.toast\.error\(result\.emailError/);
+    assert.match(read("components/inbox/deliver-reply.ts"), /createReplyDelivery\(/);
   });
 });
