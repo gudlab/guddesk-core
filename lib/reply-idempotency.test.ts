@@ -281,6 +281,19 @@ describe("reply idempotency: per-step claim", () => {
     assert.equal(s.messages.length, 1);
   });
 
+  it("a testing-mode refusal is stored as itself and repeated", async () => {
+    const { db } = fakeDb();
+    const clock = { now: T0 };
+    const s = fakeServer(db, clock);
+    s.faults.emailResult = { status: "failed", reason: "testing_mode", permanent: true };
+    await s.send("c1", "u1", KEY);
+    s.faults.emailResult = null;
+    const again = await s.send("c1", "u1", KEY);
+    assert.deepEqual(again.kind === "delivered" && again.email, { status: "failed", reason: "testing_mode", permanent: true });
+    assert.equal(s.messages.length, 1);
+    assert.equal(s.emails.length, 0);
+  });
+
   it("the key is per user: the same key from another agent is a different reply", async () => {
     const { db } = fakeDb();
     const clock = { now: T0 };

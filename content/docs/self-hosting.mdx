@@ -195,6 +195,17 @@ pm2 restart guddesk
 
 Always review the [changelog](https://github.com/gudlab/guddesk-core/releases) before updating to check for breaking changes or required migration steps.
 
+### db push or migrate deploy: pick one and stay on it
+
+The schema can be applied two ways, and they don't mix:
+
+- **`pnpm prisma db push`** (this guide). Keep using `db push` on every update. **Don't switch an existing `db push` database to `prisma migrate deploy`.** Its `_prisma_migrations` table is empty, so `migrate deploy` would try to run every migration from the start against tables that already exist.
+- **`pnpm prisma migrate deploy`** is for **fresh installs**, or for databases built only with migrations, where `_prisma_migrations` lists the migrations applied so far. Migration `0005_schema_catch_up` brings such a database fully up to `prisma/schema.prisma`. Before it, a database built from migrations was missing about 18 tables (for example `api_keys`, `agents`, `email_channel_configs`, `sla_policies`) and several columns. Every statement in it is guarded (`IF NOT EXISTS`, or a `duplicate_object` handler for enums and foreign keys). It only adds, with one exception: it drops `workspaces.apiKey` (see below).
+
+To check which one you have, run `SELECT count(*) FROM _prisma_migrations;`. If the table is missing or the count is 0, you use `db push`.
+
+`workspaces.apiKey` is a leftover column from the first migration (`0001_init`). `prisma/schema.prisma` doesn't model it and the app never reads or writes it (API keys live in the `api_keys` table), so on a migrations-built database creating a workspace failed on its NOT NULL constraint. `0005` drops it and its unique index (`DROP ... IF EXISTS`), so a migrations-built database matches the schema exactly. A `db push` database never had it, so there's nothing to do there.
+
 ### Upgrading: automation runs
 
 This release adds migration `0003_automation_runs`. It creates the `automation_runs` table, which records each automation run so a rule fires once per event, and adds a nullable `unassignedAt` column to `conversations`. Nothing existing is changed or dropped.
@@ -204,7 +215,20 @@ Back up the database first, then apply it the same way you set up the schema:
 - If you followed this guide (`pnpm prisma db push`), run the steps above. `db push` adds the new table and column.
 - If you manage the schema with migrations instead, run `pnpm prisma migrate deploy`.
 
-Conversations from before the upgrade have no `unassignedAt`, so the "Unassigned for" condition only counts conversations that were unassigned after you upgraded.
+Conversations from before the upgrade have no `unassignedAt`, so the "Unassigned for" condition skips them until they are next unassigned. Conversations created after the upgrade do count: new widget, email and API conversations start with `unassignedAt` set to when they were created, and unassigning a conversation sets it again.
+
+**Optional backfill, run by you.** To have "Unassigned for" also cover conversations that are open and unassigned right now, you can set their `unassignedAt` yourself. The app never runs this. Back up first, and run it once after the upgrade:
+
+```sql
+-- Optional. Open or snoozed, unassigned, and from before the upgrade.
+UPDATE conversations
+SET "unassignedAt" = updated_at
+WHERE "assigneeId" IS NULL
+  AND "unassignedAt" IS NULL
+  AND status <> 'CLOSED';
+```
+
+`updated_at` is the cautious choice: it is the last time the conversation changed, so rules count from then. Use `created_at` instead to count from when the conversation was opened. Either way, "Unassigned for" rules whose time has already passed fire for these conversations on the next hourly run, so check your rules first.
 
 ## System Requirements
 

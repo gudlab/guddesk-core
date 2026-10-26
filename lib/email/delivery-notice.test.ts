@@ -20,6 +20,21 @@ describe("email-channel reply delivery notice", () => {
     });
   });
 
+  it("Resend's testing-mode 403 says testing mode, not a rejected customer address", () => {
+    const delivery = deliveryFailure({
+      name: "validation_error",
+      statusCode: 403,
+      message:
+        "You can only send testing emails to your own email address (o***@acme.test). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain.",
+    });
+    assert.deepEqual(delivery, { status: "failed", reason: "testing_mode" });
+    const notice = deliveryNotice(delivery) ?? "";
+    assert.match(notice, /testing mode/);
+    assert.match(notice, /Verify a domain in Resend/);
+    assert.ok(!/customer's email address/.test(notice));
+    assert.match(notice, SAVED);
+  });
+
   it("a 422 about the `to` field blames the customer's address, not the from address", () => {
     const delivery = deliveryFailure({
       name: "validation_error",
@@ -52,7 +67,7 @@ describe("email-channel reply delivery notice", () => {
   });
 
   it("a permanent failure says not to send again; a temporary one offers a retry", () => {
-    for (const reason of ["sender_rejected", "recipient_rejected"] as const) {
+    for (const reason of ["testing_mode", "sender_rejected", "recipient_rejected"] as const) {
       assert.equal(isPermanentFailure({ status: "failed", reason }), true, reason);
       assert.match(deliveryNotice({ status: "failed", reason }) ?? "", SAVED, reason);
     }

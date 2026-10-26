@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { findUserByEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
 import { emailFrom } from "@/lib/email/from";
 import { sendEmail } from "@/lib/email/send";
@@ -25,11 +26,9 @@ export async function inviteWorkspaceMember(
 
     const { email, role } = workspaceInviteSchema.parse(data);
 
-    // Check if user is already a member
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
+    // Check if user is already a member (email is normalized by the
+    // schema; the account may be stored with capitals).
+    const existingUser = await findUserByEmail(prisma, email);
 
     if (existingUser) {
       const existingMember = await prisma.workspaceMember.findUnique({
@@ -45,7 +44,7 @@ export async function inviteWorkspaceMember(
 
     // Check for existing pending invitation
     const existingInvitation = await prisma.workspaceInvitation.findFirst({
-      where: { workspaceId, email, status: "PENDING" },
+      where: { workspaceId, email: { equals: email, mode: "insensitive" }, status: "PENDING" },
     });
 
     if (existingInvitation) {

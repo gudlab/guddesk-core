@@ -16,7 +16,8 @@
  *         leaseUntilMs is 0 when no attempt is running.
  *     reply-idem:delivered:<messageId>:<email>
  *         every step is done; <email> is the email outcome (sent, skipped,
- *         sender_rejected, recipient_rejected), so a repeat answers the same
+ *         sender_rejected, recipient_rejected, testing_mode), so a repeat
+ *         answers the same
  *   expires    = last change + 24 hours (the hourly sla-check cron deletes
  *                expired rows; after that the key starts a new reply)
  *
@@ -82,14 +83,14 @@ export function newReplyKey(): string {
 /** Follow-up steps after the message is created, in order. */
 export type ReplyStep = "n" | "w";
 
-export type EmailCode = "sent" | "skipped" | "sender_rejected" | "recipient_rejected";
+export type EmailCode = "sent" | "skipped" | "sender_rejected" | "recipient_rejected" | "testing_mode";
 
 export type ReplyState =
   | { state: "sending"; leaseUntil: number }
   | { state: "saved"; messageId: string; steps: string; leaseUntil: number }
   | { state: "delivered"; messageId: string; email: EmailCode };
 
-const EMAIL_CODES: readonly EmailCode[] = ["sent", "skipped", "sender_rejected", "recipient_rejected"];
+const EMAIL_CODES: readonly EmailCode[] = ["sent", "skipped", "sender_rejected", "recipient_rejected", "testing_mode"];
 
 export function formatReplyState(s: ReplyState): string {
   switch (s.state) {
@@ -237,7 +238,8 @@ export type ReplyRun<T> =
 
 function emailCode(result: EmailResult): EmailCode {
   if (result.status !== "failed") return result.status;
-  return result.reason === "recipient_rejected" ? "recipient_rejected" : "sender_rejected";
+  if (result.reason === "recipient_rejected" || result.reason === "testing_mode") return result.reason;
+  return "sender_rejected";
 }
 
 /** The EmailResult a finished row stands for. */

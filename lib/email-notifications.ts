@@ -2,6 +2,8 @@
 import { prisma } from "@/lib/db";
 import { emailFrom } from "@/lib/email/from";
 import { sendEmail } from "@/lib/email/send";
+import { unverifiedReplyEmail } from "@/lib/inbound-email/bounce";
+import type { UnverifiedReplyBounce } from "@/lib/inbound-email/handler";
 
 const brandColor = "#3ECF8E";
 
@@ -137,4 +139,28 @@ export async function sendSlaBreachNotification(
   } catch (error) {
     console.error("Failed to send SLA breach notification:", error);
   }
+}
+
+/**
+ * A member's own email reply failed DMARC/DKIM and wasn't posted: tell
+ * them at their account address. No Reply-To (they should answer in the
+ * app) and never the original body.
+ */
+export async function sendUnverifiedReplyBounce(bounce: UnverifiedReplyBounce): Promise<boolean> {
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: bounce.workspaceId },
+    select: { slug: true },
+  });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const inboxUrl = workspace ? `${appUrl}/workspace/${workspace.slug}/inbox?c=${bounce.conversationId}` : appUrl;
+  const content = unverifiedReplyEmail({ memberName: bounce.memberName, inboxUrl });
+  // sendEmail never throws and logs failures redacted, with no body.
+  const outcome = await sendEmail("unverified-reply-bounce", {
+    from: emailFrom(),
+    to: bounce.to,
+    subject: content.subject,
+    text: content.text,
+    html: content.html,
+  });
+  return outcome.status === "sent";
 }
