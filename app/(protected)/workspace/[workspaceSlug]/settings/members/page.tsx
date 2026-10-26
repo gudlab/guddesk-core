@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { invitationExpiryLabel, invitationExpiryTitle } from "@/lib/invitation-expiry";
 import { getCurrentUser } from "@/lib/session";
 import {
   getWorkspaceBySlug,
@@ -29,6 +30,7 @@ export default async function WorkspaceMembersPage({
   ]);
   const members = await getWorkspaceMembers(workspace.id);
   const invitations = await getWorkspaceInvitations(workspace.id);
+  const now = new Date();
 
   return (
     <>
@@ -76,10 +78,14 @@ export default async function WorkspaceMembersPage({
                       {inv.invitedBy.name ?? inv.invitedBy.email}
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    Expires{" "}
-                    {inv.expiresAt.toLocaleDateString()}
-                  </span>
+                  {/* "Expires in 7 days", like the invite email. See lib/invitation-expiry.ts. */}
+                  <time
+                    dateTime={inv.expiresAt.toISOString()}
+                    title={invitationExpiryTitle(inv.expiresAt)}
+                    className="text-xs text-muted-foreground"
+                  >
+                    {invitationExpiryLabel(inv.expiresAt, now)}
+                  </time>
                 </div>
               ))}
             </div>
