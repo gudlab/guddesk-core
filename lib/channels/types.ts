@@ -17,6 +17,12 @@ export interface InboundPayload {
   body: string;
   rawPayload?: unknown;
   threadId?: string; // for email: In-Reply-To header, existing conversationId
+  /**
+   * Email reply+ only: leave the conversation's visitor as it is. The sender
+   * may be someone the customer forwarded to, so their address must not
+   * replace the customer's (agent replies keep going to the customer).
+   */
+  keepVisitor?: boolean;
   attachments?: Array<{ name: string; url: string; type: string }>;
 }
 

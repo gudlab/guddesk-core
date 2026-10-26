@@ -74,7 +74,7 @@ describe("forgot-password timing", () => {
     assert.doesNotMatch(body, /prisma\.|sendEmail\(/);
     assert.equal((body.match(/return \{ success: PASSWORD_RESET_NEUTRAL_MESSAGE \}/g) ?? []).length, 1);
     const job = action.slice(action.indexOf("\nasync function sendResetIfAccount("));
-    assert.match(job, /prisma\.user\.findUnique/);
+    assert.match(job, /findUserByEmail\(prisma, normalizedEmail\)/);
     assert.match(job, /if \(!user \|\| !user\.password\) return;/);
     assert.match(job, /await sendEmail\("password-reset"/);
   });

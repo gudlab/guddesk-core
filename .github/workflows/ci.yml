@@ -48,3 +48,39 @@ jobs:
         run: pnpm lint
       - name: Build
         run: pnpm build
+
+  migrations:
+    name: Migrations (empty Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # A throwaway service container; nothing here reaches a real database.
+      DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+      - name: Install
+        run: pnpm install
+      - name: Prisma generate
+        run: pnpm exec prisma generate
+      - name: prisma migrate deploy on an empty database (no drift, smoke), then upgrade one with data
+        run: bash scripts/ci-migrate-check.sh

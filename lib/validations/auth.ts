@@ -1,22 +1,25 @@
 import * as z from "zod"
 
+// Emails are trimmed and lowercased before validation (lib/auth-email.ts).
+const email = (message?: string) => z.string().trim().toLowerCase().email(message)
+
 export const userAuthSchema = z.object({
-  email: z.string().email(),
+  email: email(),
 })
 
 export const userLoginSchema = z.object({
-  email: z.string().email(),
+  email: email(),
   password: z.string().min(1, "Password is required"),
 })
 
 export const userRegisterSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email(),
+  email: email(),
   password: z.string().min(8, "Password must be at least 8 characters"),
 })
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: email("Please enter a valid email address"),
 })
 
 export const resetPasswordSchema = z.object({
