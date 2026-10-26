@@ -7,6 +7,7 @@ import { dispatchWebhooks } from "@/lib/webhooks";
 import { verifyVisitorToken } from "@/lib/visitor-auth";
 import { fireAutomations } from "@/lib/automations/dispatch";
 import { messageReceivedEvent, origin } from "@/lib/automations/events";
+import { visitorFacingSenderName } from "@/lib/inbound-email/sender-name";
 
 // GET /api/widget/conversations/[conversationId]/messages
 // Returns messages for a conversation (visitor authenticated via token)
@@ -69,7 +70,13 @@ export async function GET(
     },
   });
 
-  return NextResponse.json({ messages });
+  // A customer reply from a forwarded sender is stored as "Name (address)"
+  // for agents; the visitor sees just the name.
+  return NextResponse.json({
+    messages: messages.map((m) =>
+      m.type === "VISITOR" ? { ...m, senderName: visitorFacingSenderName(m.senderName) } : m,
+    ),
+  });
 }
 
 // POST /api/widget/conversations/[conversationId]/messages
