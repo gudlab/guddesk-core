@@ -3,6 +3,7 @@
 import crypto from "crypto";
 import { after } from "next/server";
 
+import { findUserByEmail, normalizeEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
 import { emailFrom } from "@/lib/email/from";
 import { sendEmail } from "@/lib/email/send";
@@ -19,7 +20,7 @@ export async function forgotPassword(values: { email: string }) {
   }
 
   const { email } = validated.data;
-  const normalizedEmail = email.toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
 
   // Answer now, before the lookup. The lookup and the email run after the
   // response, so a known and an unknown address take the same time and get
@@ -31,9 +32,7 @@ export async function forgotPassword(values: { email: string }) {
 
 /** Runs after the response. Does nothing for an unknown address. */
 async function sendResetIfAccount(normalizedEmail: string): Promise<void> {
-  const user = await prisma.user.findUnique({
-    where: { email: normalizedEmail },
-  });
+  const user = await findUserByEmail(prisma, normalizedEmail);
 
   if (!user || !user.password) return;
 

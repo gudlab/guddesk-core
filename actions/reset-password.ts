@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 
+import { findUserByEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
 import { resetPasswordSchema } from "@/lib/validations/auth";
 
@@ -34,10 +35,8 @@ export async function resetPassword(values: {
     return { error: "This reset link has expired. Please request a new one." };
   }
 
-  // Find the user
-  const user = await prisma.user.findUnique({
-    where: { email: resetToken.email },
-  });
+  // Find the user, in any case (the token holds the normalized address).
+  const user = await findUserByEmail(prisma, resetToken.email);
 
   if (!user) {
     return { error: "Account not found." };

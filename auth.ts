@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { WorkspaceRole, UserRole } from "@prisma/client";
 import NextAuth, { type DefaultSession } from "next-auth";
 
+import { withCaseInsensitiveEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
 import { getUserById } from "@/lib/user";
 
@@ -22,7 +23,8 @@ export const {
   handlers,
   auth,
 } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  // Magic link and OAuth find a mixed-case account instead of making a second one.
+  adapter: withCaseInsensitiveEmail(PrismaAdapter(prisma), prisma),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
