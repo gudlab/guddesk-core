@@ -27,7 +27,12 @@ check_not_null_unique() {
 }
 check_workspaces() {
   check_not_null_unique "$1" workspaces appId workspaces_appId_key
-  check_not_null_unique "$1" workspaces apiKey workspaces_apiKey_key
+  # 0005 drops the orphan 0001_init column workspaces.apiKey and its index.
+  local leftover
+  leftover=$(psql "$1" -qAtc "SELECT count(*) FROM information_schema.columns WHERE table_name = 'workspaces' AND column_name = 'apiKey'")
+  [ "$leftover" = "0" ] || { echo "FAIL: workspaces.apiKey still exists"; exit 1; }
+  leftover=$(psql "$1" -qAtc "SELECT count(*) FROM pg_indexes WHERE indexname = 'workspaces_apiKey_key'")
+  [ "$leftover" = "0" ] || { echo "FAIL: index workspaces_apiKey_key still exists"; exit 1; }
 }
 
 echo "== 1. migrate deploy on an empty database"
@@ -39,17 +44,10 @@ DATABASE_URL="$fresh" pnpm exec prisma migrate deploy | tee /tmp/second-deploy.t
 grep -q "No pending migrations" /tmp/second-deploy.txt
 
 echo "== 2. no drift: migrations match schema.prisma"
-# The only allowed difference is workspaces.apiKey: a 0001_init column that
-# schema.prisma doesn't model. It is kept on purpose (NOT NULL, unique, with
-# a database default), so the diff proposes dropping it; nothing else.
+# The diff must be empty: not a single statement.
 DATABASE_URL="$fresh" pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script > /tmp/drift.sql
-grep -vE '^\s*$|^--' /tmp/drift.sql > /tmp/drift-statements.sql || true
-cat > /tmp/drift-allowed.sql <<'SQL'
-DROP INDEX "workspaces_apiKey_key";
-ALTER TABLE "workspaces" DROP COLUMN "apiKey";
-SQL
-if ! diff -u /tmp/drift-allowed.sql /tmp/drift-statements.sql; then
-  echo "FAIL: the migrations don't match schema.prisma (statements above, + lines). Add a migration."
+if grep -vE '^\s*$|^--' /tmp/drift.sql; then
+  echo "FAIL: the migrations don't match schema.prisma (statements above). Add a migration."
   exit 1
 fi
 
@@ -71,11 +69,11 @@ DATABASE_URL="$upgrade" pnpm exec prisma migrate deploy
 check_workspaces "$upgrade"
 distinct=$(psql "$upgrade" -qAtc 'SELECT count(DISTINCT "appId") FROM "workspaces" WHERE "appId" IS NOT NULL')
 [ "$distinct" = "3" ] || { echo "FAIL: expected 3 distinct backfilled appIds, got $distinct"; exit 1; }
-kept=$(psql "$upgrade" -qAtc "SELECT count(*) FROM \"workspaces\" WHERE \"apiKey\" = 'key_ci_' || substr(\"id\", 7)")
-[ "$kept" = "3" ] || { echo "FAIL: existing apiKeys changed (kept $kept of 3)"; exit 1; }
+rows=$(psql "$upgrade" -qAtc 'SELECT count(*) FROM "workspaces"')
+[ "$rows" = "3" ] || { echo "FAIL: expected the 3 existing workspaces to survive, got $rows"; exit 1; }
 DATABASE_URL="$upgrade" pnpm exec tsx scripts/ci-migrate-smoke.ts
 
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-  echo "Migrations build schema.prisma on an empty Postgres (no drift beyond the kept workspaces.apiKey) and upgrade an older database." >> "$GITHUB_STEP_SUMMARY"
+  echo "Migrations build schema.prisma on an empty Postgres (empty migrate diff) and upgrade an older database." >> "$GITHUB_STEP_SUMMARY"
 fi
 echo "OK"

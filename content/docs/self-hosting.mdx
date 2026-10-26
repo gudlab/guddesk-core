@@ -200,11 +200,11 @@ Always review the [changelog](https://github.com/gudlab/guddesk-core/releases) b
 The schema can be applied two ways, and they don't mix:
 
 - **`pnpm prisma db push`** (this guide). Keep using `db push` on every update. **Don't switch an existing `db push` database to `prisma migrate deploy`.** Its `_prisma_migrations` table is empty, so `migrate deploy` would try to run every migration from the start against tables that already exist.
-- **`pnpm prisma migrate deploy`** is for **fresh installs**, or for databases built only with migrations, where `_prisma_migrations` lists the migrations applied so far. Migration `0005_schema_catch_up` brings such a database fully up to `prisma/schema.prisma`. Before it, a database built from migrations was missing about 18 tables (for example `api_keys`, `agents`, `email_channel_configs`, `sla_policies`) and several columns. Every statement in it is guarded (`IF NOT EXISTS`, or a `duplicate_object` handler for enums and foreign keys), and it adds and never drops anything.
+- **`pnpm prisma migrate deploy`** is for **fresh installs**, or for databases built only with migrations, where `_prisma_migrations` lists the migrations applied so far. Migration `0005_schema_catch_up` brings such a database fully up to `prisma/schema.prisma`. Before it, a database built from migrations was missing about 18 tables (for example `api_keys`, `agents`, `email_channel_configs`, `sla_policies`) and several columns. Every statement in it is guarded (`IF NOT EXISTS`, or a `duplicate_object` handler for enums and foreign keys). It only adds, with one exception: it drops `workspaces.apiKey` (see below).
 
 To check which one you have, run `SELECT count(*) FROM _prisma_migrations;`. If the table is missing or the count is 0, you use `db push`.
 
-`workspaces.apiKey` is a column from the first migration that the app doesn't read. A migrations-built database keeps it NOT NULL and unique, and the database fills it in with a default, so creating a workspace works. A `db push` database doesn't have it. If you ever ran `0005` by hand on a `db push` database, your next `db push` will offer to drop `apiKey` again. That's safe to accept, because nothing uses it.
+`workspaces.apiKey` is a leftover column from the first migration (`0001_init`). `prisma/schema.prisma` doesn't model it and the app never reads or writes it (API keys live in the `api_keys` table), so on a migrations-built database creating a workspace failed on its NOT NULL constraint. `0005` drops it and its unique index (`DROP ... IF EXISTS`), so a migrations-built database matches the schema exactly. A `db push` database never had it, so there's nothing to do there.
 
 ### Upgrading: automation runs
 

@@ -5,7 +5,8 @@
 -- every statement is a no-op when the object already exists:
 --   enums and foreign keys: DO $$ ... EXCEPTION WHEN duplicate_object
 --   tables, columns, indexes: IF NOT EXISTS
--- Nothing is dropped, renamed or retyped.
+-- Nothing is renamed or retyped. The only drop is the orphan
+-- workspaces.apiKey column from 0001_init (see below), guarded with IF EXISTS.
 --
 -- Only for fresh installs, or databases whose _prisma_migrations is empty
 -- and that were built from migrations. A database made with `prisma db push`
@@ -59,17 +60,15 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 
--- workspaces.apiKey (from 0001_init; not in schema.prisma, so Prisma never
--- sends it). Kept NOT NULL and unique, as decided. A database default
--- generates it, so creating a workspace works on a migrations-built
--- database. Same shape as the appId backfill in 0004.
-ALTER TABLE "workspaces" ADD COLUMN IF NOT EXISTS "apiKey" TEXT;
-ALTER TABLE "workspaces" ALTER COLUMN "apiKey" SET DEFAULT ('c' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 24));
-UPDATE "workspaces"
-SET "apiKey" = 'c' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 24)
-WHERE "apiKey" IS NULL;
-ALTER TABLE "workspaces" ALTER COLUMN "apiKey" SET NOT NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS "workspaces_apiKey_key" ON "workspaces"("apiKey");
+-- workspaces.apiKey: an orphan column from 0001_init (TEXT NOT NULL, unique).
+-- schema.prisma has never modelled it and nothing reads it (API keys live
+-- in api_keys), so Prisma never sends it and creating a workspace on a
+-- migrations-built database failed with a NOT NULL violation. Drop it so
+-- the migrations build exactly what schema.prisma describes. Both
+-- statements are no-ops where the column is already gone (or never existed,
+-- as on a `db push` database).
+DROP INDEX IF EXISTS "workspaces_apiKey_key";
+ALTER TABLE "workspaces" DROP COLUMN IF EXISTS "apiKey";
 
 -- AlterTable
 ALTER TABLE "conversations" ADD COLUMN IF NOT EXISTS "channel" "ConversationChannel" NOT NULL DEFAULT 'WIDGET',
