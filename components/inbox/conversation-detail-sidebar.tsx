@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { callAction } from "@/lib/network";
 import { assignConversation } from "@/actions/assign-conversation";
 import { updateConversationStatus } from "@/actions/update-conversation-status";
 import { tagConversation } from "@/actions/tag-conversation";
@@ -47,18 +48,18 @@ export function ConversationDetailSidebar({
   function handleAssign(value: string) {
     const assigneeId = value === "unassigned" ? null : value;
     startTransition(async () => {
-      const result = await assignConversation(conversation.id, assigneeId);
-      if (result.status === "error") toast.error(result.message);
+      const result = await callAction(() => assignConversation(conversation.id, assigneeId), toast.error);
+      if (result?.status === "error") toast.error(result.message);
     });
   }
 
   function handleStatusChange(status: string) {
     startTransition(async () => {
-      const result = await updateConversationStatus(
-        conversation.id,
-        status as "OPEN" | "SNOOZED" | "CLOSED",
+      const result = await callAction(
+        () => updateConversationStatus(conversation.id, status as "OPEN" | "SNOOZED" | "CLOSED"),
+        toast.error,
       );
-      if (result.status === "error") toast.error(result.message);
+      if (result?.status === "error") toast.error(result.message);
     });
   }
 
@@ -71,10 +72,11 @@ export function ConversationDetailSidebar({
       return;
     }
     startTransition(async () => {
-      const result = await tagConversation(conversation.id, [
-        ...conversation.tags,
-        tag,
-      ]);
+      const result = await callAction(
+        () => tagConversation(conversation.id, [...conversation.tags, tag]),
+        toast.error,
+      );
+      if (!result) return;
       if (result.status === "error") toast.error(result.message);
       setTagInput("");
     });
@@ -82,11 +84,11 @@ export function ConversationDetailSidebar({
 
   function handleRemoveTag(tag: string) {
     startTransition(async () => {
-      const result = await tagConversation(
-        conversation.id,
-        conversation.tags.filter((t) => t !== tag),
+      const result = await callAction(
+        () => tagConversation(conversation.id, conversation.tags.filter((t) => t !== tag)),
+        toast.error,
       );
-      if (result.status === "error") toast.error(result.message);
+      if (result?.status === "error") toast.error(result.message);
     });
   }
 

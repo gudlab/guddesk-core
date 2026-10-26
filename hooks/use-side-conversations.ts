@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { usePusher } from "./use-pusher";
+import { onBackOnline } from "@/lib/network";
 
 interface SideMessage {
   id: string;
@@ -28,6 +29,9 @@ export interface SideConversationItem {
 export function useSideConversations(conversationId: string | null) {
   const [sideConversations, setSideConversations] = useState<SideConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const currentIdRef = useRef(conversationId);
+  currentIdRef.current = conversationId;
 
   const fetchSideConversations = useCallback(async () => {
     if (!conversationId) {
@@ -38,20 +42,32 @@ export function useSideConversations(conversationId: string | null) {
     setIsLoading(true);
     try {
       const res = await fetch(`/api/inbox/conversations/${conversationId}/side-conversations`);
+      // Another conversation was opened while this was in flight.
+      if (currentIdRef.current !== conversationId) return;
       if (res.ok) {
         const data = await res.json();
         setSideConversations(data.sideConversations ?? []);
+        setLoadError(false);
+      } else {
+        setLoadError(true);
       }
     } catch (error) {
-      console.error("Failed to fetch side conversations:", error);
+      console.error("Failed to fetch side conversations:", error instanceof Error ? error.name : "error");
+      if (currentIdRef.current === conversationId) setLoadError(true);
     } finally {
-      setIsLoading(false);
+      if (currentIdRef.current === conversationId) setIsLoading(false);
     }
   }, [conversationId]);
 
+  // A different conversation: drop the previous one's side conversations
+  // before loading, so they never show under the new one.
   useEffect(() => {
+    setSideConversations([]);
+    setLoadError(false);
     fetchSideConversations();
   }, [fetchSideConversations]);
+
+  useEffect(() => onBackOnline(fetchSideConversations), [fetchSideConversations]);
 
   // Listen for new side conversations
   usePusher(
@@ -98,5 +114,5 @@ export function useSideConversations(conversationId: string | null) {
     handleClosed,
   );
 
-  return { sideConversations, isLoading, refetch: fetchSideConversations };
+  return { sideConversations, isLoading, loadError, refetch: fetchSideConversations };
 }
