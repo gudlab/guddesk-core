@@ -53,6 +53,8 @@ export const footerLinks: SidebarNavItem[] = [
       { title: "vs Intercom", href: "/alternatives/intercom" },
       { title: "vs Zendesk", href: "/alternatives/zendesk" },
       { title: "vs Freshdesk", href: "/alternatives/freshdesk" },
+      { title: "vs Crisp", href: "/alternatives/crisp" },
+      { title: "vs Chatwoot", href: "/alternatives/chatwoot" },
       { title: "Terms", href: "/terms" },
       { title: "Privacy", href: "/privacy" },
     ],
