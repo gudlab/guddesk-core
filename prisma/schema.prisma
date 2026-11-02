@@ -64,6 +64,13 @@ enum MessageType {
   BOT
 }
 
+enum AiResolutionMethod {
+  ANSWERED
+  HANDED_OFF
+  ESCALATED_LATER
+  CLOSED_BY_VISITOR
+}
+
 enum AgentAvailability {
   ONLINE
   AWAY
@@ -199,6 +206,8 @@ model Workspace {
   agentPerformanceSnapshots   AgentPerformanceSnapshot[]
   sideConversations           SideConversation[]
   automationRuns              AutomationRun[]
+  gudBotSettings              GudBotSettings?
+  aiTurns                     AiTurn[]
 
   @@map(name: "workspaces")
 }
@@ -312,6 +321,14 @@ model Conversation {
   updatedAt          DateTime            @updatedAt @map(name: "updated_at")
   closedAt           DateTime?
   unassignedAt       DateTime? // Since when it has had no assignee: set at creation and on every unassign. Null on rows from before this column; the "unassigned for" job skips those.
+  assignedAt         DateTime?
+
+  // GudBot resolution tracking
+  aiResolved         Boolean?
+  aiResolutionMethod AiResolutionMethod?
+  aiHandoffReason    String?
+  aiHandoffAt        DateTime?
+  aiFinalConfidence  Float?
 
   // SLA tracking
   slaPolicyId        String?
@@ -333,6 +350,7 @@ model Conversation {
   sharedDraft       SharedDraft?
   sideConversations SideConversation[]
   automationRuns    AutomationRun[]
+  aiTurns           AiTurn[]
 
   @@index([workspaceId, status])
   @@index([workspaceId, assigneeId])
@@ -426,6 +444,42 @@ model Article {
   @@index([workspaceId, isPublished])
   @@index([workspaceId, collectionId])
   @@map(name: "articles")
+}
+
+model GudBotSettings {
+  id                   String   @id @default(cuid())
+  workspaceId          String   @unique
+  enabled              Boolean  @default(false)
+  confidenceThreshold  Float    @default(0.7)
+  maxTurns             Int      @default(4)
+  handoffMessage       String   @default("Connecting you with our team. They'll have full context.")
+  channels             String[] @default(["widget"])
+  optOutTags           String[] @default([])
+  createdAt            DateTime @default(now()) @map(name: "created_at")
+  updatedAt            DateTime @updatedAt @map(name: "updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map(name: "gudbot_settings")
+}
+
+model AiTurn {
+  id             String   @id @default(cuid())
+  conversationId String
+  workspaceId    String
+  messageId      String
+  modelSelf      Float
+  evidenceScore  Float
+  effective      Float
+  citationsJson  Json
+  createdAt      DateTime @default(now()) @map(name: "created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([workspaceId, createdAt])
+  @@map(name: "ai_turns")
 }
 
 model HelpCenterSettings {

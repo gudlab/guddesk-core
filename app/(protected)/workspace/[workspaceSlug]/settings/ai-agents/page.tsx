@@ -6,10 +6,11 @@ import { constructMetadata } from "@/lib/utils";
 import { prisma } from "@/lib/db";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { AgentSettings } from "@/components/settings/agent-settings";
+import { GudBotSettingsForm } from "@/components/settings/gudbot-settings";
 
 export const metadata = constructMetadata({
-  title: "AI Agents – GudDesk",
-  description: "Install and manage AI agents that automate your customer support.",
+  title: "AI – GudDesk",
+  description: "GudBot and installed agents for this workspace.",
 });
 
 export default async function AIAgentsPage({
@@ -25,6 +26,16 @@ export default async function AIAgentsPage({
   if (!workspace) redirect("/dashboard");
 
   await requireWorkspaceRole(workspace.id, user.id!, ["OWNER", "ADMIN"]);
+
+  const gudBotSettings = await prisma.gudBotSettings.findUnique({
+    where: { workspaceId: workspace.id },
+    select: {
+      enabled: true,
+      confidenceThreshold: true,
+      maxTurns: true,
+      handoffMessage: true,
+    },
+  });
 
   const agents = await prisma.agent.findMany({
     where: { workspaceId: workspace.id },
@@ -58,14 +69,27 @@ export default async function AIAgentsPage({
   return (
     <>
       <DashboardHeader
-        heading="AI Agents"
-        text="External services that receive events and automate conversations via the API."
+        heading="AI"
+        text="GudBot answers from your knowledge base. Installed agents receive events and act through the API."
       />
 
-      <AgentSettings
-        workspaceId={workspace.id}
-        agents={agents}
-      />
+      <div className="space-y-8">
+        <GudBotSettingsForm
+          workspaceId={workspace.id}
+          settings={gudBotSettings}
+        />
+
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Installed agents</h2>
+            <p className="text-sm text-muted-foreground">
+              External services that receive events and automate conversations via
+              the API.
+            </p>
+          </div>
+          <AgentSettings workspaceId={workspace.id} agents={agents} />
+        </div>
+      </div>
     </>
   );
 }

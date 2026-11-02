@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
+import { scheduleGudBotTurn } from "@/lib/gudbot/run";
 import { cursorPageArgs } from "@/lib/pagination";
 import { safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
@@ -200,6 +201,12 @@ export async function POST(
         origin: origin("visitor"),
       }),
     );
+
+    scheduleGudBotTurn({
+      workspaceId: conversation.workspaceId,
+      conversationId,
+      visitorMessage: message,
+    });
 
     return NextResponse.json({
       id: newMessage.id,

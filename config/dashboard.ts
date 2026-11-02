@@ -151,7 +151,7 @@ export const workspaceSidebarLinks: SidebarNavItem[] = [
       {
         href: "/workspace/[slug]/settings/ai-agents",
         icon: "bot",
-        title: "AI Agents",
+        title: "AI",
         authorizeOnly: "ADMIN",
       },
       {
