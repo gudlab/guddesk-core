@@ -208,6 +208,7 @@ model Workspace {
   automationRuns              AutomationRun[]
   gudBotSettings              GudBotSettings?
   aiTurns                     AiTurn[]
+  importMappings              ImportMapping[]
 
   @@map(name: "workspaces")
 }
@@ -1039,4 +1040,22 @@ model AgentPerformanceSnapshot {
   @@unique([memberId, date])
   @@index([workspaceId, date])
   @@map(name: "agent_performance_snapshots")
+}
+
+// ─── Intercom (and future) import idempotency ─────────
+
+model ImportMapping {
+  id          String   @id @default(cuid())
+  workspaceId String
+  source      String   // "intercom"
+  entityType  String   // "contact" | "collection" | "article" | "conversation" | "message"
+  externalId  String
+  localId     String
+  createdAt   DateTime @default(now()) @map(name: "created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, source, entityType, externalId])
+  @@index([workspaceId, source, entityType])
+  @@map(name: "import_mappings")
 }

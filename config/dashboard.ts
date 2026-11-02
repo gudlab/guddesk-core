@@ -161,6 +161,12 @@ export const workspaceSidebarLinks: SidebarNavItem[] = [
         authorizeOnly: "ADMIN",
       },
       {
+        href: "/workspace/[slug]/settings/import",
+        icon: "upload",
+        title: "Import",
+        authorizeOnly: "ADMIN",
+      },
+      {
         href: "/workspace/[slug]/settings/webhooks",
         icon: "webhook",
         title: "Webhooks",

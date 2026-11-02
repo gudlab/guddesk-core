@@ -84,7 +84,7 @@ export const alternatives: Alternative[] = [
       {
         question: "How do I move from Intercom to GudDesk?",
         answer:
-          "There is no Intercom importer yet. Export your data from Intercom, then create customers and help articles through the GudDesk REST API. You can run both tools side by side while you switch.",
+          "Upload an Intercom JSON or zip export under Workspace → Settings → Import. Contacts, help articles, and conversations are copied over. The same Intercom ids are skipped if you upload the file again. Keep Intercom running until you swap the widget snippet.",
       },
       {
         question: "Is the free plan really free?",

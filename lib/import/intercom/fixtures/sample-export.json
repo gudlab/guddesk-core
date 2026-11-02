@@ -1,0 +1,132 @@
+{
+  "contacts": [
+    {
+      "type": "contact",
+      "id": "contact_ada",
+      "role": "user",
+      "email": "ada@example.com",
+      "name": "Ada Buyer",
+      "external_id": "ada-42",
+      "created_at": 1714521600
+    },
+    {
+      "type": "contact",
+      "id": "contact_sam",
+      "role": "lead",
+      "email": "sam@example.com",
+      "name": "Sam Lead",
+      "created_at": 1714608000
+    },
+    {
+      "type": "contact",
+      "id": "contact_anon",
+      "role": "user",
+      "name": "Anonymous visitor",
+      "created_at": 1714694400
+    }
+  ],
+  "collections": [
+    {
+      "type": "collection",
+      "id": "col_start",
+      "name": "Getting Started",
+      "description": "First steps after you switch."
+    }
+  ],
+  "articles": [
+    {
+      "type": "article",
+      "id": "art_reset",
+      "title": "Reset your password",
+      "body": "<p>Open <strong>Settings</strong>.</p><p>Choose Reset password and check your inbox.</p>",
+      "state": "published",
+      "parent_id": "col_start",
+      "parent_type": "collection",
+      "description": "How to reset a password.",
+      "created_at": 1714780800,
+      "published_at": 1714780800
+    },
+    {
+      "type": "article",
+      "id": "art_refund",
+      "title": "Draft refund policy",
+      "body": "Refunds take five business days. This article is still a draft.",
+      "state": "draft",
+      "parent_id": "col_start",
+      "parent_type": "collection",
+      "created_at": 1714867200
+    }
+  ],
+  "conversations": [
+    {
+      "type": "conversation",
+      "id": "conv_open",
+      "created_at": 1714953600,
+      "updated_at": 1714957200,
+      "state": "open",
+      "source": {
+        "type": "conversation",
+        "id": "src_open",
+        "delivered_as": "customer_initiated",
+        "subject": "Widget is blank",
+        "body": "<p>The chat widget is blank on checkout.</p>",
+        "author": { "type": "user", "id": "contact_ada", "name": "Ada Buyer" },
+        "created_at": 1714953600
+      },
+      "contacts": {
+        "contacts": [{ "type": "contact", "id": "contact_ada" }]
+      },
+      "conversation_parts": {
+        "conversation_parts": [
+          {
+            "type": "conversation_part",
+            "id": "part_open_agent",
+            "part_type": "comment",
+            "body": "<p>Thanks Ada. Which browser are you using?</p>",
+            "created_at": 1714955400,
+            "author": { "type": "admin", "id": "admin_1", "name": "Riley Agent" }
+          },
+          {
+            "type": "conversation_part",
+            "id": "part_open_user",
+            "part_type": "comment",
+            "body": "<p>Chrome 124 on macOS.</p>",
+            "created_at": 1714957200,
+            "author": { "type": "user", "id": "contact_ada", "name": "Ada Buyer" }
+          }
+        ]
+      }
+    },
+    {
+      "type": "conversation",
+      "id": "conv_closed",
+      "created_at": 1715040000,
+      "updated_at": 1715043600,
+      "state": "closed",
+      "source": {
+        "type": "email",
+        "id": "src_closed",
+        "delivered_as": "customer_initiated",
+        "subject": "Refund for order 88",
+        "body": "<p>I want a refund for order 88.</p>",
+        "author": { "type": "lead", "id": "contact_sam", "name": "Sam Lead" },
+        "created_at": 1715040000
+      },
+      "contacts": {
+        "contacts": [{ "type": "contact", "id": "contact_sam" }]
+      },
+      "conversation_parts": {
+        "conversation_parts": [
+          {
+            "type": "conversation_part",
+            "id": "part_closed_agent",
+            "part_type": "comment",
+            "body": "<p>Refund sent. You should see it in five days.</p>",
+            "created_at": 1715041800,
+            "author": { "type": "admin", "id": "admin_1", "name": "Riley Agent" }
+          }
+        ]
+      }
+    }
+  ]
+}

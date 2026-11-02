@@ -1,0 +1,67 @@
+---
+title: Intercom import
+description: Upload an Intercom JSON or zip export to copy contacts, articles, and conversations into a GudDesk workspace.
+---
+
+Owners and admins can import an Intercom data export into a workspace. The importer is file-based so you can try it on Preview without a live Intercom account.
+
+Live Intercom API pull, Zendesk, two-way sync, and attachment downloads are not in this slice. GudBot stays off.
+
+## Where to run it
+
+1. Open **Workspace → Settings → Import** (`/workspace/<slug>/settings/import`). The same form is also on **Integrations**.
+2. Upload a `.json` or `.zip` file (4 MB max).
+3. Check the dry-run counts.
+4. Confirm. The result lists created, skipped, and errors.
+
+Re-upload the same file to confirm idempotency: the same Intercom ids are skipped.
+
+## Sample fixture (QA)
+
+Repo path: `lib/import/intercom/fixtures/sample-export.json`
+
+Expected dry-run counts:
+
+| Type | Count |
+|---|---|
+| Contacts | 3 |
+| Collections | 1 |
+| Articles | 2 (1 published) |
+| Conversations | 2 (1 closed) |
+| Messages | 5 |
+
+After import:
+
+- **Customers**: Ada Buyer (`ada@example.com`, external id `ada-42`), Sam Lead, Anonymous visitor
+- **Knowledge Base**: collection "Getting Started" with "Reset your password" published and "Draft refund policy" as a draft
+- **Inbox**: one open API conversation ("Widget is blank") and one closed email conversation ("Refund for order 88")
+
+A second import of the same file should report those rows as skipped, with no extra customers, articles, or conversations.
+
+## Export shape
+
+A single JSON object is enough:
+
+```json
+{
+  "contacts": [{ "type": "contact", "id": "abc", "email": "ada@example.com", "name": "Ada", "external_id": "ada-42" }],
+  "collections": [{ "type": "collection", "id": "col1", "name": "Getting Started" }],
+  "articles": [{ "type": "article", "id": "art1", "title": "Title", "body": "<p>HTML</p>", "state": "published", "parent_id": "col1" }],
+  "conversations": [{ "type": "conversation", "id": "con1", "state": "open", "contacts": { "contacts": [{ "id": "abc" }] }, "source": { "body": "<p>Hi</p>" } }]
+}
+```
+
+A zip of `contacts.json`, `articles.json`, `conversations.json`, and `collections.json` works too. Intercom list wrappers (`{ "type": "list", "data": [...] }`) and JSONL are accepted. HTML bodies are stored as plain text because the help center and inbox render text, not HTML.
+
+## What is mapped
+
+- **Contacts** become customers (`visitors`). `external_id` is kept for widget `identify()`. The Intercom id is stored in `import_mappings` so re-runs do not duplicate rows. Email match reuses an existing customer.
+- **Collections / folders** become help-center collections (flat; nested folders are one collection each, best-effort).
+- **Articles** keep published vs draft. Collection assignment uses `parent_id` / `collection_id` when present.
+- **Conversations** become inbox threads with messages and timestamps. Open / closed / snoozed map onto GudDesk status. Email-sourced threads use the email channel; others use API. Admin assignment is not mapped.
+
+## Database
+
+Additive table `import_mappings` (migration `0007_intercom_import_mappings`): `workspaceId`, `source` (`intercom`), `entityType`, `externalId`, `localId`. Unique on those four fields.
+
+Imported conversations set `metadata.importSource = "intercom"`. The importer does not create `gudbot_settings` rows and does not set `enabled` on GudBot.
