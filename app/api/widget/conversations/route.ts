@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
+import { scheduleGudBotTurn } from "@/lib/gudbot/run";
 import { safeTrigger } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { createVisitorToken, verifyVisitorToken } from "@/lib/visitor-auth";
@@ -177,6 +178,12 @@ export async function POST(req: NextRequest) {
         origin: origin("visitor"),
       }),
     );
+
+    scheduleGudBotTurn({
+      workspaceId: workspace.id,
+      conversationId: conversation.id,
+      visitorMessage: message,
+    });
 
     // Generate visitor token for future requests
     const newToken = createVisitorToken(visitorId, workspace.id);

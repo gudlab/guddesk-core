@@ -26,6 +26,7 @@ const NO_FIRE = [
   "app/api/v1/conversations/[conversationId]/messages/route.ts",
   "lib/mcp/tools/messages.ts",
   "actions/manage-side-conversation.ts",
+  "lib/gudbot/run.ts",
 ];
 
 /** Places that clear the assignee also start the "unassigned for" clock. */
