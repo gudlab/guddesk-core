@@ -46,7 +46,7 @@ const faqs = [
   {
     question: "Can I migrate from Intercom?",
     answer:
-      "There is no Intercom importer yet. Export your data from Intercom, then create customers and help articles through the GudDesk REST API. You can run both tools side by side while you switch.",
+      "Owners and admins can upload an Intercom JSON or zip export under Workspace → Settings → Import. Contacts, help articles, and conversations are copied over. Uploading the same file again skips rows that already exist. Keep Intercom running until you swap the widget snippet.",
   },
 ];
 

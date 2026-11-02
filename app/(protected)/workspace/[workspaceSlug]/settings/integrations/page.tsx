@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getWorkspaceBySlug, requireWorkspaceRole } from "@/lib/workspace";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { SlackSettings } from "@/components/integrations/slack-settings";
+import { IntercomImporter } from "@/components/settings/intercom-importer";
 
 export default async function IntegrationsPage({
   params,
@@ -31,6 +32,11 @@ export default async function IntegrationsPage({
         text="Connect third-party services to your workspace."
       />
       <div className="space-y-8">
+        <section>
+          <h2 className="mb-4 text-lg font-medium">Intercom</h2>
+          <IntercomImporter workspaceId={workspace.id} />
+        </section>
+
         <section>
           <h2 className="mb-4 text-lg font-medium">Slack</h2>
           <SlackSettings

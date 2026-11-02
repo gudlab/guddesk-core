@@ -121,6 +121,11 @@ export const docsConfig: DocsConfig = {
           href: "/docs/integrations/email",
           icon: "page",
         },
+        {
+          title: "Intercom import",
+          href: "/docs/integrations/intercom",
+          icon: "page",
+        },
       ],
     },
   ],
