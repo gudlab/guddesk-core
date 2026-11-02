@@ -7,6 +7,7 @@ import {
   findWidgetScriptSrc,
   resolveDefaultApiOrigin,
 } from "./utils/api-origin";
+import { isolateShadowKeyboard } from "./utils/isolate-events";
 import {
   findWidgetScriptElement,
   mergeSnippetSettings,
@@ -33,6 +34,7 @@ declare global {
 }
 
 let shadowRoot: ShadowRoot | null = null;
+let unbindShadowKeyboard: (() => void) | null = null;
 
 function getBaseUrl(explicitBaseUrl?: string): string {
   const scripts = Array.from(document.querySelectorAll("script[src]")).map(
@@ -72,6 +74,7 @@ function init(settings: GudDeskSettings) {
   host.id = "guddesk-widget";
   document.body.appendChild(host);
   shadowRoot = host.attachShadow({ mode: "open" });
+  unbindShadowKeyboard = isolateShadowKeyboard(shadowRoot);
 
   // Mount Preact app inside shadow DOM
   render(
@@ -89,6 +92,8 @@ function init(settings: GudDeskSettings) {
 function destroy() {
   const host = document.getElementById("guddesk-widget");
   if (host) {
+    unbindShadowKeyboard?.();
+    unbindShadowKeyboard = null;
     render(null, shadowRoot!);
     host.remove();
     shadowRoot = null;

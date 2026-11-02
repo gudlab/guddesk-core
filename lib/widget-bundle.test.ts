@@ -30,6 +30,12 @@ describe("built widget bundle", () => {
       read("packages/widget/dist/guddesk.umd.cjs"),
     );
   });
+
+  it("the hosted bundle keeps widget keystrokes inside the shadow root", () => {
+    const bundle = read("public/widget.js");
+    assert.match(bundle, /stopPropagation/);
+    assert.match(bundle, /addEventListener\("keydown"/);
+  });
 });
 
 describe("findBareImports", () => {
