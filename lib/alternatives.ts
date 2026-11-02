@@ -39,7 +39,7 @@ export const alternatives: Alternative[] = [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Agent replies in the open widget", competitor: true, guddesk: "Live with Pusher keys, every 4 seconds without" },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "Email channel", competitor: true, guddesk: true },
+      { name: "Email channel", competitor: true, guddesk: "Yes, with your own mail setup" },
       { name: "Public help center", competitor: true, guddesk: true },
       { name: "Workflow automations", competitor: "Advanced plan and up", guddesk: "Yes, one action per rule" },
       { name: "Built-in autonomous AI agent", competitor: "Fin, $0.99 per outcome", guddesk: "Not yet. On the roadmap" },
@@ -79,7 +79,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can GudDesk replace Intercom?",
         answer:
-          "For live chat, a shared inbox, email and a public help center, yes. Intercom has an autonomous AI agent (Fin) today and GudDesk doesn't yet. If you need WhatsApp, SMS, phone or SSO, Intercom covers those and GudDesk doesn't.",
+          "For live chat, a shared inbox and a public help center, yes. Email works when you add your own mail setup. Intercom has an autonomous AI agent (Fin) today and GudDesk doesn't yet. If you need WhatsApp, SMS, phone or SSO, Intercom covers those and GudDesk doesn't.",
       },
       {
         question: "How do I move from Intercom to GudDesk?",
@@ -125,7 +125,7 @@ export const alternatives: Alternative[] = [
       { name: "Free tier", competitor: "14-day trial", guddesk: "Free forever (2 members)" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
       { name: "Slack integration", competitor: true, guddesk: "Automation rules can post to Slack" },
-      { name: "Email integration", competitor: true, guddesk: true },
+      { name: "Email integration", competitor: true, guddesk: "Yes, with your own mail setup" },
     ],
     switchReasons: [
       {
@@ -198,7 +198,7 @@ export const alternatives: Alternative[] = [
       { name: "Unified platform", competitor: "Multiple products", guddesk: "All-in-one" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
       { name: "Slack integration", competitor: true, guddesk: "Automation rules can post to Slack" },
-      { name: "Email integration", competitor: true, guddesk: true },
+      { name: "Email integration", competitor: true, guddesk: "Yes, with your own mail setup" },
     ],
     switchReasons: [
       {
