@@ -245,6 +245,175 @@ export const alternatives: Alternative[] = [
       },
     ],
   },
+  {
+    slug: "crisp",
+    name: "Crisp",
+    tagline: "The open-source Crisp alternative",
+    description:
+      "Crisp charges a flat price per workspace but caps the seats on each plan. GudDesk Pro is $29 a month for unlimited seats, and you can self-host the AGPL-3.0 code on your own servers.",
+    pricing:
+      "Free for 2 seats. Paid plans run from $45 a month per workspace (Mini, 4 seats) to $295 (Plus, 20 seats, $10 a month for each extra agent). VAT not included. Source: crisp.chat/en/pricing, checked 2 Nov 2026.",
+    weaknesses: [
+      "Seats are capped per plan, so a team of 5 needs Essentials at $95 a month",
+      "The knowledge base and workflow builder start on Essentials",
+      "AI runs on included credits, from $5 on Mini (about 90 automated conversations) up to $75 on Plus",
+      "Cloud only. The pricing page lists no self-hosted option",
+    ],
+    features: [
+      { name: "Live chat widget", competitor: true, guddesk: true },
+      { name: "Shared inbox", competitor: true, guddesk: true },
+      { name: "Shared email inbox", competitor: "Mini plan and up", guddesk: "Yes, with your own mail setup" },
+      { name: "Knowledge base", competitor: "Essentials plan and up", guddesk: "Included on Free" },
+      { name: "Workflow automations", competitor: "Essentials plan and up", guddesk: "Included on Free" },
+      { name: "WhatsApp and Instagram", competitor: "Essentials plan and up", guddesk: false },
+      { name: "SMS and phone", competitor: true, guddesk: false },
+      { name: "Mobile apps", competitor: true, guddesk: false },
+      { name: "Typing indicators", competitor: true, guddesk: true },
+      { name: "Built-in autonomous AI agent", competitor: "AI Agent, uses AI credits", guddesk: "Not yet. On the roadmap" },
+      { name: "AI writing help and summaries", competitor: true, guddesk: "Planned, ships with GudBot v1" },
+      { name: "Bring your own AI agent", competitor: "Not compared", guddesk: "Agent API, replies as BOT" },
+      { name: "MCP server", competitor: true, guddesk: "Checks API key permission levels" },
+      { name: "Remove branding", competitor: "Plus plan", guddesk: "Pro plan" },
+      { name: "Extra workspaces", competitor: "Each workspace is billed separately", guddesk: "Unlimited on Pro" },
+      { name: "Self-hosting", competitor: false, guddesk: true },
+      { name: "Open source", competitor: false, guddesk: "AGPL-3.0" },
+      { name: "Conversations", competitor: "Unlimited on every plan", guddesk: "500 a month on Free, unlimited on Pro" },
+      { name: "Free plan", competitor: "2 seats, 100 customer profiles, no AI credits", guddesk: "2 members, 500 conversations a month" },
+      { name: "Price", competitor: "$45 to $295 per workspace a month", guddesk: "Pro $29 a month flat, unlimited seats" },
+    ],
+    switchReasons: [
+      {
+        title: "Unlimited seats for $29",
+        description:
+          "Crisp caps seats on each plan, so a team of 5 needs Essentials at $95 a month and a team of 11 needs Plus at $295. GudDesk Pro is $29 a month for any team size.",
+      },
+      {
+        title: "A help center on the free plan",
+        description:
+          "Crisp puts the knowledge base on Essentials at $95 a month. GudDesk Free includes a public help center, for 2 members and 500 conversations a month.",
+      },
+      {
+        title: "Run it on your own servers",
+        description:
+          "Crisp is a hosted service with EU data hosting. GudDesk's AGPL-3.0 code runs on your own Postgres with no plan caps, so your conversations stay in your database.",
+      },
+      {
+        title: "One plan for every workspace",
+        description:
+          "Crisp bills each workspace as its own subscription. On GudDesk Pro you can create as many workspaces as you need.",
+      },
+    ],
+    faqs: [
+      {
+        question: "Is Crisp cheaper than GudDesk?",
+        answer:
+          "Crisp Free and GudDesk Free both cover 2 seats. Above that, Crisp starts at $45 a month for 4 seats (Mini, before VAT) and GudDesk Pro is $29 a month for unlimited seats. Crisp includes unlimited conversations on every plan, while GudDesk Free stops at 500 a month.",
+      },
+      {
+        question: "What does Crisp have that GudDesk doesn't?",
+        answer:
+          "Crisp has an autonomous AI agent and mobile apps, and it connects channels such as WhatsApp and Instagram. GudDesk doesn't have those yet. If you need them today, Crisp covers them.",
+      },
+      {
+        question: "How fast do replies show up in the GudDesk widget?",
+        answer:
+          "As they are sent. GudDesk Cloud uses Pusher, so agent replies and typing indicators reach the open widget live. If the live connection fails, the widget checks for new messages every 4 seconds.",
+      },
+      {
+        question: "How do I move from Crisp to GudDesk?",
+        answer:
+          "There is no Crisp importer yet. Create customers and help articles through the GudDesk REST API, then swap the widget snippet on your site. You can run both tools side by side while you switch.",
+      },
+      {
+        question: "Does GudDesk have built-in AI?",
+        answer:
+          "Not yet. AI reply suggestions and summaries are planned and ship with GudBot v1. Today you connect your own agent through webhooks and the API, and its replies show up as BOT messages.",
+      },
+    ],
+  },
+  {
+    slug: "chatwoot",
+    name: "Chatwoot",
+    tagline: "An open-source Chatwoot alternative with flat pricing",
+    description:
+      "Chatwoot is open source too, and its cloud plans bill per agent, from $19 a month. GudDesk Pro is $29 a month flat for your whole team, and you can self-host the AGPL-3.0 code on your own servers.",
+    pricing:
+      "Cloud: Hacker is free for up to 2 agents. Startups is $19 and Business is $39 per agent a month. Enterprise is $99 per agent a month. Source: chatwoot.com/pricing, checked 2 Nov 2026.",
+    weaknesses: [
+      "Cloud plans bill per agent: $19 a month on Startups and $39 on Business",
+      "The free Hacker plan covers live chat only and keeps data for 30 days",
+      "The help center starts on Startups, and automation rules start on Business",
+      "Captain AI runs on monthly credits (300 on Startups, 500 on Business), with extra credits at $20 per 1,000",
+    ],
+    features: [
+      { name: "Live chat widget", competitor: true, guddesk: true },
+      { name: "Shared inbox", competitor: true, guddesk: true },
+      { name: "Email channel", competitor: true, guddesk: "Yes, with your own mail setup" },
+      { name: "WhatsApp and Instagram", competitor: true, guddesk: false },
+      { name: "Voice", competitor: "Business plan and up", guddesk: false },
+      { name: "Public help center", competitor: "Startups plan and up", guddesk: "Included on Free" },
+      { name: "Automation rules", competitor: "Business plan and up", guddesk: "Included on Free" },
+      { name: "Built-in autonomous AI agent", competitor: "Captain AI, credit based", guddesk: "Not yet. On the roadmap" },
+      { name: "AI reply suggestions and summaries", competitor: "Captain AI, credit based", guddesk: "Planned, ships with GudBot v1" },
+      { name: "Bring your own AI agent", competitor: "Not compared", guddesk: "Agent API, replies as BOT" },
+      { name: "REST API and MCP server", competitor: "Not compared", guddesk: "Both check API key permission levels" },
+      { name: "SSO / SAML", competitor: "Enterprise plan, $99 per agent a month", guddesk: false },
+      { name: "Mobile apps", competitor: true, guddesk: false },
+      { name: "Self-hosting", competitor: "Community Edition is free", guddesk: "Free, no plan caps" },
+      { name: "Licence", competitor: "MIT core, separate licence for enterprise/ code", guddesk: "AGPL-3.0" },
+      { name: "Free cloud plan", competitor: "2 agents, 500 conversations a month, live chat only", guddesk: "2 members, 500 conversations a month" },
+      { name: "Paid cloud price", competitor: "$19 to $99 per agent a month", guddesk: "Pro $29 a month flat, unlimited seats" },
+    ],
+    switchReasons: [
+      {
+        title: "One price for the whole team",
+        description:
+          "Chatwoot Cloud bills each agent, so 5 agents on Business cost $195 a month. GudDesk Pro is $29 a month for unlimited seats.",
+      },
+      {
+        title: "More on the free plan",
+        description:
+          "Chatwoot Hacker and GudDesk Free both cover 2 seats and 500 conversations a month. GudDesk Free also includes the help center, which Chatwoot keeps for paid plans.",
+      },
+      {
+        title: "Open source on both sides",
+        description:
+          "Chatwoot's core is MIT licensed and GudDesk is AGPL-3.0. GudDesk runs on Next.js and Postgres, so TypeScript teams can read and change it in a language they already use.",
+      },
+      {
+        title: "Built for your own agents",
+        description:
+          "Connect your own bot through the agent API. It gets a webhook and an API key, and its replies show up as BOT messages in the widget and inbox. GudDesk charges nothing per resolution.",
+      },
+    ],
+    faqs: [
+      {
+        question: "Chatwoot is open source too. Why switch?",
+        answer:
+          "Both projects publish their code. Chatwoot's core is MIT licensed, with a separate licence for code in its enterprise/ directory. GudDesk is AGPL-3.0. On the hosted side the main difference is price: Chatwoot Cloud bills per agent and GudDesk Pro is $29 a month flat.",
+      },
+      {
+        question: "Can I self-host either one?",
+        answer:
+          "Yes. Chatwoot's Community Edition is free to self-host, and its paid self-hosted plans are $19 or $99 per agent a month. GudDesk self-hosting has no plan caps. You run it from source on Node.js 20.19 or later, pointed at your own PostgreSQL. There is no GudDesk Docker image yet.",
+      },
+      {
+        question: "What does Chatwoot have that GudDesk doesn't?",
+        answer:
+          "Captain AI, voice, mobile apps and channels such as WhatsApp and Instagram. Chatwoot is also more established, with more than 38,000 GitHub stars. If you need those today, Chatwoot covers them.",
+      },
+      {
+        question: "How do I move from Chatwoot to GudDesk?",
+        answer:
+          "There is no Chatwoot importer yet. Chatwoot lets you export conversations and contacts through its API. Create customers and help articles in GudDesk through the REST API, and run both tools side by side while you switch.",
+      },
+      {
+        question: "Does GudDesk have built-in AI?",
+        answer:
+          "Not yet. AI reply suggestions and summaries are planned and ship with GudBot v1. Today you connect your own agent through webhooks and the API, and it can use any model you like.",
+      },
+    ],
+  },
 ];
 
 export function getAlternativeBySlug(slug: string): Alternative | undefined {
