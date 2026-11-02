@@ -212,9 +212,9 @@ export default function PricingPage() {
               <span className="text-muted-foreground">It&apos;s the plan.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
-              Most workspaces never need to pay. Get live chat, shared inbox,
-              knowledge base, webhooks and full API access. All for
-              $0, forever.
+              Free covers 2 members and 500 conversations a month. You get
+              live chat, the shared inbox, the help center, webhooks and full
+              API access for $0.
             </p>
           </div>
 
