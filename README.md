@@ -1,58 +1,58 @@
+# GudDesk
+
+Open-source live chat and a shared inbox, with a help center. Bring your own AI agent.
+
+[Website](https://guddesk.com) · [Docs](https://guddesk.com/docs) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md)
+
+GudDesk is an Intercom and Zendesk alternative with flat pricing. Use GudDesk Cloud, or self-host this AGPL-3.0 code with no plan limits. If it's useful to you, a star helps other people find it.
+
 <p align="center">
-  <a href="https://www.guddesk.com">
-    <img src="docs/assets/guddesk-hero.svg" alt="GudDesk homepage" width="800" />
+  <a href="https://guddesk.com">
+    <img src="docs/assets/guddesk-hero.svg" alt="GudDesk inbox and chat widget" width="800" />
   </a>
 </p>
 
+## Plans on GudDesk Cloud
+
+| Plan | Price | What you get |
+|---|---|---|
+| Free | $0 | 2 members, 500 conversations a month |
+| Pro | $29 a month flat | Unlimited seats and conversations, no GudDesk branding |
+
+Self-hosting has no plan limits.
+
+## What works today
+
+| Feature | GudDesk Cloud | Self-hosted |
+|---|---|---|
+| Chat widget (one script tag, with page rules) | Yes | Yes |
+| Verified identity for logged-in users (HMAC) | Yes | Yes |
+| Shared inbox with assignment and tags | Yes | Yes |
+| Email | Outbound via Resend; inbound receiving not live yet | Yes, with Resend inbound |
+| Live replies and typing indicators | Yes (Pusher) | With your Pusher keys. Without them, polling every 4 to 10 seconds |
+| Public help center | Yes | Yes |
+| GudBot (KB-grounded AI replies; default OFF) | Yes | Yes |
+| Intercom file importer | Yes | Yes |
+| Automation rules | Rules save, but don't run yet | Yes |
+| Agent API: your own bot replies as BOT | Yes | Yes |
+| REST API and webhooks | Yes | Yes |
+
+## Planned
+
+| Feature | Status |
+|---|---|
+| Docker image | Planned. Today you run from source |
+| WhatsApp and SSO | Not in this release |
+
+See [ROADMAP.md](ROADMAP.md) for the full list.
+
 <p align="center">
-  <a href="https://www.guddesk.com">
+  <a href="https://guddesk.com">
     <img src="docs/assets/guddesk-tour.svg" alt="GudDesk product tour" width="800" />
   </a>
 </p>
 
-<p align="center">
-  <a href="https://www.guddesk.com">Watch the full reel on guddesk.com</a>
-</p>
-
-<p align="center">
-  <strong>GudDesk</strong> is open-source customer messaging for humans and agents.<br />
-  Live chat and a shared inbox, with a help center. Bring your own AI agent.
-</p>
-
-<p align="center">
-  <a href="https://guddesk.com">Website</a> ·
-  <a href="https://guddesk.com/docs">Documentation</a> ·
-  <a href="https://github.com/gudlab/guddesk-core">Public source</a> ·
-  <a href="https://gudlab.org">GudLab</a>
-</p>
-
-Star this repo if GudDesk is useful. Hosted cloud is [guddesk.com](https://guddesk.com). This is the public **AGPL-3.0** core (`package.json` name `guddesk`).
-
----
-
-## About
-
-GudDesk is an Intercom / Zendesk alternative without per-seat pricing. Self-host the AGPL core, or use cloud:
-
-| Cloud plan | Price | Notes |
-|---|---|---|
-| Free | $0 | 2 members, 500 conversations/month |
-| Pro | **$29/mo** flat | Unlimited seats, branding off |
-| Business | **~$99/mo** flat | Same no-per-seat rule; talk to us to enable |
-
-Self-host is uncapped. WhatsApp, SSO, and GudBot v1 are **not** in this release.
-
 Built by [GudLab](https://gudlab.org).
-
-### Key Features
-
-- **Live Chat Widget**: two-line snippet via `cdn.guddesk.com`
-- **Shared Inbox**: assignment and tagging, with live inbox updates and typing indicators when you add Pusher keys
-- **Knowledge Base**: collections, publish workflow, public help center
-- **AI assist (planned)**: reply suggestions and summaries, shipping with GudBot v1
-- **AI Agent Plugins**: external bots via REST + webhooks (`BOT` messages)
-- **Automation rules**: a rule builder for conversation events. Each rule runs when its trigger fires
-- **Self-Hosted**: your Postgres, your keys
 
 ## Install the widget (hosted)
 
