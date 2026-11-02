@@ -39,7 +39,7 @@ export const alternatives: Alternative[] = [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Agent replies in the open widget", competitor: true, guddesk: "Live with Pusher keys, every 4 seconds without" },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "Email channel", competitor: true, guddesk: true },
+      { name: "Email channel", competitor: true, guddesk: "Yes, with your own mail setup" },
       { name: "Public help center", competitor: true, guddesk: true },
       { name: "Workflow automations", competitor: "Advanced plan and up", guddesk: "Yes, one action per rule" },
       { name: "Built-in autonomous AI agent", competitor: "Fin, $0.99 per outcome", guddesk: "Not yet. On the roadmap" },
@@ -79,7 +79,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can GudDesk replace Intercom?",
         answer:
-          "For live chat, a shared inbox, email and a public help center, yes. Intercom has an autonomous AI agent (Fin) today and GudDesk doesn't yet. If you need WhatsApp, SMS, phone or SSO, Intercom covers those and GudDesk doesn't.",
+          "For live chat, a shared inbox, email with your own mail setup, and a public help center, yes. Intercom has an autonomous AI agent (Fin) today and GudDesk doesn't yet. If you need WhatsApp, SMS, phone or SSO, Intercom covers those and GudDesk doesn't.",
       },
       {
         question: "How do I move from Intercom to GudDesk?",
@@ -262,7 +262,7 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "Shared email inbox", competitor: "Mini plan and up", guddesk: "Included on Free" },
+      { name: "Shared email inbox", competitor: "Mini plan and up", guddesk: "Yes, with your own mail setup" },
       { name: "Knowledge base", competitor: "Essentials plan and up", guddesk: "Included on Free" },
       { name: "Workflow automations", competitor: "Essentials plan and up", guddesk: "Included on Free" },
       { name: "WhatsApp and Instagram", competitor: "Essentials plan and up", guddesk: false },
@@ -348,7 +348,7 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "Email channel", competitor: true, guddesk: true },
+      { name: "Email channel", competitor: true, guddesk: "Yes, with your own mail setup" },
       { name: "WhatsApp and Instagram", competitor: true, guddesk: false },
       { name: "Voice", competitor: "Business plan and up", guddesk: false },
       { name: "Public help center", competitor: "Startups plan and up", guddesk: "Included on Free" },
