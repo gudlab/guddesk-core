@@ -227,7 +227,7 @@ _Win the deals that require compliance, scale, and white-glove support._
 | SSO/SAML | - | - | Yes | Yes |
 | Support | Community | Email | Priority | Dedicated |
 
-**Key principle:** Workspace-based pricing, not per-agent. AI is included, not an add-on. No surprise bills.
+**Key principle:** One flat price per workspace, with no per-agent fees. AI assist is planned for Pro and ships with GudBot v1. No surprise bills.
 
 ---
 

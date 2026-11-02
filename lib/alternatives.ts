@@ -79,7 +79,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can GudDesk replace Intercom?",
         answer:
-          "For live chat, a shared inbox, email with your own mail setup, and a public help center, yes. Intercom has an autonomous AI agent (Fin) today and GudDesk doesn't yet. If you need WhatsApp, SMS, phone or SSO, Intercom covers those and GudDesk doesn't.",
+          "For live chat, a shared inbox and a public help center, yes. Email works when you add your own mail setup. Intercom has an autonomous AI agent (Fin) today and GudDesk doesn't yet. If you need WhatsApp, SMS, phone or SSO, Intercom covers those and GudDesk doesn't.",
       },
       {
         question: "How do I move from Intercom to GudDesk?",
@@ -125,7 +125,7 @@ export const alternatives: Alternative[] = [
       { name: "Free tier", competitor: "14-day trial", guddesk: "Free forever (2 members)" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
       { name: "Slack integration", competitor: true, guddesk: "Automation rules can post to Slack" },
-      { name: "Email integration", competitor: true, guddesk: true },
+      { name: "Email integration", competitor: true, guddesk: "Yes, with your own mail setup" },
     ],
     switchReasons: [
       {
@@ -153,12 +153,12 @@ export const alternatives: Alternative[] = [
       {
         question: "Can GudDesk handle the same ticket volume as Zendesk?",
         answer:
-          "GudDesk is designed for small to mid-size teams. If you're processing tens of thousands of tickets daily with complex routing rules across dozens of departments, Zendesk's enterprise features may still be a better fit. For teams with up to a few thousand conversations per month, GudDesk handles volume with ease.",
+          "GudDesk is built for small and mid-size teams. If you handle tens of thousands of tickets a day with complex routing across many departments, Zendesk's enterprise features may still fit you better.",
       },
       {
         question: "Does GudDesk have a ticketing system?",
         answer:
-          "GudDesk uses a conversation-based model rather than traditional tickets. Every customer interaction (chat, email, bot) is a conversation in your shared inbox. You can assign, tag, prioritize, and track resolution. It's ticketing without the ticket jargon.",
+          "GudDesk works in conversations. Chat and email messages, plus any BOT replies, land in conversations in your shared inbox. You can assign and tag them, and close each one when it's resolved.",
       },
       {
         question: "How do I migrate from Zendesk to GudDesk?",
@@ -168,7 +168,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Is GudDesk secure enough for our team?",
         answer:
-          "GudDesk is open source, so your security team can audit every line of code. Self-host it on your own infrastructure for complete data control. We use encryption in transit and at rest, and follow secure development practices.",
+          "GudDesk is open source, so your security team can review the code. guddesk.com sends HSTS on every page. If you need full control of your data, self-host it on your own servers.",
       },
     ],
   },
@@ -198,13 +198,13 @@ export const alternatives: Alternative[] = [
       { name: "Unified platform", competitor: "Multiple products", guddesk: "All-in-one" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
       { name: "Slack integration", competitor: true, guddesk: "Automation rules can post to Slack" },
-      { name: "Email integration", competitor: true, guddesk: true },
+      { name: "Email integration", competitor: true, guddesk: "Yes, with your own mail setup" },
     ],
     switchReasons: [
       {
-        title: "One platform, not three",
+        title: "Chat and email in one product",
         description:
-          "Freshworks splits support across Freshdesk, Freshchat, and Freshcaller. GudDesk unifies live chat, email, and bot conversations in a single platform with a single price.",
+          "Freshworks sells live chat as Freshchat, a separate product with its own price. GudDesk puts chat and email conversations in one inbox on one plan.",
       },
       {
         title: "Free with no time limit",
@@ -217,9 +217,9 @@ export const alternatives: Alternative[] = [
           "Freshdesk's Freddy AI Copilot is $29/agent/mo (as of 14 Oct 2026). GudDesk lets you connect your own agent on every plan. AI reply suggestions for your team are planned.",
       },
       {
-        title: "Modern developer experience",
+        title: "Code your developers can read",
         description:
-          "GudDesk is built with Next.js, TypeScript, and a Plugin API. If your team is technical, you'll appreciate the modern stack and the ability to extend the platform with custom code.",
+          "GudDesk is written in TypeScript on Next.js. Your developers can extend it through the REST API and webhooks, or change the AGPL-3.0 code directly.",
       },
     ],
     faqs: [
