@@ -16,7 +16,7 @@
 
 <p align="center">
   <strong>GudDesk</strong> is open-source customer messaging for humans and agents.<br />
-  Live chat, shared inbox and knowledge base. Bring your own AI agent.
+  Live chat and a shared inbox, with a help center. Bring your own AI agent.
 </p>
 
 <p align="center">
