@@ -74,7 +74,7 @@ Self-host: keep the same `appId` and load `https://your-domain/widget.js` instea
 | Database | [PostgreSQL](https://postgresql.org) via [Prisma 7](https://prisma.io) |
 | Auth | [Auth.js v5](https://authjs.dev) |
 | Real-time | [Pusher](https://pusher.com) (optional; the widget polls every 4 seconds without it) |
-| AI (planned) | [Anthropic Claude](https://anthropic.com) |
+| AI | Optional GudBot / [Anthropic](https://anthropic.com) (default OFF) |
 | Email | [Resend](https://resend.com) + [React Email](https://react.email) |
 | UI | [Tailwind CSS](https://tailwindcss.com), [Radix UI](https://radix-ui.com), [shadcn/ui](https://ui.shadcn.com) |
 | Widget | [Preact](https://preactjs.com) + [Vite](https://vitejs.dev) (Shadow DOM) |
