@@ -12,12 +12,12 @@ Most support platforms charge per-agent, and lock AI behind expensive add-ons. G
 
 ## What's Built Today
 
-- **Live chat widget**: embeddable and customizable, with page visibility controls (include/exclude URL patterns). Real-time via Pusher when keys are set, polling every 4 seconds otherwise
+- **Live chat widget**: embeddable and customizable, with page visibility controls (include/exclude URL patterns). Replies reach the open widget live, with a 4-second check if the live connection fails
 - **Customer identity verification**: HMAC-SHA256 identity verification (same standard as Intercom/Zendesk), `GudDesk.identify()` API with `userHash` support
-- **Shared inbox**: conversations from chat + email, assignment, status management, internal notes
+- **Shared inbox**: conversations from chat, assignment, status management, internal notes. Email outbound works; Cloud inbound receiving is still being set up
 - **Knowledge base**: articles, collections, public help center
-- **Automation rules**: rule builder with 5 triggers and 6 actions. Rules run when their trigger fires
-- **Integrations**: email (Resend), webhooks, REST API. Automation rules can post to a saved Slack webhook. Other Slack notifications are not sent yet
+- **Automation rules**: rule builder with 5 triggers and 6 actions. Rules are saved but not run yet
+- **Integrations**: email (Resend), webhooks, REST API. Slack webhook settings are saved, but notifications are not sent yet
 - **REST API v1**: full CRUD for conversations, customers (including PATCH updates), articles, workspaces, agents; cursor-based pagination, rate limiting
 - **API keys**: account-level keys with optional workspace scoping ("All Workspaces" or single workspace), permission levels (Read Only / Read & Write / Full Access)
 - **Agent framework**: install/uninstall agents via API with auto-provisioned webhook endpoints and dedicated API keys
@@ -35,7 +35,8 @@ Most support platforms charge per-agent, and lock AI behind expensive add-ons. G
 _Fill the gaps that every competitor already covers._
 
 ### Omnichannel Messaging
-- [x] **Email channel**: full email ticketing (not just reply-by-email), custom SMTP, email threading
+- [x] **Email outbound**: send replies by email from the inbox, custom SMTP, email threading
+- [ ] **Cloud inbound email**: receive customer email into the inbox (still being set up)
 - [ ] **WhatsApp Business**: send/receive via WhatsApp Cloud API
 - [ ] **Facebook Messenger**: page inbox integration
 - [ ] **Instagram DMs**: business account integration
@@ -69,13 +70,13 @@ _Fill the gaps that every competitor already covers._
 
 ## Phase 2: AI-Native Support
 
-_Build autonomous resolution that actually works._
+_Optional AI answers and agent assist, default off._
 
-### GudBot (Autonomous AI Agent)
-- [ ] **AI assist for agents**: reply suggestions and summaries for the inbox (Claude). Planned, ships as part of GudBot v1
-- [x] **KB-powered resolution**: answer questions directly from knowledge base articles
-- [x] **Conversation handoff**: escalate to a human when AI can't resolve
-- [x] **Confidence scoring**: only answer when confidence is high, ask clarifying questions otherwise
+### GudBot (optional, default off)
+- [x] **AI assist for agents**: reply suggestions and summaries for the inbox when GudBot is on
+- [x] **KB-powered resolution**: when GudBot is on, answers from knowledge base articles with citations
+- [x] **Conversation handoff**: when GudBot is on, escalate to a human when it cannot resolve
+- [x] **Confidence scoring**: when GudBot is on, only answer when confidence is high
 - [ ] **Multi-turn conversations**: maintain context across messages
 - [ ] **Action execution**: AI can check order status, update records, trigger workflows
 - [ ] **Resolution analytics**: track AI resolution rate, handoff rate, CSAT for AI vs human
@@ -134,17 +135,17 @@ _Scale from a small team to a full support organization._
 - [ ] **Team inboxes**: separate inboxes per team (Sales, Support, Billing)
 
 ### Collaboration
-- [ ] **Collision detection**: show when another agent is viewing or replying to a conversation. The banner is built but the inbox does not show it yet (will need Pusher keys)
+- [x] **Collision detection**: show when another agent is viewing or replying to a conversation
 - [x] **@mentions**: tag teammates in internal notes
 - [x] **Shared drafts**: collaborate on a reply before sending
 - [x] **Side conversations**: discuss a ticket with another team without the customer seeing
 
 ### Workforce Management
-- [x] **Agent availability**: manual online/away/offline status (live presence needs Pusher keys)
+- [x] **Agent availability**: manual online/away/offline status
 - [ ] **Availability routing**: route new conversations by agent status
 - [ ] **Shift scheduling**: define agent schedules and auto-assign based on availability
 - [x] **Performance dashboards**: per-agent metrics (response time, resolution time, volume). Per-agent CSAT needs widget rating first
-- [x] **Workload monitoring**: live view of team capacity (needs Pusher keys)
+- [x] **Workload monitoring**: live view of team capacity
 
 ### Advanced Reporting
 - [ ] **Custom dashboards**: drag-and-drop dashboard builder
@@ -216,18 +217,16 @@ _Win the deals that require compliance, scale, and white-glove support._
 
 ## Pricing Philosophy
 
-| | Free | Pro | Business | Enterprise |
-|---|---|---|---|---|
-| Price | $0 | $29/workspace/mo | ~$99/workspace/mo | Custom |
-| Members | 2 | Unlimited | Unlimited | Unlimited |
-| Conversations | 500/mo | Unlimited | Unlimited | Unlimited |
-| AI Resolutions | 50/mo | 500/mo | Unlimited | Unlimited |
-| Channels | Chat + Email | + Social + WhatsApp | + Phone + SMS | + Custom |
-| SLAs | - | Basic | Advanced | Custom |
-| SSO/SAML | - | - | Yes | Yes |
-| Support | Community | Email | Priority | Dedicated |
+| | Free | Pro | Enterprise |
+|---|---|---|---|
+| Price | $0 | $29/workspace/mo | Custom |
+| Members | 2 | Unlimited | Unlimited |
+| Conversations | 500/mo | Unlimited | Unlimited |
+| GudBot | Optional, default off | Optional, default off | Optional, default off |
+| Channels | Chat; email outbound | Chat; email outbound | Custom |
+| Support | Community | Email | Dedicated |
 
-**Key principle:** One flat price per workspace, with no per-agent fees. AI assist is planned for Pro and ships with GudBot v1. No surprise bills.
+**Key principle:** One flat price per workspace, with no per-agent fees. GudBot is optional and off by default. No surprise bills.
 
 ---
 

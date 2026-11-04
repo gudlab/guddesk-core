@@ -5,8 +5,6 @@ import { prisma } from "@/lib/db";
 import { requireWorkspaceMember } from "@/lib/workspace";
 import { callClaude } from "@/lib/ai/client";
 import { CATEGORIZE_SYSTEM } from "@/lib/ai/prompts";
-import { fireAutomations } from "@/lib/automations/dispatch";
-import { origin, tagAddedEvents } from "@/lib/automations/events";
 
 export async function categorizeConversation(conversationId: string) {
   try {
@@ -17,7 +15,7 @@ export async function categorizeConversation(conversationId: string) {
 
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      select: { workspaceId: true, tags: true },
+      select: { workspaceId: true },
     });
 
     if (!conversation) {
@@ -60,21 +58,10 @@ export async function categorizeConversation(conversationId: string) {
     }
 
     if (tags.length > 0) {
-      const updated = await prisma.conversation.update({
+      await prisma.conversation.update({
         where: { id: conversationId },
         data: { tags },
-        select: { updatedAt: true },
       });
-      fireAutomations(
-        tagAddedEvents({
-          workspaceId: conversation.workspaceId,
-          conversationId,
-          before: conversation.tags,
-          after: tags,
-          at: updated.updatedAt,
-          origin: origin("agent"),
-        }),
-      );
     }
 
     return { status: "success" as const, tags };
