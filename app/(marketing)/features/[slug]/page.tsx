@@ -2,13 +2,15 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { siteConfig } from "@/config/site";
 import { features, getAllFeatureSlugs, getFeatureBySlug } from "@/lib/features";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/shared/json-ld";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
+import { MarketingFaq } from "@/components/sections/marketing-faq";
+import { MarketingPageCta } from "@/components/sections/marketing-page-cta";
+import { CANONICAL_ORIGIN, withCanonical } from "@/lib/canonical";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -25,7 +27,7 @@ export async function generateMetadata({
   const feature = getFeatureBySlug(slug);
   if (!feature) return {};
 
-  return {
+  return withCanonical({
     title: `${feature.name} | ${feature.tagline} | GudDesk`,
     description: feature.description.slice(0, 155) + "…",
     openGraph: {
@@ -33,7 +35,7 @@ export async function generateMetadata({
       description: feature.description.slice(0, 155) + "…",
       type: "website",
     },
-  };
+  }, `/features/${feature.slug}`);
 }
 
 export default async function FeaturePage({ params }: PageProps) {
@@ -48,48 +50,37 @@ export default async function FeaturePage({ params }: PageProps) {
     .map((rs) => features.find((f) => f.slug === rs))
     .filter(Boolean);
 
-  const HeroIcon = Icons[feature.icon as keyof typeof Icons];
-
   return (
     <>
       <FaqJsonLd faqs={feature.faqs} />
       <BreadcrumbJsonLd
         items={[
-          { name: "Home", url: siteConfig.url },
-          { name: "Features", url: `${siteConfig.url}/features` },
+          { name: "Home", url: CANONICAL_ORIGIN },
+          { name: "Features", url: `${CANONICAL_ORIGIN}/features` },
           {
             name: feature.name,
-            url: `${siteConfig.url}/features/${feature.slug}`,
+            url: `${CANONICAL_ORIGIN}/features/${feature.slug}`,
           },
         ]}
       />
 
-      {/* Hero */}
-      <section className="space-y-6 py-12 sm:py-20 lg:py-24">
+      <section className="py-16 sm:py-20 lg:py-24">
         <MaxWidthWrapper className="flex flex-col items-center text-center">
-          {HeroIcon && (
-            <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/40">
-              <HeroIcon className="size-8 text-emerald-600 dark:text-emerald-400" />
-            </div>
-          )}
-          <div className="text-gradient_brand mb-2 font-semibold">
-            {feature.tagline}
-          </div>
           <h1 className="font-satoshi max-w-3xl text-[40px] leading-[1.15] font-black tracking-tight text-balance sm:text-5xl md:text-6xl md:leading-[1.15]">
             {feature.headline}
           </h1>
-          <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-lg text-balance">
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-pretty text-neutral-600 dark:text-neutral-300">
             {feature.description}
           </p>
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/register"
               className={cn(
                 buttonVariants({ rounded: "xl", size: "lg" }),
-                "gap-2 px-5 text-[15px]",
+                "gap-2 px-5",
               )}
             >
-              Get it free
+              Create a free workspace
               <Icons.arrowRight className="size-4" />
             </Link>
             <Link
@@ -100,41 +91,37 @@ export default async function FeaturePage({ params }: PageProps) {
                   rounded: "xl",
                   size: "lg",
                 }),
-                "px-4 text-[15px]",
+                "px-5",
               )}
             >
-              View Documentation
+              Read the docs
             </Link>
           </div>
         </MaxWidthWrapper>
       </section>
 
-      {/* Highlights */}
-      <section className="border-t py-16">
+      <section className="border-t py-16 sm:py-20 lg:py-24">
         <MaxWidthWrapper>
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              Key highlights
-            </h2>
-          </div>
+          <h2 className="text-center font-heading text-3xl text-balance md:text-4xl">
+            What {feature.name.toLowerCase()} includes
+          </h2>
 
-          <div className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-2">
+          <div className="mx-auto mt-10 grid max-w-4xl gap-8 sm:grid-cols-2">
             {feature.highlights.map((highlight) => {
               const IconComponent = Icons[highlight.icon as keyof typeof Icons];
               return (
-                <div
-                  key={highlight.title}
-                  className="bg-card rounded-xl border p-6 shadow-sm"
-                >
-                  <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                    {IconComponent && (
-                      <IconComponent className="size-5 text-emerald-600 dark:text-emerald-400" />
-                    )}
+                <div key={highlight.title}>
+                  <div className="flex items-start gap-2.5">
+                    {IconComponent ? (
+                      <IconComponent className="mt-0.5 size-5 shrink-0 text-emerald-800 dark:text-emerald-300" />
+                    ) : null}
+                    <div>
+                      <h3 className="font-heading text-base">{highlight.title}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-pretty text-neutral-600 dark:text-neutral-300">
+                        {highlight.description}
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="font-heading text-base">{highlight.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                    {highlight.description}
-                  </p>
                 </div>
               );
             })}
@@ -142,53 +129,44 @@ export default async function FeaturePage({ params }: PageProps) {
         </MaxWidthWrapper>
       </section>
 
-      {/* Full capabilities */}
-      <section className="bg-muted/30 border-t py-16">
+      <section className="border-t py-16 sm:py-20 lg:py-24">
         <MaxWidthWrapper>
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              Full capability list
+            <h2 className="font-heading text-3xl text-balance md:text-4xl">
+              On Free and Pro
             </h2>
-            <p className="text-muted-foreground mt-4">
-              Free plan includes the core features. Pro lifts the member and conversation limits.
+            <p className="mt-4 text-pretty text-neutral-600 dark:text-neutral-300">
+              Free covers 2 members and 500 conversations a month. Pro is $29 a
+              month flat and lifts those caps.
             </p>
           </div>
 
-          <div className="mx-auto mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="mx-auto mt-10 grid max-w-2xl gap-2 sm:grid-cols-2">
             {feature.capabilities.map((cap) => (
-              <div
-                key={cap}
-                className="bg-card flex items-center gap-2 rounded-lg border px-4 py-3"
-              >
-                <Icons.check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-sm">{cap}</span>
+              <div key={cap} className="flex items-center gap-2 text-sm">
+                <Icons.check className="size-4 shrink-0 text-emerald-800 dark:text-emerald-300" />
+                {cap}
               </div>
             ))}
           </div>
         </MaxWidthWrapper>
       </section>
 
-      {/* Use case examples */}
-      <section className="border-t py-16">
+      <section className="border-t py-16 sm:py-20 lg:py-24">
         <MaxWidthWrapper>
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              See it in action
-            </h2>
-          </div>
+          <h2 className="text-center font-heading text-3xl text-balance md:text-4xl">
+            How teams use it
+          </h2>
 
-          <div className="mx-auto mt-10 max-w-3xl space-y-6">
+          <div className="mx-auto mt-10 max-w-3xl space-y-8">
             {feature.useCaseExamples.map((example, i) => (
-              <div
-                key={example.title}
-                className="bg-card flex gap-4 rounded-xl border p-6 shadow-sm"
-              >
-                <div className="font-satoshi flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+              <div key={example.title} className="flex gap-4">
+                <span className="font-satoshi w-6 shrink-0 text-lg font-bold text-emerald-800 dark:text-emerald-300">
                   {i + 1}
-                </div>
+                </span>
                 <div>
                   <h3 className="font-heading text-base">{example.title}</h3>
-                  <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                  <p className="mt-1.5 text-sm leading-relaxed text-pretty text-neutral-600 dark:text-neutral-300">
                     {example.description}
                   </p>
                 </div>
@@ -198,98 +176,42 @@ export default async function FeaturePage({ params }: PageProps) {
         </MaxWidthWrapper>
       </section>
 
-      {/* FAQ */}
-      <section className="bg-muted/30 border-t py-16">
-        <MaxWidthWrapper>
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              Frequently Asked Questions
-            </h2>
-          </div>
+      <div className="border-t" />
+      <MarketingFaq faqs={feature.faqs} />
 
-          <div className="mx-auto mt-10 max-w-3xl space-y-6">
-            {feature.faqs.map((faq) => (
-              <div key={faq.question} className="bg-card rounded-xl border p-6">
-                <h3 className="font-heading text-base">{faq.question}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                  {faq.answer}
-                </p>
-              </div>
-            ))}
-          </div>
-        </MaxWidthWrapper>
-      </section>
-
-      {/* Related features */}
-      {relatedFeatures.length > 0 && (
-        <section className="border-t py-12">
+      {relatedFeatures.length > 0 ? (
+        <section className="border-t py-16">
           <MaxWidthWrapper>
-            <div className="mx-auto max-w-3xl text-center">
-              <h3 className="font-heading text-lg">Related features</h3>
-              <div className="mt-4 flex flex-wrap justify-center gap-3">
-                {relatedFeatures.map((rf) => {
-                  if (!rf) return null;
-                  return (
-                    <Link
-                      key={rf.slug}
-                      href={`/features/${rf.slug}`}
-                      className={cn(
-                        buttonVariants({
-                          variant: "outline",
-                          size: "sm",
-                          rounded: "xl",
-                        }),
-                        "px-4",
-                      )}
-                    >
-                      {rf.name}
-                    </Link>
-                  );
-                })}
-              </div>
+            <h2 className="text-center font-heading text-xl">Related features</h2>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {relatedFeatures.map((rf) => {
+                if (!rf) return null;
+                return (
+                  <Link
+                    key={rf.slug}
+                    href={`/features/${rf.slug}`}
+                    className={cn(
+                      buttonVariants({
+                        variant: "outline",
+                        size: "sm",
+                        rounded: "xl",
+                      }),
+                      "px-4",
+                    )}
+                  >
+                    {rf.name}
+                  </Link>
+                );
+              })}
             </div>
           </MaxWidthWrapper>
         </section>
-      )}
+      ) : null}
 
-      {/* CTA */}
-      <section className="border-t py-16">
-        <MaxWidthWrapper>
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              Try {feature.name} for free
-            </h2>
-            <p className="text-muted-foreground mt-4">
-              Free plan for 2 members. No credit card required.
-            </p>
-            <div className="mt-8 flex justify-center gap-3">
-              <Link
-                href="/register"
-                className={cn(
-                  buttonVariants({ rounded: "xl", size: "lg" }),
-                  "gap-2 px-5 text-[15px]",
-                )}
-              >
-                Get Started Free
-                <Icons.arrowRight className="size-4" />
-              </Link>
-              <Link
-                href="/pricing"
-                className={cn(
-                  buttonVariants({
-                    variant: "outline",
-                    rounded: "xl",
-                    size: "lg",
-                  }),
-                  "px-4 text-[15px]",
-                )}
-              >
-                Compare Plans
-              </Link>
-            </div>
-          </div>
-        </MaxWidthWrapper>
-      </section>
+      <MarketingPageCta
+        title={`Try ${feature.name} on the free plan`}
+        description="Free covers 2 members and 500 conversations a month. No credit card."
+      />
     </>
   );
 }

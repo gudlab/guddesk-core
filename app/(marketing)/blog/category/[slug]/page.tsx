@@ -30,6 +30,7 @@ export async function generateMetadata({
   return constructMetadata({
     title: `${title} Posts | GudDesk`,
     description,
+    path: `/blog/category/${slug}`,
   });
 }
 
@@ -56,6 +57,14 @@ export default async function BlogCategory({
         blurDataURL: await getBlurDataURL(post.image),
       })),
   );
+
+  if (articles.length === 0) {
+    return (
+      <p className="text-neutral-600 dark:text-neutral-300">
+        No posts in this category yet.
+      </p>
+    );
+  }
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

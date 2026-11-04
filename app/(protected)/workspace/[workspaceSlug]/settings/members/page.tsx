@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
 
-import { invitationExpiryLabel, invitationExpiryTitle } from "@/lib/invitation-expiry";
+import { checkSeatAvailability } from "@/lib/feature-flags";
+import {
+  invitationExpiryLabel,
+  invitationExpiryTitle,
+} from "@/lib/invitation-expiry";
+import { splitInvitations } from "@/lib/invitations";
 import { getCurrentUser } from "@/lib/session";
 import {
   getWorkspaceBySlug,
@@ -11,6 +16,7 @@ import {
 import { DashboardHeader } from "@/components/dashboard/header";
 import { InviteMemberForm } from "@/components/workspace/invite-member-form";
 import { MembersTable } from "@/components/workspace/members-table";
+import { PendingInvitations } from "@/components/workspace/pending-invitations";
 
 export default async function WorkspaceMembersPage({
   params,
@@ -30,27 +36,48 @@ export default async function WorkspaceMembersPage({
   ]);
   const members = await getWorkspaceMembers(workspace.id);
   const invitations = await getWorkspaceInvitations(workspace.id);
+  const seats = await checkSeatAvailability(workspace.id);
+  // Only live invites hold a seat. Expired ones are listed as expired.
+  // One clock for the split and the labels, so they can't disagree.
   const now = new Date();
+  const { active, expired } = splitInvitations(invitations, now);
+  const invitationRows = [...active, ...expired].map((inv) => ({
+    id: inv.id,
+    email: inv.email,
+    role: inv.role,
+    invitedBy: inv.invitedBy.name ?? inv.invitedBy.email ?? "a teammate",
+    expiresAt: inv.expiresAt.toISOString(),
+    // Worded on the server: "Expires in 7 days", like the invite email.
+    expiresLabel: invitationExpiryLabel(inv.expiresAt, now),
+    expiresTitle: invitationExpiryTitle(inv.expiresAt),
+    expired: expired.includes(inv),
+  }));
 
   return (
     <>
       <DashboardHeader
         heading="Workspace Members"
-        text="Manage your workspace members and send invitations."
+        text="Manage members and send invitations."
       />
 
       <div className="space-y-8">
         {/* Invite form */}
         <div className="rounded-lg border p-6">
-          <h3 className="mb-4 text-sm font-medium">Invite a new member</h3>
-          <InviteMemberForm workspaceId={workspace.id} />
+          <h2 className="mb-4 text-sm font-medium">Invite a new member</h2>
+          <InviteMemberForm
+            workspaceId={workspace.id}
+            seatLimit={
+              seats.allowed ? null : { used: seats.used, max: seats.maxSeats }
+            }
+            canUpgrade={membership.role === "OWNER"}
+          />
         </div>
 
         {/* Members list */}
         <div>
-          <h3 className="mb-4 text-sm font-medium">
+          <h2 className="mb-4 text-sm font-medium">
             Members ({members.length})
-          </h3>
+          </h2>
           <MembersTable
             workspaceId={workspace.id}
             members={members}
@@ -60,35 +87,18 @@ export default async function WorkspaceMembersPage({
         </div>
 
         {/* Pending invitations */}
-        {invitations.length > 0 && (
+        {invitationRows.length > 0 && (
           <div>
-            <h3 className="mb-4 text-sm font-medium">
-              Pending Invitations ({invitations.length})
-            </h3>
-            <div className="space-y-2">
-              {invitations.map((inv) => (
-                <div
-                  key={inv.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{inv.email}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Invited as {inv.role} by{" "}
-                      {inv.invitedBy.name ?? inv.invitedBy.email}
-                    </p>
-                  </div>
-                  {/* "Expires in 7 days", like the invite email. See lib/invitation-expiry.ts. */}
-                  <time
-                    dateTime={inv.expiresAt.toISOString()}
-                    title={invitationExpiryTitle(inv.expiresAt)}
-                    className="text-xs text-muted-foreground"
-                  >
-                    {invitationExpiryLabel(inv.expiresAt, now)}
-                  </time>
-                </div>
-              ))}
-            </div>
+            <h2 className="mb-4 text-sm font-medium">
+              Pending invitations ({active.length})
+            </h2>
+            <PendingInvitations
+              workspaceId={workspace.id}
+              invitations={invitationRows}
+              canRevoke={
+                membership.role === "OWNER" || membership.role === "ADMIN"
+              }
+            />
           </div>
         )}
       </div>

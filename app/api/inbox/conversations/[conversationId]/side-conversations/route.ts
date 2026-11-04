@@ -4,9 +4,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceMember } from "@/lib/workspace";
 
+// GET /api/inbox/conversations/[conversationId]/side-conversations
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ conversationId: string }>; },
+  { params }: { params: Promise<{ conversationId: string }> },
 ) {
   try {
     const { conversationId } = await params;

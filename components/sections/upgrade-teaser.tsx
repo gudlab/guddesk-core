@@ -8,7 +8,7 @@ import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 const proFeatures = [
   "Unlimited members",
   "Unlimited conversations",
-  "AI reply suggestions and summaries: planned",
+  "GudBot reply suggestions and summaries (optional, default off)",
   "Remove GudDesk branding",
   "Priority support",
 ];

@@ -37,15 +37,15 @@ export const alternatives: Alternative[] = [
     ],
     features: [
       { name: "Live chat widget", competitor: true, guddesk: true },
-      { name: "Agent replies in the open widget", competitor: true, guddesk: "Live with Pusher keys, every 4 seconds without" },
+      { name: "Agent replies in the open widget", competitor: true, guddesk: "Live (checks every 4 seconds if the live connection fails)" },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "Email channel", competitor: true, guddesk: "Yes, with your own mail setup" },
+      { name: "Email channel", competitor: true, guddesk: "Outbound now; inbound being set up" },
       { name: "Public help center", competitor: true, guddesk: true },
-      { name: "Workflow automations", competitor: "Advanced plan and up", guddesk: "Yes, one action per rule" },
-      { name: "Built-in autonomous AI agent", competitor: "Fin, $0.99 per outcome", guddesk: "Not yet. On the roadmap" },
+      { name: "Workflow automations", competitor: "Advanced plan and up", guddesk: "Rules can be saved but don't run yet" },
+      { name: "Built-in autonomous AI agent", competitor: "Fin, $0.99 per outcome", guddesk: "No always-on agent. GudBot optional, default off" },
       { name: "Bring your own AI agent", competitor: "Not compared", guddesk: "Agent API, replies as BOT" },
       { name: "REST API and MCP server", competitor: "Not compared", guddesk: "Both check API key permission levels" },
-      { name: "Slack notifications", competitor: "Not compared", guddesk: "From automation rules only" },
+      { name: "Slack notifications", competitor: "Not compared", guddesk: "Not sent yet" },
       { name: "WhatsApp, SMS and phone", competitor: "Pay as you go", guddesk: false },
       { name: "SSO", competitor: "Expert plan", guddesk: false },
       { name: "Self-hosting", competitor: false, guddesk: true },
@@ -79,7 +79,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can GudDesk replace Intercom?",
         answer:
-          "For live chat, a shared inbox and a public help center, yes. Email works when you add your own mail setup. Intercom has an autonomous AI agent (Fin) today and GudDesk doesn't yet. If you need WhatsApp, SMS, phone or SSO, Intercom covers those and GudDesk doesn't.",
+          "For live chat, a shared inbox and a public help center, yes. Email is outbound now; inbound being set up. Intercom's Fin answers on its own. GudBot suggests replies and stays off until you turn it on. If you need WhatsApp, SMS, phone or SSO, Intercom covers those and GudDesk doesn't.",
       },
       {
         question: "How do I move from Intercom to GudDesk?",
@@ -94,7 +94,7 @@ export const alternatives: Alternative[] = [
       {
         question: "What about Intercom's Fin AI?",
         answer:
-          "Fin answers customers on its own and costs $0.99 per outcome (intercom.com/pricing, 20 Oct 2026). GudDesk doesn't ship a built-in AI agent yet. One is on the roadmap. Today you connect your own agent through webhooks and the API.",
+          "Fin answers customers on its own and costs $0.99 per outcome (intercom.com/pricing, 20 Oct 2026). GudBot can suggest replies and summaries. It stays off until you turn it on. You can also connect your own agent through the API.",
       },
       {
         question: "Is GudDesk secure?",
@@ -119,13 +119,13 @@ export const alternatives: Alternative[] = [
       { name: "Shared inbox / ticketing", competitor: true, guddesk: true },
       { name: "AI agents", competitor: "Suite Professional ($115 per agent a month billed annually, $149 monthly)", guddesk: "Bring your own via API" },
       { name: "Knowledge base", competitor: true, guddesk: true },
-      { name: "Workflow automations", competitor: true, guddesk: "Yes, one action per rule" },
+      { name: "Workflow automations", competitor: true, guddesk: "Rules can be saved but don't run yet" },
       { name: "Self-hosting", competitor: false, guddesk: true },
       { name: "Open source", competitor: false, guddesk: "AGPL-3.0" },
       { name: "Free tier", competitor: "14-day trial", guddesk: "Free forever (2 members)" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
-      { name: "Slack integration", competitor: true, guddesk: "Automation rules can post to Slack" },
-      { name: "Email integration", competitor: true, guddesk: "Yes, with your own mail setup" },
+      { name: "Slack integration", competitor: true, guddesk: "Notifications not sent yet" },
+      { name: "Email integration", competitor: true, guddesk: "Outbound now; inbound being set up" },
     ],
     switchReasons: [
       {
@@ -146,7 +146,7 @@ export const alternatives: Alternative[] = [
       {
         title: "Bring your own agent",
         description:
-          "Install your own agent: it gets a webhook and an API key and replies as BOT. Zendesk AI sits on top of a ticketing product. A built-in GudDesk AI agent is on the roadmap.",
+          "Install your own agent: it gets a webhook and an API key and replies as BOT. Zendesk AI sits on top of a ticketing product. GudBot can suggest replies. It stays off until you turn it on.",
       },
     ],
     faqs: [
@@ -158,7 +158,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Does GudDesk have a ticketing system?",
         answer:
-          "GudDesk works in conversations. Chat and email messages, plus any BOT replies, land in conversations in your shared inbox. You can assign and tag them, and close each one when it's resolved.",
+          "GudDesk works in conversations. Chat messages, plus any BOT replies, land in conversations in your shared inbox. You can assign and tag them, and close each one when it's resolved. Email is outbound now; inbound being set up.",
       },
       {
         question: "How do I migrate from Zendesk to GudDesk?",
@@ -191,20 +191,20 @@ export const alternatives: Alternative[] = [
       { name: "Shared inbox", competitor: true, guddesk: true },
       { name: "AI agents", competitor: "Freddy AI Agent (Growth+; extra sessions $49/100, as of 14 Oct 2026)", guddesk: "Bring your own via API" },
       { name: "Knowledge base", competitor: true, guddesk: true },
-      { name: "Workflow automations", competitor: "Growth plan+ ($19/agent/mo billed annually)", guddesk: "Yes, one action per rule" },
+      { name: "Workflow automations", competitor: "Growth plan+ ($19/agent/mo billed annually)", guddesk: "Rules can be saved but don't run yet" },
       { name: "Self-hosting", competitor: false, guddesk: true },
       { name: "Open source", competitor: false, guddesk: "AGPL-3.0" },
       { name: "Free plan", competitor: "Free Program: 2 agents for 6 months", guddesk: "Core features (2 members, 500 conversations a month, no time limit)" },
       { name: "Unified platform", competitor: "Multiple products", guddesk: "All-in-one" },
       { name: "Plugin/API ecosystem", competitor: true, guddesk: true },
-      { name: "Slack integration", competitor: true, guddesk: "Automation rules can post to Slack" },
-      { name: "Email integration", competitor: true, guddesk: "Yes, with your own mail setup" },
+      { name: "Slack integration", competitor: true, guddesk: "Notifications not sent yet" },
+      { name: "Email integration", competitor: true, guddesk: "Outbound now; inbound being set up" },
     ],
     switchReasons: [
       {
         title: "Chat and email in one product",
         description:
-          "Freshworks sells live chat as Freshchat, a separate product with its own price. GudDesk puts chat and email conversations in one inbox on one plan.",
+          "Freshworks sells live chat as Freshchat, a separate product with its own price. GudDesk puts chat in one inbox on one plan. Email is outbound now; inbound being set up.",
       },
       {
         title: "Free with no time limit",
@@ -214,7 +214,7 @@ export const alternatives: Alternative[] = [
       {
         title: "Your own bot on every plan",
         description:
-          "Freshdesk's Freddy AI Copilot is $29/agent/mo (as of 14 Oct 2026). GudDesk lets you connect your own agent on every plan. AI reply suggestions for your team are planned.",
+          "Freshdesk's Freddy AI Copilot is $29/agent/mo (as of 14 Oct 2026). GudDesk lets you connect your own agent on every plan. GudBot can suggest replies. It stays off until you turn it on.",
       },
       {
         title: "Code your developers can read",
@@ -262,15 +262,15 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "Shared email inbox", competitor: "Mini plan and up", guddesk: "Yes, with your own mail setup" },
+      { name: "Shared email inbox", competitor: "Mini plan and up", guddesk: "Outbound on Free; inbound being set up" },
       { name: "Knowledge base", competitor: "Essentials plan and up", guddesk: "Included on Free" },
-      { name: "Workflow automations", competitor: "Essentials plan and up", guddesk: "Included on Free" },
+      { name: "Workflow automations", competitor: "Essentials plan and up", guddesk: "Rules can be saved but don't run yet" },
       { name: "WhatsApp and Instagram", competitor: "Essentials plan and up", guddesk: false },
       { name: "SMS and phone", competitor: true, guddesk: false },
       { name: "Mobile apps", competitor: true, guddesk: false },
       { name: "Typing indicators", competitor: true, guddesk: true },
-      { name: "Built-in autonomous AI agent", competitor: "AI Agent, uses AI credits", guddesk: "Not yet. On the roadmap" },
-      { name: "AI writing help and summaries", competitor: true, guddesk: "Planned, ships with GudBot v1" },
+      { name: "Built-in autonomous AI agent", competitor: "AI Agent, uses AI credits", guddesk: "No always-on agent. GudBot optional, default off" },
+      { name: "AI writing help and summaries", competitor: true, guddesk: "Optional, default off" },
       { name: "Bring your own AI agent", competitor: "Not compared", guddesk: "Agent API, replies as BOT" },
       { name: "MCP server", competitor: true, guddesk: "Checks API key permission levels" },
       { name: "Remove branding", competitor: "Plus plan", guddesk: "Pro plan" },
@@ -327,7 +327,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Does GudDesk have built-in AI?",
         answer:
-          "Not yet. AI reply suggestions and summaries are planned and ship with GudBot v1. Today you connect your own agent through webhooks and the API, and its replies show up as BOT messages.",
+          "GudBot can suggest replies and summaries. It stays off until you turn it on. You can also connect your own agent through webhooks and the API, and its replies show up as BOT messages.",
       },
     ],
   },
@@ -348,13 +348,13 @@ export const alternatives: Alternative[] = [
     features: [
       { name: "Live chat widget", competitor: true, guddesk: true },
       { name: "Shared inbox", competitor: true, guddesk: true },
-      { name: "Email channel", competitor: true, guddesk: "Yes, with your own mail setup" },
+      { name: "Email channel", competitor: true, guddesk: "Outbound now; inbound being set up" },
       { name: "WhatsApp and Instagram", competitor: true, guddesk: false },
       { name: "Voice", competitor: "Business plan and up", guddesk: false },
       { name: "Public help center", competitor: "Startups plan and up", guddesk: "Included on Free" },
-      { name: "Automation rules", competitor: "Business plan and up", guddesk: "Included on Free" },
-      { name: "Built-in autonomous AI agent", competitor: "Captain AI, credit based", guddesk: "Not yet. On the roadmap" },
-      { name: "AI reply suggestions and summaries", competitor: "Captain AI, credit based", guddesk: "Planned, ships with GudBot v1" },
+      { name: "Automation rules", competitor: "Business plan and up", guddesk: "Rules can be saved but don't run yet" },
+      { name: "Built-in autonomous AI agent", competitor: "Captain AI, credit based", guddesk: "No always-on agent. GudBot optional, default off" },
+      { name: "AI reply suggestions and summaries", competitor: "Captain AI, credit based", guddesk: "Optional, default off" },
       { name: "Bring your own AI agent", competitor: "Not compared", guddesk: "Agent API, replies as BOT" },
       { name: "REST API and MCP server", competitor: "Not compared", guddesk: "Both check API key permission levels" },
       { name: "SSO / SAML", competitor: "Enterprise plan, $99 per agent a month", guddesk: false },
@@ -410,7 +410,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Does GudDesk have built-in AI?",
         answer:
-          "Not yet. AI reply suggestions and summaries are planned and ship with GudBot v1. Today you connect your own agent through webhooks and the API, and it can use any model you like.",
+          "GudBot can suggest replies and summaries. It stays off until you turn it on. You can also connect your own agent through webhooks and the API, and it can use any model you like.",
       },
     ],
   },

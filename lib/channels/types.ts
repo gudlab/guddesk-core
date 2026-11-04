@@ -6,7 +6,6 @@
  */
 
 import type { ConversationChannel, Message } from "@prisma/client";
-
 import type { OutboundDelivery } from "@/lib/email/delivery-notice";
 
 export interface InboundPayload {

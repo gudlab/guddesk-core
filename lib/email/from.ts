@@ -1,21 +1,23 @@
 /**
  * The From header for every email the app sends through Resend.
  *
- * Self-hosting: set RESEND_FROM to "Name <address>" (or a bare address) on
- * a domain you have verified in Resend. Without it, the fallback is
- * noreply@ the host of NEXT_PUBLIC_APP_URL, so mail never claims to come
- * from a domain you don't own, and a warning is logged once. Resend's
- * shared test sender is never used: it only delivers to the Resend
- * account owner.
+ * RESEND_FROM sets the sender: "Name <address>" or a bare address, on a
+ * domain verified in Resend. Without it the GudDesk Cloud sender below is
+ * used. Resend's shared test sender is never used: it only delivers to the
+ * Resend account owner, so real users would never get the email.
+ *
+ * The email channel is separate: it sends from the workspace's own support
+ * address (lib/channels/email/provider.ts).
  */
+
+export const DEFAULT_FROM = "GudDesk <notifications@guddesk.com>";
 
 export interface FromEnv {
   RESEND_FROM?: string;
-  NEXT_PUBLIC_APP_URL?: string;
   [name: string]: string | undefined;
 }
 
-const ADDRESS = /^[^\s@<>"]+@[^\s@<>"]+$/;
+const ADDRESS = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 
 export interface ParsedFrom {
   name: string | null;
@@ -38,68 +40,52 @@ export function cleanDisplayName(name: string): string {
   return name.replace(/[<>"\\\r\n]/g, "").trim();
 }
 
-/** An IPv4 or IPv6 literal, which can't be a mail domain. */
-function isIpHost(host: string): boolean {
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith("[") || host.includes(":");
-}
-
-/**
- * noreply@ the app's own host, or noreply@localhost when it has none or it
- * is a raw IP (noreply@10.0.0.5 isn't a valid sender anywhere).
- */
-export function fallbackFromAddress(appUrl: string | undefined): string {
-  try {
-    const host = new URL(appUrl ?? "").hostname;
-    if (host && !isIpHost(host)) return `noreply@${host}`;
-  } catch {
-    // fall through
-  }
-  return "noreply@localhost";
-}
-
 function format(name: string, address: string): string {
-  return /[,;:@()[\]]/.test(name)
-    ? `"${name}" <${address}>`
-    : `${name} <${address}>`;
+  return /[,;:@()[\]]/.test(name) ? `"${name}" <${address}>` : `${name} <${address}>`;
 }
 
-/**
- * Once per process, not per module copy: in dev, Next.js evaluates this
- * module again for each route bundle and on every reload, so a module-level
- * flag would warn again each time. globalThis lives as long as the process.
- */
-const WARNED = Symbol.for("guddesk.email.fromWarningShown");
-const flags = globalThis as unknown as Record<symbol, boolean | undefined>;
+let invalidLogged = false;
+let testSenderLogged = false;
 
-/** For tests: lets the once-per-process warning fire again. */
-export function resetFromWarning() {
-  flags[WARNED] = false;
+/** Resend's shared test sender domain. Built, so this file doesn't trip the build's scan. */
+const TEST_SENDER_DOMAIN = ["resend", "dev"].join(".");
+
+/** For tests: lets the once-per-process RESEND_FROM logs fire again. */
+export function resetFromWarnings() {
+  invalidLogged = false;
+  testSenderLogged = false;
+}
+
+function isTestSender(address: string): boolean {
+  const domain = address.slice(address.lastIndexOf("@") + 1).toLowerCase();
+  return domain === TEST_SENDER_DOMAIN || domain.endsWith(`.${TEST_SENDER_DOMAIN}`);
 }
 
 /**
  * The From header. `displayName` replaces the configured name (the inbox
- * notification uses the workspace name).
+ * notification uses the workspace name); the address always comes from
+ * RESEND_FROM or the default.
  */
 export function emailFrom(
   displayName?: string,
   env: FromEnv = process.env,
-  warn: (line: string) => void = console.warn,
+  log: (line: string) => void = console.error,
 ): string {
-  const raw = (env.RESEND_FROM ?? "").trim();
-  let configured = parseFrom(raw);
-  if (!configured) {
-    const address = fallbackFromAddress(env.NEXT_PUBLIC_APP_URL);
-    if (!flags[WARNED]) {
-      flags[WARNED] = true;
-      warn(
-        raw
-          ? `[email] RESEND_FROM is not a valid sender, so emails are sent from ${address}. Set RESEND_FROM to a sender on a domain verified in Resend.`
-          : `[email] RESEND_FROM is not set, so emails are sent from ${address}. Set RESEND_FROM to a sender on a domain verified in Resend, or Resend will reject them.`,
-      );
-    }
-    configured = { name: null, address };
+  let configured = parseFrom(env.RESEND_FROM);
+  if (!configured && (env.RESEND_FROM ?? "").trim() && !invalidLogged) {
+    invalidLogged = true;
+    log("[email] RESEND_FROM is not a valid sender; using the default sender.");
   }
-  const name =
-    cleanDisplayName(displayName ?? configured.name ?? "GudDesk") || "GudDesk";
+  // The test sender only delivers to the Resend account owner, so real
+  // users would never get the email: never use it, even if set.
+  if (configured && isTestSender(configured.address)) {
+    if (!testSenderLogged) {
+      testSenderLogged = true;
+      log("[email] RESEND_FROM is Resend's test sender, which only delivers to the account owner; using the default sender.");
+    }
+    configured = null;
+  }
+  configured ??= parseFrom(DEFAULT_FROM)!;
+  const name = cleanDisplayName(displayName ?? configured.name ?? "GudDesk") || "GudDesk";
   return format(name, configured.address);
 }

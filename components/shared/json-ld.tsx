@@ -1,4 +1,5 @@
 import { siteConfig } from "@/config/site";
+import { CANONICAL_ORIGIN } from "@/lib/canonical";
 
 /**
  * Organization + WebSite structured data for the root layout.
@@ -10,19 +11,16 @@ export function OrganizationJsonLd() {
     "@graph": [
       {
         "@type": "Organization",
-        "@id": `${siteConfig.url}/#organization`,
+        "@id": `${CANONICAL_ORIGIN}/#organization`,
         name: siteConfig.name,
-        url: siteConfig.url,
+        url: CANONICAL_ORIGIN,
         logo: {
           "@type": "ImageObject",
-          url: `${siteConfig.url}/_static/favicons/android-chrome-512x512.png`,
+          url: `${CANONICAL_ORIGIN}/_static/favicons/android-chrome-512x512.png`,
           width: 512,
           height: 512,
         },
-        sameAs: [
-          siteConfig.links.twitter,
-          siteConfig.links.github,
-        ],
+        sameAs: [siteConfig.links.twitter, siteConfig.links.github],
         contactPoint: {
           "@type": "ContactPoint",
           email: siteConfig.mailSupport,
@@ -31,12 +29,12 @@ export function OrganizationJsonLd() {
       },
       {
         "@type": "WebSite",
-        "@id": `${siteConfig.url}/#website`,
-        url: siteConfig.url,
+        "@id": `${CANONICAL_ORIGIN}/#website`,
+        url: CANONICAL_ORIGIN,
         name: siteConfig.name,
         description: siteConfig.description,
         publisher: {
-          "@id": `${siteConfig.url}/#organization`,
+          "@id": `${CANONICAL_ORIGIN}/#organization`,
         },
       },
       {
@@ -45,12 +43,12 @@ export function OrganizationJsonLd() {
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
         description: siteConfig.description,
-        url: siteConfig.url,
+        url: CANONICAL_ORIGIN,
         offers: {
           "@type": "Offer",
           price: "0",
           priceCurrency: "USD",
-          description: "Free for 2 members",
+          description: "Free for 2 seats and 500 conversations a month",
         },
         featureList: [
           "Live Chat Widget",
@@ -68,6 +66,21 @@ export function OrganizationJsonLd() {
     ],
   };
 
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
+/** Generic JSON-LD script tag. Used by help center Article / FAQ payloads. */
+export function JsonLdScript({
+  data,
+}: {
+  data: Record<string, unknown> | null | undefined;
+}) {
+  if (!data) return null;
   return (
     <script
       type="application/ld+json"

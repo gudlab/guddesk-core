@@ -116,10 +116,7 @@ describe("FAQ extraction", () => {
       "Yes. Close the workspace from Billing.",
     ].join("\n");
     assert.equal(extractFaqPairs(body).length, 2);
-    assert.equal(
-      questionHeading("## How do I export data?"),
-      "How do I export data?",
-    );
+    assert.equal(questionHeading("## How do I export data?"), "How do I export data?");
   });
 });
 
@@ -211,12 +208,15 @@ describe("public help sitemap entries", () => {
 
     assert.deepEqual(
       entries.map((entry) => entry.path),
-      ["/help/acme", "/help/acme/billing", "/help/acme/billing/reset-password"],
+      [
+        "/help/acme",
+        "/help/acme/billing",
+        "/help/acme/billing/reset-password",
+      ],
     );
     assert.equal(
-      entries.find(
-        (entry) => entry.path === "/help/acme/billing/reset-password",
-      )?.lastModified,
+      entries.find((entry) => entry.path === "/help/acme/billing/reset-password")
+        ?.lastModified,
       now,
     );
   });

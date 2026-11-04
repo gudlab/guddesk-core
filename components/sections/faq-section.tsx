@@ -16,7 +16,7 @@ const faqs = [
   {
     question: "What are AI agent plugins?",
     answer:
-      "An agent is a bot you connect to GudDesk. Installing one gives it a webhook and an API key. It hears about new messages and replies as BOT, and those replies show in the widget and inbox. A built-in GudDesk AI agent is on the roadmap.",
+      "An agent is a bot you connect to GudDesk. Installing one gives it a webhook and an API key. It hears about new messages and replies as BOT, and those replies show in the widget and inbox. GudBot is optional and off by default.",
   },
   {
     question: "Can I build my own agent?",
@@ -26,7 +26,7 @@ const faqs = [
   {
     question: "How does GudDesk compare to Intercom?",
     answer:
-      "Intercom charges per seat, from $29 a month on Essential billed annually, plus $0.99 for each Fin AI outcome. GudDesk Pro is $29 a month flat for the whole team, with no per-resolution fee. You can also self-host GudDesk, which Intercom doesn't offer. Intercom has a built-in autonomous AI agent today; GudDesk doesn't yet.",
+      "Intercom charges per seat, from $29 a month on Essential billed annually, plus $0.99 for each Fin AI outcome. GudDesk Pro is $29 a month flat for the whole team, with no per-resolution fee. You can also self-host GudDesk, which Intercom doesn't offer. GudBot is optional and off by default.",
   },
   {
     question: "Can I self-host GudDesk?",
@@ -36,12 +36,12 @@ const faqs = [
   {
     question: "Does GudDesk have built-in AI?",
     answer:
-      "Not yet. AI reply suggestions and summaries are planned and will ship with GudBot v1. Today you can connect your own AI agent, which replies as BOT through the API.",
+      "GudBot is optional and off by default. When you turn it on, it can suggest replies and summaries. You can also connect your own agent, which replies as BOT through the API.",
   },
   {
     question: "How do I install the chat widget?",
     answer:
-      "Add two lines of JavaScript to your site. The widget loads asynchronously, is fully customizable (colors, position, welcome message) and works on any website or web app. Agent and bot messages appear natively in the widget.",
+      "Two lines: set window.GudDeskSettings.appId to your gd_pub_ key, then load https://cdn.guddesk.com/widget.js. Never put server API keys in the page. Self-host by pointing the script at your own origin.",
   },
   {
     question: "Can I migrate from Intercom?",
@@ -62,7 +62,7 @@ export default function FAQSection() {
               <AccordionTrigger className="text-left text-base">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-neutral-600 dark:text-neutral-300">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>

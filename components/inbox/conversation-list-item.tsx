@@ -1,9 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import type { ConversationListItem } from "@/hooks/use-conversations";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import type { ConversationListItem } from "@/hooks/use-conversations";
+import { ChannelBadge } from "@/components/inbox/channel-badge";
 
 interface ConversationListItemProps {
   conversation: ConversationListItem;
@@ -37,7 +38,7 @@ export function ConversationListItemComponent({
   return (
     <button
       className={cn(
-        "flex w-full items-start gap-3 border-b p-3 text-left transition-colors hover:bg-muted/50",
+        "hover:bg-muted/50 flex w-full items-start gap-3 border-b p-3 text-left transition-colors",
         isSelected && "bg-muted",
       )}
       onClick={onClick}
@@ -49,24 +50,29 @@ export function ConversationListItemComponent({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-sm font-medium">{visitorName}</span>
-          <span className="shrink-0 text-xs text-muted-foreground">
+          <span className="shrink-0 text-xs text-neutral-600 dark:text-neutral-300">
             {formatRelativeTime(conversation.lastMessageAt)}
           </span>
         </div>
 
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+        <p className="mt-0.5 truncate text-sm text-neutral-600 dark:text-neutral-300">
           {conversation.lastMessagePreview || "No messages yet"}
         </p>
 
-        {conversation.tags.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1">
-            {conversation.tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="px-1.5 py-0 text-[10px]">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          {conversation.channel && conversation.channel !== "WIDGET" && (
+            <ChannelBadge channel={conversation.channel} />
+          )}
+          {conversation.tags.slice(0, 3).map((tag) => (
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="px-1.5 py-0 text-xs"
+            >
+              {tag}
+            </Badge>
+          ))}
+        </div>
       </div>
     </button>
   );

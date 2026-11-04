@@ -5,6 +5,8 @@ import { twMerge } from "tailwind-merge";
 
 import { env } from "@/env.mjs";
 import { siteConfig } from "@/config/site";
+import { getAppUrl } from "@/lib/app-url";
+import { CANONICAL_ORIGIN, withCanonical } from "@/lib/canonical";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,14 +27,17 @@ export function constructMetadata({
     ],
   } as Metadata["icons"],
   noIndex = false,
+  path,
 }: {
   title?: string;
   description?: string;
   image?: string;
   icons?: Metadata["icons"];
   noIndex?: boolean;
+  /** Path of the page, e.g. "/pricing". Adds a canonical tag and og:url. */
+  path?: string;
 } = {}): Metadata {
-  return {
+  const metadata: Metadata = {
     title,
     description,
     keywords: [
@@ -54,7 +59,6 @@ export function constructMetadata({
     openGraph: {
       type: "website",
       locale: "en_US",
-      url: siteConfig.url,
       title,
       description,
       siteName: title,
@@ -67,8 +71,12 @@ export function constructMetadata({
       creator: "@guddesk",
     },
     icons,
-    metadataBase: new URL(siteConfig.url),
-    manifest: `${siteConfig.url}/site.webmanifest`,
+    // Metadata URLs only. Email, invite and Stripe links use getAppUrl().
+    metadataBase: new URL(CANONICAL_ORIGIN),
+    // Relative so www.guddesk.com does not fetch the apex URL
+    // (guddesk.com/site.webmanifest), which fails CORS on the Vercel
+    // domain redirect. metadataBase still points at CANONICAL_ORIGIN.
+    manifest: "/site.webmanifest",
     ...(noIndex && {
       robots: {
         index: false,
@@ -76,6 +84,7 @@ export function constructMetadata({
       },
     }),
   };
+  return path === undefined ? metadata : withCanonical(metadata, path);
 }
 
 export function formatDate(input: string | number): string {
@@ -88,7 +97,7 @@ export function formatDate(input: string | number): string {
 }
 
 export function absoluteUrl(path: string) {
-  return `${env.NEXT_PUBLIC_APP_URL}${path}`;
+  return `${getAppUrl()}${path}`;
 }
 
 // Utils from precedent.dev

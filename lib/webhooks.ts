@@ -266,7 +266,7 @@ export async function retryDelivery(deliveryId: string): Promise<void> {
   });
 }
 
-// ── Public: Send a test ping ────────────────────────
+// ── Public: Send a test ping ────────────────────────────
 
 /**
  * Send a test ping event to a specific endpoint.

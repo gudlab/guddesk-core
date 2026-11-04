@@ -365,7 +365,7 @@ export function WebhookSettings({
   );
 }
 
-// ── Sub-components ──────────────────────────
+// ── Sub-components ──────────────────────────────────────
 
 function SecretAlert({
   secret,

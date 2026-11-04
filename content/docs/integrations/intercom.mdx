@@ -62,6 +62,6 @@ A zip of `contacts.json`, `articles.json`, `conversations.json`, and `collection
 
 ## Database
 
-Additive table `import_mappings` (migration `0007_intercom_import_mappings`): `workspaceId`, `source` (`intercom`), `entityType`, `externalId`, `localId`. Unique on those four fields.
+Additive table `import_mappings` (migration `0005_intercom_import_mappings`): `workspaceId`, `source` (`intercom`), `entityType`, `externalId`, `localId`. Unique on those four fields.
 
 Imported conversations set `metadata.importSource = "intercom"`. The importer does not create `gudbot_settings` rows and does not set `enabled` on GudBot.

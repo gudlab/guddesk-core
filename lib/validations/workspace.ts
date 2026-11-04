@@ -26,7 +26,7 @@ export const createWorkspaceSchema = z.object({
 });
 
 export const workspaceInviteSchema = z.object({
-  // Trimmed and lowercased, like account emails (lib/auth-email.ts).
+  // Trimmed and lowercased so invites are stored in one form.
   email: z.string().trim().toLowerCase().email("Please enter a valid email address"),
   role: z.enum([WorkspaceRole.ADMIN, WorkspaceRole.AGENT, WorkspaceRole.VIEWER]),
 });

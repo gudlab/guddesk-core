@@ -1,11 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { upsertEmailChannelConfig } from "@/actions/manage-email-channel";
 import { toast } from "sonner";
 
-import { upsertEmailChannelConfig } from "@/actions/manage-email-channel";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -28,7 +34,11 @@ interface Props {
   supportAddress: string;
 }
 
-export function EmailChannelSettings({ config, workspaceId, supportAddress }: Props) {
+export function EmailChannelSettings({
+  config,
+  workspaceId,
+  supportAddress,
+}: Props) {
   const [isPending, startTransition] = useTransition();
   const [isEnabled, setIsEnabled] = useState(config?.isEnabled ?? false);
   const [fromName, setFromName] = useState(config?.fromName ?? "");
@@ -63,8 +73,9 @@ export function EmailChannelSettings({ config, workspaceId, supportAddress }: Pr
             <div>
               <CardTitle className="text-base">Email Channel</CardTitle>
               <CardDescription>
-                Accept support requests via email. Customers can email your support address
-                and conversations will appear in your inbox.
+                Outbound email replies work from the inbox. Cloud inbound
+                receiving is still being set up, so do not point customers at
+                this address as a live inbox yet.
               </CardDescription>
             </div>
             <Switch checked={isEnabled} onCheckedChange={setIsEnabled} />
@@ -77,13 +88,13 @@ export function EmailChannelSettings({ config, workspaceId, supportAddress }: Pr
         <CardHeader>
           <CardTitle className="text-base">Support Address</CardTitle>
           <CardDescription>
-            Share this email address with customers or set up email forwarding from your
-            custom domain.
+            Share this email address with customers or set up email forwarding
+            from your custom domain.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="flex-1 rounded-md border bg-muted/50 px-3 py-2 text-sm font-mono">
+            <div className="bg-muted/50 flex-1 rounded-md border px-3 py-2 font-mono text-sm">
               {supportAddress}
             </div>
             <Button
@@ -98,9 +109,9 @@ export function EmailChannelSettings({ config, workspaceId, supportAddress }: Pr
               Copy
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Emails sent to this address will create new conversations in your inbox.
-            Replies to outbound emails will be threaded into the existing conversation.
+          <p className="text-sm text-neutral-600 dark:text-neutral-300">
+            Replies to outbound emails thread into the existing conversation.
+            Customer mail to this address is not a live inbound inbox yet.
           </p>
         </CardContent>
       </Card>
@@ -110,7 +121,8 @@ export function EmailChannelSettings({ config, workspaceId, supportAddress }: Pr
         <CardHeader>
           <CardTitle className="text-base">Outbound Settings</CardTitle>
           <CardDescription>
-            Configure how outbound emails appear when agents reply to email conversations.
+            Configure how outbound emails appear when agents reply to email
+            conversations.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -123,7 +135,7 @@ export function EmailChannelSettings({ config, workspaceId, supportAddress }: Pr
                 onChange={(e) => setFromName(e.target.value)}
                 placeholder="e.g. Acme Support"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
                 Display name for outbound emails
               </p>
             </div>
@@ -137,7 +149,7 @@ export function EmailChannelSettings({ config, workspaceId, supportAddress }: Pr
                 onChange={(e) => setFromAddress(e.target.value)}
                 placeholder="e.g. support@acme.com"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
                 Must be a verified sender address
               </p>
             </div>
@@ -152,7 +164,7 @@ export function EmailChannelSettings({ config, workspaceId, supportAddress }: Pr
               placeholder="HTML signature appended to outbound emails..."
               rows={4}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
               HTML is supported. Leave blank for no signature.
             </p>
           </div>
@@ -168,8 +180,9 @@ export function EmailChannelSettings({ config, workspaceId, supportAddress }: Pr
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Auto-reopen on reply</Label>
-              <p className="text-xs text-muted-foreground">
-                Automatically reopen closed conversations when a customer sends a new email reply.
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                Automatically reopen closed conversations when a customer sends
+                a new email reply.
               </p>
             </div>
             <Switch checked={autoReopen} onCheckedChange={setAutoReopen} />

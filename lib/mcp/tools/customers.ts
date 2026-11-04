@@ -16,7 +16,7 @@ function json(data: unknown) {
 // ---------------------------------------------------------------------------
 
 export function registerCustomerTools(server: McpServer, auth: McpAuthContext) {
-  // ── list_customers ────────────────────────────────────────────────────────
+  // ── list_customers ──────────────────────────────────────────────────────
   server.registerTool(
     "list_customers",
     {
@@ -64,7 +64,7 @@ export function registerCustomerTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── get_customer ──────────────────────────────────────────────────────────
+  // ── get_customer ────────────────────────────────────────────────────────
   server.registerTool(
     "get_customer",
     {
@@ -112,7 +112,7 @@ export function registerCustomerTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── update_customer ───────────────────────────────────────────────────────
+  // ── update_customer ──────────────────────────────────────────────────────
   server.registerTool(
     "update_customer",
     {
@@ -169,7 +169,7 @@ export function registerCustomerTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── list_customer_events ──────────────────────────────────────────────────
+  // ── list_customer_events ───────────────────────────────────────────────
   server.registerTool(
     "list_customer_events",
     {

@@ -29,32 +29,38 @@ export function MessageList() {
 
   return (
     <div class="fc-messages">
-      {messages.value.map((msg) => (
-        <div
-          key={msg.id}
-          class={`fc-msg-row ${msg.type === "VISITOR" ? "fc-msg-row-visitor" : "fc-msg-row-agent"}`}
-        >
-          {msg.type !== "VISITOR" && msg.senderName && (
-            <div class="fc-msg-sender">{msg.senderName}</div>
-          )}
-          <div
-            class={`fc-msg ${msg.type === "VISITOR" ? "fc-msg-visitor" : "fc-msg-agent"}${msg._sending ? " fc-msg-sending" : ""}`}
-          >
+      {messages.value.map((msg) =>
+        msg.type === "SYSTEM" ? (
+          <div key={msg.id} class="fc-msg-system">
             {msg.body}
-            <div class="fc-msg-time">
-              {msg._sending ? (
-                <span class="fc-sending-indicator">
-                  <span class="fc-sending-dot" />
-                  <span class="fc-sending-dot" />
-                  <span class="fc-sending-dot" />
-                </span>
-              ) : (
-                formatTime(msg.createdAt)
-              )}
+          </div>
+        ) : (
+          <div
+            key={msg.id}
+            class={`fc-msg-row ${msg.type === "VISITOR" ? "fc-msg-row-visitor" : "fc-msg-row-agent"}`}
+          >
+            {msg.type !== "VISITOR" && msg.senderName && (
+              <div class="fc-msg-sender">{msg.senderName}</div>
+            )}
+            <div
+              class={`fc-msg ${msg.type === "VISITOR" ? "fc-msg-visitor" : "fc-msg-agent"}${msg._sending ? " fc-msg-sending" : ""}`}
+            >
+              {msg.body}
+              <div class="fc-msg-time">
+                {msg._sending ? (
+                  <span class="fc-sending-indicator">
+                    <span class="fc-sending-dot" />
+                    <span class="fc-sending-dot" />
+                    <span class="fc-sending-dot" />
+                  </span>
+                ) : (
+                  formatTime(msg.createdAt)
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ),
+      )}
 
       {isTyping.value && (
         <div class="fc-typing">

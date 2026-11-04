@@ -36,7 +36,11 @@ export default function InvitationPage() {
         return;
       }
 
-      toast.success("You have joined the workspace!");
+      if ("alreadyMember" in result && result.alreadyMember) {
+        toast.info(result.message);
+      } else {
+        toast.success("You have joined the workspace!");
+      }
       router.push(`/workspace/${result.workspaceSlug}/inbox`);
     });
   }, [token, router]);

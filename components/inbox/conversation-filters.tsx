@@ -1,6 +1,5 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -8,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WorkspaceMemberOption {
   id: string;
@@ -33,24 +33,26 @@ export function ConversationFilters({
     <div className="flex items-center gap-2 border-b px-3 py-2">
       <Tabs
         value={status}
-        onValueChange={(v) => onStatusChange(v as "OPEN" | "SNOOZED" | "CLOSED")}
+        onValueChange={(v) =>
+          onStatusChange(v as "OPEN" | "SNOOZED" | "CLOSED")
+        }
         className="flex-1"
       >
         <TabsList className="h-8 w-full">
-          <TabsTrigger value="OPEN" className="flex-1 text-xs">
+          <TabsTrigger value="OPEN" className="flex-1 text-sm">
             Open
           </TabsTrigger>
-          <TabsTrigger value="SNOOZED" className="flex-1 text-xs">
+          <TabsTrigger value="SNOOZED" className="flex-1 text-sm">
             Snoozed
           </TabsTrigger>
-          <TabsTrigger value="CLOSED" className="flex-1 text-xs">
+          <TabsTrigger value="CLOSED" className="flex-1 text-sm">
             Closed
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
       <Select value={assigneeFilter} onValueChange={onAssigneeChange}>
-        <SelectTrigger className="h-8 w-[120px] text-xs">
+        <SelectTrigger className="h-8 w-[120px] text-sm">
           <SelectValue placeholder="All agents" />
         </SelectTrigger>
         <SelectContent>

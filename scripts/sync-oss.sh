@@ -32,26 +32,74 @@ echo "Cloning ${PUBLIC_REMOTE} …"
 git clone --depth 1 "$PUBLIC_REMOTE" "$WORKDIR/guddesk-core"
 
 echo "Copying tree (secrets excluded) …"
-rsync -a --delete \
-  --exclude '.git/' \
-  --exclude '.next/' \
-  --exclude 'node_modules/' \
-  --exclude '.contentlayer/' \
-  --exclude '.vercel/' \
-  --exclude '.env' \
-  --exclude '.env.*' \
-  --exclude '*.pem' \
-  --exclude '.DS_Store' \
-  --exclude 'docs/gudbot-v1.md' \
-  --exclude 'vercel.md' \
-  "$ROOT/" "$WORKDIR/guddesk-core/"
+python3 - "$ROOT" "$WORKDIR/guddesk-core" << 'PY'
+import os, shutil, sys
+from pathlib import Path
+src, dst = Path(sys.argv[1]), Path(sys.argv[2])
+exclude_dirs = {".git", ".next", "node_modules", ".contentlayer", ".vercel", ".impeccable"}
+exclude_files = {
+    "docs/gudbot-v1.md",
+    "vercel.md",
+    "PRODUCT.md",
+    "DESIGN.md",
+    ".github/workflows/cron.yml",
+    "lib/scheduled/cron-workflow.test.ts",
+}
+src_files = set()
+for dirpath, dirnames, filenames in os.walk(src):
+    dirnames[:] = [d for d in dirnames if d not in exclude_dirs]
+    rel = Path(dirpath).relative_to(src)
+    for f in filenames:
+        relf = str(rel / f) if rel != Path(".") else f
+        if relf in exclude_files or f.endswith(".pem") or f == ".DS_Store":
+            continue
+        if f.startswith(".env") and f != ".env.example":
+            continue
+        src_files.add(relf)
+        target = dst / relf
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src / relf, target)
+for dirpath, dirnames, filenames in os.walk(dst):
+    dirnames[:] = [d for d in dirnames if d not in exclude_dirs]
+    rel = Path(dirpath).relative_to(dst)
+    for f in filenames:
+        relf = str(rel / f) if rel != Path(".") else f
+        if relf.startswith(".git"):
+            continue
+        if relf not in src_files:
+            (dst / relf).unlink()
+PY
 
 rm -f "$WORKDIR/guddesk-core/.env" \
   "$WORKDIR/guddesk-core/.env.local" \
   "$WORKDIR/guddesk-core/.env.loc" \
   "$WORKDIR/guddesk-core/.env.production" \
   "$WORKDIR/guddesk-core/docs/gudbot-v1.md" \
-  "$WORKDIR/guddesk-core/vercel.md"
+  "$WORKDIR/guddesk-core/vercel.md" \
+  "$WORKDIR/guddesk-core/PRODUCT.md" \
+  "$WORKDIR/guddesk-core/DESIGN.md" \
+  "$WORKDIR/guddesk-core/.github/workflows/cron.yml" \
+  "$WORKDIR/guddesk-core/lib/scheduled/cron-workflow.test.ts"
+rm -rf "$WORKDIR/guddesk-core/.impeccable"
+
+# Public README: this tree is gudlab/guddesk-core, not the private SaaS copy.
+python3 - "$WORKDIR/guddesk-core/README.md" << 'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+text = p.read_text()
+old = (
+    "If you landed on `cavewebs/flowchat`, this is the **GudDesk** hosted SaaS working copy "
+    "(`package.json` name `guddesk`). Star, clone, and open issues on **[gudlab/guddesk-core](https://github.com/gudlab/guddesk-core)**."
+)
+new = (
+    "Star this repo if GudDesk is useful. Hosted cloud is [guddesk.com](https://guddesk.com). "
+    "This is the public **AGPL-3.0** core (`package.json` name `guddesk`)."
+)
+if old not in text:
+    raise SystemExit("error: public README overlay did not find the private landing paragraph")
+p.write_text(text.replace(old, new, 1))
+PY
 
 # Self-host / public edition: no hosted plan caps.
 cat > "$WORKDIR/guddesk-core/lib/feature-flags.ts" << 'EOF'
@@ -78,6 +126,41 @@ const UNLIMITED: PlanLimits = {
 
 export function getPlanLimits(_plan?: string): PlanLimits {
   return UNLIMITED;
+}
+
+export type SeatDecision = {
+  allowed: boolean;
+  plan: string;
+  members: number;
+  pendingInvites: number;
+  used: number;
+  maxSeats: number;
+};
+
+export type ConversationBanner = {
+  level: "warning" | "over";
+  count: number;
+  limit: number;
+  monthKey: string;
+};
+
+export async function checkSeatAvailability(
+  _workspaceId: string,
+): Promise<SeatDecision> {
+  return {
+    allowed: true,
+    plan: "CORE",
+    members: 0,
+    pendingInvites: 0,
+    used: 0,
+    maxSeats: Infinity,
+  };
+}
+
+export async function getConversationLimitBanner(
+  _workspaceId: string,
+): Promise<ConversationBanner | null> {
+  return null;
 }
 
 export async function canUserCreateWorkspace(_userId: string): Promise<{
@@ -119,7 +202,7 @@ if [[ -e .env.loc || -e .env || -e .env.local ]]; then
   exit 1
 fi
 
-if grep -R -E --exclude-dir='.git' --exclude='*.example' \
+if grep -R -E --exclude-dir='.git' --exclude-dir='node_modules' --exclude='*.example' --exclude='sync-oss.sh' \
   'sk_live_|sk_test_|re_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}' . >/dev/null 2>&1; then
   echo "error: possible API key in the public tree; refusing to continue." >&2
   exit 1

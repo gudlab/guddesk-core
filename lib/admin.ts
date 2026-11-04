@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { monthStartUtc } from "@/lib/plan-limits";
 
 export async function getPlatformStats() {
   const [
@@ -138,11 +139,7 @@ export async function getWorkspacesList(
     where.plan = filter.plan;
   }
 
-  const monthStart = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1,
-  );
+  const monthStart = monthStartUtc(new Date());
 
   const [workspaces, total] = await Promise.all([
     prisma.workspace.findMany({
@@ -192,11 +189,7 @@ export async function getWorkspaceDetail(workspaceId: string) {
 
   if (!workspace) return null;
 
-  const monthStart = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1,
-  );
+  const monthStart = monthStartUtc(new Date());
 
   const [conversationsThisMonth, totalMessages, totalVisitors, aiTokens] =
     await Promise.all([
@@ -308,11 +301,7 @@ export async function getPlatformConversationStats(days: number = 30) {
 }
 
 export async function getTopWorkspaces(limit: number = 10) {
-  const monthStart = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth(),
-    1,
-  );
+  const monthStart = monthStartUtc(new Date());
 
   const workspaces = await prisma.workspace.findMany({
     select: {

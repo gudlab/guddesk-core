@@ -23,19 +23,18 @@ export function BlogHeaderLayout() {
     <>
       <MaxWidthWrapper className="py-6 md:pb-8 md:pt-10">
         <div className="max-w-screen-sm">
-          <h1 className="font-heading text-3xl md:text-4xl">
+          <h1 className="font-heading text-3xl text-balance md:text-4xl">
             {data?.title || "Blog"}
           </h1>
-          <p className="mt-3.5 text-base text-muted-foreground md:text-lg">
-            {data?.description ||
-              "Latest news and updates from GudDesk."}
+          <p className="mt-3.5 text-pretty text-base text-neutral-600 md:text-lg dark:text-neutral-300">
+            {data?.description || "Notes on the product, the code, and support."}
           </p>
         </div>
 
         <nav className="mt-8 hidden w-full md:flex">
           <ul
             role="list"
-            className="flex w-full flex-1 gap-x-2 border-b text-[15px] text-muted-foreground"
+            className="flex w-full flex-1 gap-x-2 border-b text-[15px] text-neutral-600 dark:text-neutral-300"
           >
             <CategoryLink title="All" href="/blog" active={!slug} />
             {BLOG_CATEGORIES.map((category) => (
@@ -54,7 +53,7 @@ export function BlogHeaderLayout() {
       <Drawer.Root open={open} onClose={closeDrawer}>
         <Drawer.Trigger
           onClick={() => setOpen(true)}
-          className="mb-8 flex w-full items-center border-y p-3 text-foreground/90 md:hidden"
+          className="mb-8 flex w-full items-center border-y p-3 text-foreground md:hidden"
         >
           <List className="size-[18px]" />
           <p className="ml-2.5 text-sm font-medium">Categories</p>
@@ -66,9 +65,9 @@ export function BlogHeaderLayout() {
         <Drawer.Portal>
           <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mt-24 overflow-hidden rounded-t-[10px] border bg-background">
             <div className="sticky top-0 z-20 flex w-full items-center justify-center bg-inherit">
-              <div className="my-3 h-1.5 w-16 rounded-full bg-muted-foreground/20" />
+              <div className="my-3 h-1.5 w-16 rounded-full bg-neutral-300 dark:bg-neutral-600" />
             </div>
-            <ul role="list" className="mb-14 w-full p-3 text-muted-foreground">
+            <ul role="list" className="mb-14 w-full p-3 text-neutral-600 dark:text-neutral-300">
               <CategoryLink
                 title="All"
                 href="/blog"
@@ -117,7 +116,7 @@ const CategoryLink = ({
   return (
     <Link href={href} onClick={clickAction}>
       {mobile ? (
-        <li className="rounded-lg text-foreground hover:bg-muted">
+        <li className="rounded-lg text-foreground hover:bg-neutral-100 dark:hover:bg-neutral-800">
           <div className="flex items-center justify-between px-3 py-2 text-sm">
             <span>{title}</span>
             {active && <Check className="size-4" />}
@@ -126,9 +125,10 @@ const CategoryLink = ({
       ) : (
         <li
           className={cn(
-            "-mb-px border-b-2 border-transparent font-medium text-muted-foreground hover:text-foreground",
+            "-mb-px border-b-2 border-transparent font-medium text-neutral-600 hover:text-foreground dark:text-neutral-300",
             {
-              "border-blue-600 text-foreground dark:border-blue-400": active,
+              "border-emerald-800 text-foreground dark:border-emerald-300":
+                active,
             },
           )}
         >

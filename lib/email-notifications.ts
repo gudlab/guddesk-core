@@ -1,7 +1,8 @@
 
 import { prisma } from "@/lib/db";
+import { getAppUrl } from "@/lib/app-url";
+import { buildConversationReplyTo, sendEmail } from "@/lib/outbound-email";
 import { emailFrom } from "@/lib/email/from";
-import { sendEmail } from "@/lib/email/send";
 import { unverifiedReplyEmail } from "@/lib/inbound-email/bounce";
 import type { UnverifiedReplyBounce } from "@/lib/inbound-email/handler";
 
@@ -31,7 +32,7 @@ export async function sendAgentNotificationEmail(
     conversation.visitor.email ??
     "A visitor";
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppUrl();
   const inboxUrl = `${appUrl}/workspace/${conversation.workspace.slug}/inbox?c=${conversationId}`;
 
   try {
@@ -39,7 +40,7 @@ export async function sendAgentNotificationEmail(
       from: emailFrom(conversation.workspace.name),
       to: conversation.assignee.user.email,
       subject: `New message from ${visitorLabel}`,
-      replyTo: `reply+${conversationId}@mail.guddesk.com`,
+      replyTo: buildConversationReplyTo(conversationId),
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 0;">
           <div style="background-color: ${brandColor}; border-radius: 8px 8px 0 0; padding: 20px 24px; text-align: center;">
@@ -104,7 +105,7 @@ export async function sendSlaBreachNotification(
       ? "First Response SLA Breached"
       : "Resolution SLA Breached";
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppUrl();
   const inboxUrl = `${appUrl}/workspace/${conversation.workspace.slug}/inbox?c=${conversationId}`;
 
   try {
@@ -143,18 +144,18 @@ export async function sendSlaBreachNotification(
 
 /**
  * A member's own email reply failed DMARC/DKIM and wasn't posted: tell
- * them at their account address. No Reply-To (they should answer in the
- * app) and never the original body.
+ * them, from the verified sender, at their account address. No Reply-To
+ * (they should answer in the app) and never the original body.
  */
 export async function sendUnverifiedReplyBounce(bounce: UnverifiedReplyBounce): Promise<boolean> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: bounce.workspaceId },
     select: { slug: true },
   });
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const inboxUrl = workspace ? `${appUrl}/workspace/${workspace.slug}/inbox?c=${bounce.conversationId}` : appUrl;
+  const inboxUrl = workspace
+    ? `${getAppUrl()}/workspace/${workspace.slug}/inbox?c=${bounce.conversationId}`
+    : getAppUrl();
   const content = unverifiedReplyEmail({ memberName: bounce.memberName, inboxUrl });
-  // sendEmail never throws and logs failures redacted, with no body.
   const outcome = await sendEmail("unverified-reply-bounce", {
     from: emailFrom(),
     to: bounce.to,

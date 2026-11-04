@@ -1,6 +1,7 @@
 import { after } from "next/server";
 
 import { callClaudeWithTools } from "@/lib/ai/client";
+import { getAppUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/db";
 import { safeTriggerBatch, type RealtimeEvent } from "@/lib/pusher-server";
 
@@ -13,10 +14,6 @@ import { runGudBotLoop, type HistoryMessage } from "./loop";
 import { resolveGudBotSettings } from "./settings";
 
 const BOT_SENDER_NAME = "GudBot";
-
-function getAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-}
 
 async function shouldRunGudBot(
   workspaceId: string,

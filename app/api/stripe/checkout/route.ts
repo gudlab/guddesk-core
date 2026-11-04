@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceRole } from "@/lib/workspace";
 import { getStripe } from "@/lib/stripe";
+import { getAppUrl } from "@/lib/app-url";
 
 // POST /api/stripe/checkout
 export async function POST(req: NextRequest) {
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = getAppUrl();
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,

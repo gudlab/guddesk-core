@@ -8,8 +8,7 @@ import {
 
 const slugSchema = (maxLength: number) =>
   z.preprocess(
-    (value) =>
-      typeof value === "string" ? normalizeSlug(value, maxLength) : value,
+    (value) => (typeof value === "string" ? normalizeSlug(value, maxLength) : value),
     z
       .string()
       .min(1)

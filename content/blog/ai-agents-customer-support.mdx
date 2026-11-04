@@ -1,6 +1,6 @@
 ---
 title: "How AI Agents Are Changing Customer Support"
-description: How AI agents fit into customer support. GudBot is planned. Today you connect your own agent through the API.
+description: How AI agents fit into customer support. GudBot is optional and off by default. You can also connect your own agent through the API.
 image: /_static/blog/blog-post-3.jpg
 date: "2025-06-05"
 authors:
@@ -12,27 +12,27 @@ related:
   - self-hosting-guddesk
 ---
 
-Update, October 2026: GudBot is not shipped yet. It's on the roadmap. Today GudDesk works with your own AI agent through the API.
+Update, November 2026: GudBot is available. It is optional and off by default. When you turn it on, it answers from your knowledge base with citations and hands off to a human when it isn't sure. You can also connect your own agent through the API.
 
 Most "AI-powered" support tools do one thing: they show your customers a help article and hope for the best. If the article doesn't solve the problem, the customer ends up waiting in the same queue they would have been in anyway, just more frustrated.
 
-GudDesk is built for agents that resolve conversations. The first-party agent is planned. Today you connect your own through the API.
+GudBot can answer from your knowledge base when you turn it on. It stays off by default. You can also connect your own AI agent through the API.
 
 ## The Difference Between Deflection and Resolution
 
 **Deflection** is when an AI says "Here's an article that might help" and closes the chat. If the article doesn't answer the question, the customer has to start over.
 
-**Resolution** is when an AI understands the conversation and takes the right action until the issue is solved. When it can't, it hands off to a human.
+**Resolution** is when an AI understands the context of the conversation, takes the right action, and confirms the issue is solved. If it cannot, it hands off to a human.
 
-The planned agents aim for resolution. You can already do this with your own agent through the API.
+That is the bar we are aiming for.
 
-## Planned agents
+## GudBot and other agents
 
-Three first-party agents are planned. When it ships, GudBot will handle the first reply. It will read the message and answer from your knowledge base. If that does not work, it will try another approach or pass the conversation to a human. TriageBot will route conversations to the right person or team. When it ships, OnboardBot will check in with new users and flag people who look stuck.
+GudBot is optional and off by default. When you turn it on, it reads the message and answers from your knowledge base with citations. If it isn't sure, it hands off to a human. TriageBot (routing) and OnboardBot (check-ins for new users) are still planned.
 
 ## Building Your Own Agents
 
-Until the first-party agents ship, the Agent API lets you build custom agents that integrate with your tools and workflows.
+Today you do this with the Agent API. Connect your own agent; it hears about conversations and can reply as BOT. GudBot covers knowledge-base answers. Other built-in agents (TriageBot, OnboardBot) are still planned. Every business is different, so the API is how you integrate your specific tools and workflows.
 
 Here's what a basic custom agent looks like:
 
@@ -48,7 +48,7 @@ const refundAgent = new GudDeskAgent({
     if (order && order.isRefundable) {
       await processRefund(order.id);
       return conversation.resolve(
-        `Your refund for order #${order.id} has been processed. You'll see it in 3-5 business days.`
+        `Your refund for order #${order.id} has been processed. You'll see it in 3-5 business days.`,
       );
     }
 
@@ -61,12 +61,12 @@ This agent listens for refund requests, checks if the order is eligible, process
 
 ## Why This Matters
 
-The average customer support interaction costs businesses $5-12 when handled by a human. AI agents that actually resolve issues can reduce that cost while improving customer satisfaction.
+The average customer support interaction costs businesses $5-12 when handled by a human. AI agents that resolve issues can reduce that cost while improving customer satisfaction.
 
 Speed matters too. A useful reply in seconds builds more loyalty than one that takes hours.
 
 ## Getting Started
 
-A first-party agent is not included yet. You can connect your own agent through the API on any plan. AI reply suggestions for your team are planned.
+GudBot is optional and off by default. You can also connect your own AI agent through the API. For agents that call external APIs, bring your own API key.
 
 Check out our [agents documentation](/docs) to get started.

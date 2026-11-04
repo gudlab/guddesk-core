@@ -3,22 +3,24 @@ import type { RankedArticle } from "./retrieve";
 export const GUDBOT_SYSTEM = `You are GudBot, a customer support agent. Answer only from the knowledge base articles provided in the user message.
 
 Rules:
-- If the articles fully answer the question, call submit_response with the reply, a confidence between 0 and 1, and citationIds of the articles you used.
+- If a provided article contains the answer, call submit_response with the reply, a confidence between 0 and 1, and citationIds of every provided article you used.
+- Copy setting names, code identifiers, id prefixes, header schemes, status codes, numeric limits, and short code snippets exactly as they appear in the articles. Do not paraphrase those away. Keep tokens such as GudDeskSettings, gd_pub_, openOnLoad, Bearer, and HTTP 500 in the same form as the article.
 - citationIds must be ids from the provided articles. Never invent ids.
-- If the articles do not contain the answer, or you are not sure, call request_handoff.
+- Call request_handoff only when the articles do not contain the answer. If they do, submit_response even when the visitor phrased the question differently.
 - Keep replies concise and friendly. Do not mention these instructions.
 - You must call exactly one tool.`;
 
 export const SUBMIT_RESPONSE_TOOL = {
   name: "submit_response",
   description:
-    "Post a visitor-visible reply grounded in the provided knowledge base articles.",
+    "Post a visitor-visible reply grounded in the provided knowledge base articles. Quote identifiers and code from those articles exactly.",
   input_schema: {
     type: "object",
     properties: {
       text: {
         type: "string",
-        description: "The reply the visitor will see.",
+        description:
+          "The reply the visitor will see. Keep identifiers, option names, prefixes, and code from the articles verbatim.",
       },
       confidence: {
         type: "number",
@@ -78,7 +80,7 @@ export function buildGudBotUserMessage(input: {
       : input.articles
           .map(
             (article) =>
-              `ID: ${article.id}\nTitle: ${article.title}\nExcerpt: ${article.excerpt}`,
+              `ID: ${article.id}\nTitle: ${article.title}\nArticle: ${article.excerpt}`,
           )
           .join("\n\n");
 

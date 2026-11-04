@@ -5,7 +5,8 @@ import { BlogPosts } from "@/components/content/blog-posts";
 
 export const metadata = constructMetadata({
   title: "Blog | GudDesk",
-  description: "Latest news and updates from GudDesk.",
+  description: "Notes on the product, the code, and support.",
+  path: "/blog",
 });
 
 export default async function BlogPage() {

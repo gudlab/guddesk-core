@@ -6,7 +6,7 @@ export const BLOG_CATEGORIES: {
   {
     title: "News",
     slug: "news",
-    description: "Updates and announcements from GudDesk.",
+    description: "Product notes and announcements from GudDesk.",
   },
   {
     title: "Education",

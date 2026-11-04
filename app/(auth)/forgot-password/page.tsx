@@ -2,10 +2,12 @@ import { Metadata } from "next";
 import Image from "next/image";
 
 import { ForgotPasswordForm } from "@/components/forms/forgot-password-form";
+import { canonicalUrl } from "@/lib/canonical";
 
 export const metadata: Metadata = {
-  title: "Forgot Password – GudDesk",
+  title: "Forgot Password | GudDesk",
   description: "Reset your GudDesk account password",
+  alternates: { canonical: canonicalUrl("/forgot-password") },
 };
 
 export default function ForgotPasswordPage() {

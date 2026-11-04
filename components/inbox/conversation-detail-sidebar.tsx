@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
+import { assignConversation } from "@/actions/assign-conversation";
+import { tagConversation } from "@/actions/tag-conversation";
+import { updateConversationStatus } from "@/actions/update-conversation-status";
 import { toast } from "sonner";
 
 import { callAction } from "@/lib/network";
-import { assignConversation } from "@/actions/assign-conversation";
-import { updateConversationStatus } from "@/actions/update-conversation-status";
-import { tagConversation } from "@/actions/tag-conversation";
+import type { ConversationListItem } from "@/hooks/use-conversations";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,25 +21,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ChannelBadge } from "@/components/inbox/channel-badge";
 import { Icons } from "@/components/shared/icons";
-import type { ConversationListItem } from "@/hooks/use-conversations";
+import { useWorkspaceContext } from "@/components/workspace/workspace-context";
 
 interface WorkspaceMember {
   id: string;
+  userId?: string;
   user: { name: string | null; image: string | null };
 }
 
 interface ConversationDetailSidebarProps {
   conversation: ConversationListItem;
   members: WorkspaceMember[];
+  sideConversationCount?: number;
+  onToggleSidePanel?: () => void;
 }
 
 export function ConversationDetailSidebar({
   conversation,
   members,
+  sideConversationCount = 0,
+  onToggleSidePanel,
 }: ConversationDetailSidebarProps) {
   const [isPending, startTransition] = useTransition();
   const [tagInput, setTagInput] = useState("");
+  const wsContext = useWorkspaceContext();
 
   const visitorName =
     conversation.visitor.name ||
@@ -48,7 +57,10 @@ export function ConversationDetailSidebar({
   function handleAssign(value: string) {
     const assigneeId = value === "unassigned" ? null : value;
     startTransition(async () => {
-      const result = await callAction(() => assignConversation(conversation.id, assigneeId), toast.error);
+      const result = await callAction(
+        () => assignConversation(conversation.id, assigneeId),
+        toast.error,
+      );
       if (result?.status === "error") toast.error(result.message);
     });
   }
@@ -56,7 +68,11 @@ export function ConversationDetailSidebar({
   function handleStatusChange(status: string) {
     startTransition(async () => {
       const result = await callAction(
-        () => updateConversationStatus(conversation.id, status as "OPEN" | "SNOOZED" | "CLOSED"),
+        () =>
+          updateConversationStatus(
+            conversation.id,
+            status as "OPEN" | "SNOOZED" | "CLOSED",
+          ),
         toast.error,
       );
       if (result?.status === "error") toast.error(result.message);
@@ -85,7 +101,11 @@ export function ConversationDetailSidebar({
   function handleRemoveTag(tag: string) {
     startTransition(async () => {
       const result = await callAction(
-        () => tagConversation(conversation.id, conversation.tags.filter((t) => t !== tag)),
+        () =>
+          tagConversation(
+            conversation.id,
+            conversation.tags.filter((t) => t !== tag),
+          ),
         toast.error,
       );
       if (result?.status === "error") toast.error(result.message);
@@ -93,41 +113,58 @@ export function ConversationDetailSidebar({
   }
 
   return (
-    <div className="flex h-full w-[280px] shrink-0 flex-col border-l">
+    <div className="flex h-full w-[280px] min-w-0 shrink-0 flex-col border-l">
       <div className="border-b px-4 py-3">
-        <h4 className="text-xs font-semibold uppercase text-muted-foreground">
-          Details
-        </h4>
+        <h2 className="text-sm font-semibold">Details</h2>
       </div>
 
       <div className="flex-1 space-y-6 overflow-y-auto p-4">
         {/* Visitor Info */}
         <div className="space-y-3">
-          <Label className="text-xs text-muted-foreground">Visitor</Label>
-          <div className="flex items-center gap-2">
+          <Label className="text-sm text-neutral-600 dark:text-neutral-300">
+            Visitor
+          </Label>
+          <Link
+            href={
+              wsContext
+                ? `/workspace/${wsContext.workspaceSlug}/customers/${conversation.visitor.id}`
+                : "#"
+            }
+            className="hover:bg-muted/50 -m-1 flex items-center gap-2 rounded-md p-1 transition-colors"
+          >
             <Avatar className="size-8">
               <AvatarFallback className="text-xs">{initials}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{visitorName}</p>
               {conversation.visitor.email && (
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="truncate text-sm text-neutral-600 dark:text-neutral-300">
                   {conversation.visitor.email}
                 </p>
               )}
             </div>
-          </div>
+          </Link>
+        </div>
+
+        {/* Channel */}
+        <div className="space-y-2">
+          <Label className="text-sm text-neutral-600 dark:text-neutral-300">
+            Channel
+          </Label>
+          <ChannelBadge channel={conversation.channel ?? "WIDGET"} />
         </div>
 
         {/* Status */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Status</Label>
+          <Label className="text-sm text-neutral-600 dark:text-neutral-300">
+            Status
+          </Label>
           <Select
             value={conversation.status}
             onValueChange={handleStatusChange}
             disabled={isPending}
           >
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -140,13 +177,15 @@ export function ConversationDetailSidebar({
 
         {/* Assignee */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Assigned To</Label>
+          <Label className="text-sm text-neutral-600 dark:text-neutral-300">
+            Assigned to
+          </Label>
           <Select
             value={conversation.assigneeId ?? "unassigned"}
             onValueChange={handleAssign}
             disabled={isPending}
           >
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="h-8 text-sm">
               <SelectValue placeholder="Unassigned" />
             </SelectTrigger>
             <SelectContent>
@@ -162,18 +201,16 @@ export function ConversationDetailSidebar({
 
         {/* Tags */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Tags</Label>
+          <Label className="text-sm text-neutral-600 dark:text-neutral-300">
+            Tags
+          </Label>
           <div className="flex flex-wrap gap-1">
             {conversation.tags.map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="gap-1 text-xs"
-              >
+              <Badge key={tag} variant="secondary" className="gap-1 text-xs">
                 {tag}
                 <button
                   onClick={() => handleRemoveTag(tag)}
-                  className="ml-0.5 hover:text-destructive"
+                  className="hover:text-destructive ml-0.5"
                 >
                   x
                 </button>
@@ -185,26 +222,53 @@ export function ConversationDetailSidebar({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               placeholder="Add tag..."
-              className="h-7 text-xs"
+              className="h-8 text-sm"
             />
-            <Button type="submit" size="sm" variant="outline" className="h-7 px-2 text-xs">
+            <Button
+              type="submit"
+              size="sm"
+              variant="outline"
+              className="h-8 px-2 text-sm"
+            >
               Add
             </Button>
           </form>
         </div>
 
+        {/* Side Conversations */}
+        <div className="space-y-2">
+          <Label className="text-sm text-neutral-600 dark:text-neutral-300">
+            Side conversations
+          </Label>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 text-sm"
+            onClick={onToggleSidePanel}
+          >
+            <Icons.messages className="size-3" />
+            {sideConversationCount > 0
+              ? `${sideConversationCount} thread${sideConversationCount === 1 ? "" : "s"}`
+              : "Start a thread"}
+          </Button>
+        </div>
+
         {/* Quick actions */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Actions</Label>
+          <Label className="text-sm text-neutral-600 dark:text-neutral-300">
+            Actions
+          </Label>
           {conversation.status !== "CLOSED" && (
             <Button
               variant="outline"
               size="sm"
-              className="w-full text-xs"
+              className="w-full text-sm"
               onClick={() => handleStatusChange("CLOSED")}
               disabled={isPending}
             >
-              {isPending && <Icons.spinner className="mr-1.5 size-3 animate-spin" />}
+              {isPending && (
+                <Icons.spinner className="mr-1.5 size-3 animate-spin" />
+              )}
               Close Conversation
             </Button>
           )}
@@ -212,7 +276,7 @@ export function ConversationDetailSidebar({
             <Button
               variant="outline"
               size="sm"
-              className="w-full text-xs"
+              className="w-full text-sm"
               onClick={() => handleStatusChange("OPEN")}
               disabled={isPending}
             >

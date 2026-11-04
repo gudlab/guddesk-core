@@ -125,10 +125,9 @@ describe("widget loads without creating a visitor", () => {
   it("identify still posts to /api/widget/visitors with the stored token and userHash", () => {
     const client = read("packages/widget/src/api/client.ts");
     assert.match(client, /"\/api\/widget\/visitors"/);
-    assert.match(client, /buildIdentifyPayload\(appId, visitorToken\.value, info\)/);
-    const payload = read("packages/widget/src/api/identify-payload.ts");
-    assert.match(payload, /userHash: info\.userHash/);
-    assert.match(payload, /externalId: info\.userId/);
+    assert.match(client, /visitorToken: visitorToken\.value/);
+    assert.match(client, /userHash: info\.userHash/);
+    assert.match(client, /externalId: info\.userId/);
   });
 
   it("the first message creates the visitor through /api/widget/conversations", () => {

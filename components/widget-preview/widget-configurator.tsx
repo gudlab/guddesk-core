@@ -16,11 +16,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Icons } from "@/components/shared/icons";
-import { widgetPrimaryColorError } from "@/lib/widget-color";
 import { useState } from "react";
+import Link from "next/link";
+
 interface WidgetConfiguratorProps {
   workspaceId: string;
-  plan?: string;
+  plan: "FREE" | "PRO";
   settings: {
     primaryColor: string;
     position: "bottom-right" | "bottom-left";
@@ -36,17 +37,14 @@ interface WidgetConfiguratorProps {
 
 export function WidgetConfigurator({
   workspaceId,
+  plan,
   settings,
 }: WidgetConfiguratorProps) {
+  const isPro = plan === "PRO";
   const [isPending, startTransition] = useTransition();
   const [config, setConfig] = useState(settings);
-  const colorError = widgetPrimaryColorError(config.primaryColor);
 
   function handleSave() {
-    if (colorError) {
-      toast.error(colorError);
-      return;
-    }
     startTransition(async () => {
       const result = await updateWidgetSettings(workspaceId, {
         ...config,
@@ -100,7 +98,7 @@ export function WidgetConfigurator({
               <input
                 type="color"
                 id="primaryColor"
-                value={colorError ? "#3ECF8E" : config.primaryColor}
+                value={config.primaryColor}
                 onChange={(e) =>
                   setConfig((s) => ({ ...s, primaryColor: e.target.value }))
                 }
@@ -111,19 +109,9 @@ export function WidgetConfigurator({
                 onChange={(e) =>
                   setConfig((s) => ({ ...s, primaryColor: e.target.value }))
                 }
-                placeholder="#3ECF8E"
-                maxLength={7}
-                aria-label="Primary color hex value"
-                aria-invalid={colorError ? true : undefined}
-                aria-describedby={colorError ? "primaryColor-error" : undefined}
                 className="w-28"
               />
             </div>
-            {colorError && (
-              <p id="primaryColor-error" className="text-sm text-destructive">
-                {colorError}
-              </p>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -155,15 +143,36 @@ export function WidgetConfigurator({
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <Label htmlFor="showBranding">Show GudDesk branding</Label>
-            <Switch
-              id="showBranding"
-              checked={config.showBranding}
-              onCheckedChange={(checked) =>
-                setConfig((s) => ({ ...s, showBranding: checked }))
-              }
-            />
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="showBranding">Show GudDesk branding</Label>
+                {!isPro && (
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    PRO
+                  </span>
+                )}
+              </div>
+              <Switch
+                id="showBranding"
+                checked={config.showBranding}
+                disabled={!isPro}
+                onCheckedChange={(checked) =>
+                  setConfig((s) => ({ ...s, showBranding: checked }))
+                }
+              />
+            </div>
+            {!isPro && (
+              <p className="text-xs text-muted-foreground">
+                <Link
+                  href="/dashboard/billing"
+                  className="text-emerald-600 hover:underline dark:text-emerald-400"
+                >
+                  Upgrade to Pro
+                </Link>{" "}
+                to remove GudDesk branding from the widget.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -307,11 +316,7 @@ export function WidgetConfigurator({
           </div>
         </div>
 
-        <Button
-          onClick={handleSave}
-          disabled={isPending || Boolean(colorError)}
-          className="w-full"
-        >
+        <Button onClick={handleSave} disabled={isPending} className="w-full">
           {isPending && (
             <Icons.spinner className="mr-2 size-4 animate-spin" />
           )}

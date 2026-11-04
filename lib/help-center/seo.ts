@@ -68,7 +68,9 @@ export function questionHeading(line: string): string | null {
   if (stripped.includes(". ")) return null;
   const raw = line.trim();
   const markedUp =
-    /^#{1,3}\s+/.test(raw) || /^q:\s+/i.test(raw) || /^\*\*.+\*\*$/.test(raw);
+    /^#{1,3}\s+/.test(raw) ||
+    /^q:\s+/i.test(raw) ||
+    /^\*\*.+\*\*$/.test(raw);
   if (!markedUp && !QUESTION_WORDS.test(stripped)) return null;
   return stripped;
 }
@@ -253,15 +255,10 @@ export function publicHelpSitemapEntries(
       for (const article of collection.articles) {
         if (!article.isPublished) continue;
         const lastModified = article.updatedAt;
-        if (lastModified > collectionModified)
-          collectionModified = lastModified;
+        if (lastModified > collectionModified) collectionModified = lastModified;
         if (lastModified > workspaceModified) workspaceModified = lastModified;
         collectionEntries.push({
-          path: articlePublicPath(
-            workspace.slug,
-            collection.slug,
-            article.slug,
-          ),
+          path: articlePublicPath(workspace.slug, collection.slug, article.slug),
           lastModified,
         });
       }

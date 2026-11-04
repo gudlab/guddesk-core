@@ -7,18 +7,15 @@ import bcrypt from "bcryptjs";
 import { env } from "@/env.mjs";
 import { findUserByEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
-import { emailFrom } from "@/lib/email/from";
-import { sendMagicLinkSafely } from "@/lib/email/send";
 import { userLoginSchema } from "@/lib/validations/auth";
+import { sendMagicLink } from "@/lib/magic-link";
+import { emailFrom } from "@/lib/email/from";
 
 const MAGIC_LINK_FROM = emailFrom();
-
-// Auth.js's own Resend send, wrapped so a failure is logged redacted and
-// rethrown without addresses.
-const magicLink = Resend({
+const defaultMagicLinkSend = Resend({
   apiKey: env.RESEND_API_KEY,
   from: MAGIC_LINK_FROM,
-});
+}).sendVerificationRequest;
 
 export default {
   providers: [
@@ -26,16 +23,17 @@ export default {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
-    {
-      ...magicLink,
-      options: {
-        ...magicLink.options,
-        sendVerificationRequest: (params) =>
-          sendMagicLinkSafely(params.identifier, () =>
-            magicLink.sendVerificationRequest(params),
-          ),
-      },
-    },
+    Resend({
+      apiKey: env.RESEND_API_KEY,
+      from: MAGIC_LINK_FROM,
+      // Same email as Auth.js sends, but through the gate in
+      // lib/outbound-email.ts.
+      // The signIn callback in auth.ts stops a blocked magic link first.
+      // This still throws if the gate skips the email, so the user never
+      // sees "check your email" for a link that was not sent.
+      sendVerificationRequest: (params) =>
+        sendMagicLink(params.identifier, () => defaultMagicLinkSend(params)),
+    }),
     Credentials({
       async authorize(credentials) {
         const validated = userLoginSchema.safeParse(credentials);

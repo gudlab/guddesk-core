@@ -1,88 +1,46 @@
 ---
 title: Widget Customization
-description: Customize the GudDesk chat widget's colors, position, behavior, and greeting message.
+description: Change the GudDesk chat widget's color, position, welcome message and behavior from the dashboard.
 ---
 
-The GudDesk widget is fully customizable to match your brand. All options are configured via `window.GudDeskSettings` or through the dashboard.
+You set the widget's look and behavior in the dashboard. The snippet on your site only needs your App ID.
 
-## Configuration Options
+## Dashboard Settings
 
-```html
-<script>
-  window.GudDeskSettings = {
-    appId: "gd_pub_xxxxxxxxxxxxxxxx",
+Go to **Workspace Settings > Widget**. The page shows a preview next to the form. You can set:
 
-    // Appearance
-    accentColor: "#3ECF8E",       // Primary color (hex)
-    position: "bottom-right",      // "bottom-right" or "bottom-left"
-    greeting: "Hi there! How can we help?",
+- **Display name**: the name shown in the widget header
+- **Welcome message**: the first message a visitor sees
+- **Primary color**: the color of the launcher, the header and the visitor's messages
+- **Position**: bottom-right or bottom-left
+- **Require email before chat**: ask visitors for an email address before they can send a message
+- **Show GudDesk branding**: the "Powered by GudDesk" line. Pro workspaces can turn it off
+- **Offline contact form**: after a set number of minutes with no reply, the widget asks the visitor for their email and message
+- **Page visibility**: show the widget everywhere except some URLs, or only on some URLs, using glob patterns
 
-    // Behavior
-    openOnLoad: false,             // Auto-open on page load
-    hideOnMobile: false,           // Hide widget on mobile devices
-    showBranding: true,            // Show "Powered by GudDesk" (Pro: can disable)
-  };
-</script>
+Click **Save**. The widget loads these settings each time it starts, so the change shows up on your site on the next page load.
+
+## Snippet Settings
+
+`window.GudDeskSettings` accepts these keys:
+
+```javascript
+window.GudDeskSettings = {
+  appId: "gd_pub_xxxxxxxxxxxxxxxx",          // required
+  baseUrl: "https://your-guddesk-domain.com", // self-hosted only
+};
 ```
 
-## Dashboard Configuration
-
-You can also configure the widget from your GudDesk dashboard:
-
-1. Navigate to **Settings > Widget**
-2. Use the live preview to adjust colors, position, and greeting
-3. Click **Save**: changes apply immediately to all pages with your widget installed
-
-Dashboard settings are the default. Snippet keys (`accentColor`, `position`, `greeting`, `openOnLoad`, `hideOnMobile`) overlay those defaults **after** `/api/widget/config` loads, so a marketing page can differ from the app. Omit a key to keep the dashboard value. `showBranding` is dashboard-only (Pro).
-
-`openOnLoad: true` opens the chat after config loads. `hideOnMobile: true` skips rendering at or below 440px (the same breakpoint as the widget layout CSS).
+Self-hosted installs with Pusher can also pass `pusherKey` and `pusherCluster`. Colors, position and messages are not read from the snippet. Set them in the dashboard.
 
 ## Custom CSS
 
-The widget UI lives in Shadow DOM (`#guddesk-widget` is only the host). Page CSS cannot reach the bubble or window. There is no `.guddesk-launcher` class; the bubble is `.fc-bubble` inside the shadow tree. Use `GudDeskSettings` or the dashboard for colors, position, and greeting.
+The widget renders inside a shadow root attached to `#guddesk-widget`, so your page's CSS can't reach its internals. You can position or hide the container itself:
 
 ```css
 #guddesk-widget {
-  /* Host element only. Inner UI is in shadow DOM and is not styleable from the page. */
+  /* the host element for the widget */
 }
 ```
 
-<Callout type="warning">
-  Do not target classes inside the shadow tree from page CSS. They will not match.
-</Callout>
-
-## Accent Color
-
-The accent color affects the chat bubble, header, and sent message backgrounds. Set it to your brand color:
-
-```javascript
-window.GudDeskSettings = {
-  appId: "gd_pub_xxxxxxxxxxxxxxxx",
-  accentColor: "#6366F1", // Indigo
-};
-```
-
-## Position
-
-Place the widget in the bottom-left or bottom-right of the screen:
-
-```javascript
-// Bottom-left
-window.GudDeskSettings = {
-  appId: "gd_pub_xxxxxxxxxxxxxxxx",
-  position: "bottom-left",
-};
-```
-
-## Greeting Message
-
-The greeting is shown when a visitor opens the widget for the first time:
-
-```javascript
-window.GudDeskSettings = {
-  appId: "gd_pub_xxxxxxxxxxxxxxxx",
-  greeting: "Welcome! Ask us anything.",
-};
-```
-
-Set `greeting` to an empty string to disable the greeting bubble.
+To control the chat window from your own code, use `GudDesk.open()`, `GudDesk.close()` and `GudDesk.destroy()`. See [Widget Installation](/docs/widget/installation).

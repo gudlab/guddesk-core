@@ -22,6 +22,7 @@ import {
 import ProjectSwitcher, {
   type WorkspaceItem,
 } from "@/components/dashboard/project-switcher";
+import { UpgradeCard } from "@/components/dashboard/upgrade-card";
 import { Icons } from "@/components/shared/icons";
 import { useWorkspaceContext } from "@/components/workspace/workspace-context";
 
@@ -63,7 +64,8 @@ function useResolvedLinks(
       // Look up role from server-provided workspaces (always available),
       // fall back to context role for backward compatibility
       const wsRole = workspaces?.find((w) => w.slug === slug)?.role;
-      const userLevel = WORKSPACE_ROLE_LEVEL[wsRole ?? workspaceRole ?? "VIEWER"] ?? 0;
+      const userLevel =
+        WORKSPACE_ROLE_LEVEL[wsRole ?? workspaceRole ?? "VIEWER"] ?? 0;
 
       return {
         isWorkspaceView: true,
@@ -86,7 +88,11 @@ function useResolvedLinks(
           .filter((section) => section.items.length > 0),
       };
     }
-    return { isWorkspaceView: false, workspaceSlug: null, links: dashboardLinks };
+    return {
+      isWorkspaceView: false,
+      workspaceSlug: null,
+      links: dashboardLinks,
+    };
   }, [path, dashboardLinks, workspaceLinks, workspaces, workspaceRole]);
 }
 
@@ -141,12 +147,12 @@ export function DashboardSidebar({
                   {isSidebarExpanded ? (
                     <PanelLeftClose
                       size={18}
-                      className="stroke-muted-foreground"
+                      className="stroke-neutral-600 dark:stroke-neutral-300"
                     />
                   ) : (
                     <PanelRightClose
                       size={18}
-                      className="stroke-muted-foreground"
+                      className="stroke-neutral-600 dark:stroke-neutral-300"
                     />
                   )}
                   <span className="sr-only">Toggle Sidebar</span>
@@ -158,7 +164,7 @@ export function DashboardSidebar({
                 <div className="px-4">
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-2 rounded-md p-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-accent-foreground"
+                    className="hover:bg-muted hover:text-accent-foreground flex items-center gap-2 rounded-md p-2 text-sm font-medium text-neutral-600 dark:text-neutral-300"
                   >
                     <ArrowLeft className="size-3.5" />
                     Back to Dashboard
@@ -173,7 +179,7 @@ export function DashboardSidebar({
                     className="flex flex-col gap-0.5"
                   >
                     {isSidebarExpanded ? (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
                         {section.title}
                       </p>
                     ) : (
@@ -189,12 +195,12 @@ export function DashboardSidebar({
                                 key={`link-${item.title}`}
                                 href={item.disabled ? "#" : item.href}
                                 className={cn(
-                                  "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
+                                  "hover:bg-muted flex items-center gap-3 rounded-md p-2 text-sm font-medium",
                                   path === item.href
                                     ? "bg-muted"
-                                    : "text-muted-foreground hover:text-accent-foreground",
+                                    : "hover:text-accent-foreground text-neutral-600 dark:text-neutral-300",
                                   item.disabled &&
-                                    "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
+                                    "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-neutral-600 dark:hover:text-neutral-300",
                                 )}
                               >
                                 <Icon className="size-5" />
@@ -212,12 +218,12 @@ export function DashboardSidebar({
                                     key={`link-tooltip-${item.title}`}
                                     href={item.disabled ? "#" : item.href}
                                     className={cn(
-                                      "flex items-center gap-3 rounded-md py-2 text-sm font-medium hover:bg-muted",
+                                      "hover:bg-muted flex items-center gap-3 rounded-md py-2 text-sm font-medium",
                                       path === item.href
                                         ? "bg-muted"
-                                        : "text-muted-foreground hover:text-accent-foreground",
+                                        : "hover:text-accent-foreground text-neutral-600 dark:text-neutral-300",
                                       item.disabled &&
-                                        "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
+                                        "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-neutral-600 dark:hover:text-neutral-300",
                                     )}
                                   >
                                     <span className="flex size-full items-center justify-center">
@@ -238,7 +244,9 @@ export function DashboardSidebar({
                 ))}
               </nav>
 
-              <div className="mt-auto xl:p-4" />
+              <div className="mt-auto xl:p-4">
+                {isSidebarExpanded ? <UpgradeCard /> : null}
+              </div>
             </div>
           </aside>
         </ScrollArea>
@@ -298,7 +306,7 @@ export function MobileSheetSidebar({
                   <Link
                     href="/dashboard"
                     onClick={() => setOpen(false)}
-                    className="flex items-center gap-2 rounded-md text-sm font-medium text-muted-foreground hover:text-accent-foreground"
+                    className="hover:text-accent-foreground flex items-center gap-2 rounded-md text-sm font-medium text-neutral-600 dark:text-neutral-300"
                   >
                     <ArrowLeft className="size-3.5" />
                     Back to Dashboard
@@ -310,7 +318,7 @@ export function MobileSheetSidebar({
                     key={section.title}
                     className="flex flex-col gap-0.5"
                   >
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
                       {section.title}
                     </p>
 
@@ -326,12 +334,12 @@ export function MobileSheetSidebar({
                               }}
                               href={item.disabled ? "#" : item.href}
                               className={cn(
-                                "flex items-center gap-3 rounded-md p-2 text-sm font-medium hover:bg-muted",
+                                "hover:bg-muted flex items-center gap-3 rounded-md p-2 text-sm font-medium",
                                 path === item.href
                                   ? "bg-muted"
-                                  : "text-muted-foreground hover:text-accent-foreground",
+                                  : "hover:text-accent-foreground text-neutral-600 dark:text-neutral-300",
                                 item.disabled &&
-                                  "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
+                                  "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-neutral-600 dark:hover:text-neutral-300",
                               )}
                             >
                               <Icon className="size-5" />
@@ -349,7 +357,9 @@ export function MobileSheetSidebar({
                   </section>
                 ))}
 
-                <div className="mt-auto" />
+                <div className="mt-auto">
+                  <UpgradeCard />
+                </div>
               </nav>
             </div>
           </ScrollArea>
@@ -359,6 +369,6 @@ export function MobileSheetSidebar({
   }
 
   return (
-    <div className="flex size-9 animate-pulse rounded-lg bg-muted md:hidden" />
+    <div className="bg-muted flex size-9 animate-pulse rounded-lg md:hidden" />
   );
 }
