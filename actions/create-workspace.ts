@@ -17,7 +17,7 @@ export async function createWorkspace(data: { name: string; slug: string }) {
     // Check workspace limit for free plan
     const limitCheck = await canUserCreateWorkspace(session.user.id);
     if (!limitCheck.allowed) {
-      return { status: "error", message: limitCheck.reason ?? "Workspace limit reached" };
+      return { status: "error", message: "Workspace limit reached" };
     }
 
     const { name, slug } = createWorkspaceSchema.parse(data);
