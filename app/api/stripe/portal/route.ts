@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceRole } from "@/lib/workspace";
 import { getStripe } from "@/lib/stripe";
+import { getAppUrl } from "@/lib/app-url";
 
 // POST /api/stripe/portal
 export async function POST(req: NextRequest) {
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = getAppUrl();
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: workspace.stripeCustomerId,

@@ -5,6 +5,10 @@ import { prisma } from "@/lib/db";
 import { safeTrigger } from "@/lib/pusher-server";
 import { apiOk, apiError, checkRateLimit, withHeaders } from "@/lib/api-utils";
 
+// POST /api/agent/typing
+// Allows external AI agents to send typing indicators to the widget.
+// Body: { conversationId, typing: true|false }
+// Requires READ_WRITE permission or higher.
 export async function POST(req: NextRequest) {
   const authContext = await authenticateApiKey(req);
   if (!authContext) {
@@ -38,6 +42,7 @@ export async function POST(req: NextRequest) {
       return withHeaders(apiError(wsResult.error, wsResult.status), rateResult.headers);
     }
 
+    // Verify conversation belongs to this workspace
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       select: { workspaceId: true },
@@ -47,6 +52,7 @@ export async function POST(req: NextRequest) {
       return withHeaders(apiError("Conversation not found", 404), rateResult.headers);
     }
 
+    // Fire typing event to the visitor widget channel
     const event = typing ? "typing:start" : "typing:stop";
     await safeTrigger(
       `private-visitor-${conversationId}`,

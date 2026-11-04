@@ -5,6 +5,10 @@ import { prisma } from "@/lib/db";
 import { safeTriggerBatch } from "@/lib/pusher-server";
 import { apiOk, apiError, checkRateLimit, withHeaders } from "@/lib/api-utils";
 
+// POST /api/agent/reply
+// Allows external AI agents to send BOT messages into conversations.
+// Authenticated via API key (Authorization: Bearer or x-api-key header).
+// Requires READ_WRITE permission or higher.
 export async function POST(req: NextRequest) {
   const authContext = await authenticateApiKey(req);
   if (!authContext) {
@@ -36,11 +40,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Resolve workspace from the API key scope or request body
     const wsResult = await resolveWorkspace(authContext, requestedWorkspaceId);
     if ("error" in wsResult) {
       return withHeaders(apiError(wsResult.error, wsResult.status), rateResult.headers);
     }
 
+    // Verify the conversation belongs to this workspace
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
       select: { workspaceId: true, assigneeId: true, status: true },
@@ -50,6 +56,7 @@ export async function POST(req: NextRequest) {
       return withHeaders(apiError("Conversation not found", 404), rateResult.headers);
     }
 
+    // Block bot replies when a human agent is assigned
     if (conversation.assigneeId) {
       return withHeaders(
         apiOk({
@@ -61,6 +68,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Block bot replies to closed conversations
     if (conversation.status === "CLOSED") {
       return withHeaders(
         apiOk({
@@ -72,6 +80,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Create BOT message
     const message = await prisma.message.create({
       data: {
         conversationId,
@@ -81,6 +90,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Update conversation metadata
     const preview =
       messageBody.length > 100
         ? messageBody.slice(0, 100) + "..."
@@ -94,6 +104,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Trigger real-time events (same pattern as agent messages).
+    // Awaited so they actually flush on Vercel serverless.
     const messagePayload = {
       id: message.id,
       type: message.type,

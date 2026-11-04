@@ -6,6 +6,10 @@ import { authenticateApiKey, hasPermission, resolveWorkspace } from "@/lib/api-a
 import { prisma } from "@/lib/db";
 import { apiOk, apiError, checkRateLimit, withHeaders } from "@/lib/api-utils";
 
+// ---------------------------------------------------------------------------
+// GET /api/agent/webhooks  —  List webhook endpoints
+// Requires: READ_ONLY or higher
+// ---------------------------------------------------------------------------
 export async function GET(req: NextRequest) {
   const authContext = await authenticateApiKey(req);
   if (!authContext) {
@@ -23,6 +27,7 @@ export async function GET(req: NextRequest) {
   if (!rateResult.allowed) return rateResult.response;
 
   try {
+    // Resolve workspace from key scope or query param
     const requestedWorkspaceId = req.nextUrl.searchParams.get("workspaceId");
     const wsResult = await resolveWorkspace(authContext, requestedWorkspaceId);
     if ("error" in wsResult) {
@@ -52,6 +57,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// POST /api/agent/webhooks  —  Register a new webhook endpoint
+// Requires: FULL_ACCESS
+// ---------------------------------------------------------------------------
 export async function POST(req: NextRequest) {
   const authContext = await authenticateApiKey(req);
   if (!authContext) {
@@ -82,17 +91,20 @@ export async function POST(req: NextRequest) {
       return withHeaders(apiError("Invalid URL format", 400), rateResult.headers);
     }
 
+    // Resolve workspace from key scope or request body
     const wsResult = await resolveWorkspace(authContext, requestedWorkspaceId);
     if ("error" in wsResult) {
       return withHeaders(apiError(wsResult.error, wsResult.status), rateResult.headers);
     }
 
+    // Check if an endpoint with this exact URL already exists for the workspace
     const existing = await prisma.webhookEndpoint.findFirst({
       where: { workspaceId: wsResult.workspaceId, url },
       select: { id: true, secret: true, isEnabled: true },
     });
 
     if (existing) {
+      // Re-enable if disabled, and return the existing endpoint
       if (!existing.isEnabled) {
         await prisma.webhookEndpoint.update({
           where: { id: existing.id },
@@ -151,6 +163,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// DELETE /api/agent/webhooks  —  Remove a webhook endpoint
+// Body: { endpointId: string } or { url: string }
+// Requires: FULL_ACCESS
+// ---------------------------------------------------------------------------
 export async function DELETE(req: NextRequest) {
   const authContext = await authenticateApiKey(req);
   if (!authContext) {
@@ -175,11 +192,13 @@ export async function DELETE(req: NextRequest) {
       return withHeaders(apiError("endpointId or url is required", 400), rateResult.headers);
     }
 
+    // Resolve workspace from key scope or request body
     const wsResult = await resolveWorkspace(authContext, requestedWorkspaceId);
     if ("error" in wsResult) {
       return withHeaders(apiError(wsResult.error, wsResult.status), rateResult.headers);
     }
 
+    // Find the endpoint (by ID or URL) and verify ownership
     const endpoint = endpointId
       ? await prisma.webhookEndpoint.findUnique({
           where: { id: endpointId },
