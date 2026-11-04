@@ -5,7 +5,7 @@
  * 1. Every model in schema.prisma can be read: findFirst selects every
  *    scalar column, so a missing table or column fails here.
  * 2. A workspace can be created the way actions/create-workspace.ts does
- *    it: an owner and widget settings, and no workspaces.apiKey (0005
+ *    it: an owner and widget settings, and no workspaces.apiKey (0006
  *    drops that orphan 0001_init column).
  */
 import { PrismaPg } from "@prisma/adapter-pg";

@@ -27,7 +27,7 @@ check_not_null_unique() {
 }
 check_workspaces() {
   check_not_null_unique "$1" workspaces appId workspaces_appId_key
-  # 0005 drops the orphan 0001_init column workspaces.apiKey and its index.
+  # 0006 drops the orphan 0001_init column workspaces.apiKey and its index.
   local leftover
   leftover=$(psql "$1" -qAtc "SELECT count(*) FROM information_schema.columns WHERE table_name = 'workspaces' AND column_name = 'apiKey'")
   [ "$leftover" = "0" ] || { echo "FAIL: workspaces.apiKey still exists"; exit 1; }
