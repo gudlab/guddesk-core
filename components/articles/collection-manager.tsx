@@ -9,6 +9,7 @@ import {
   updateCollection,
   deleteCollection,
 } from "@/actions/manage-collection";
+import { generateCollectionSlug } from "@/lib/help-center/slug";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,14 +24,6 @@ interface CollectionItem {
   icon: string | null;
   isPublished: boolean;
   articleCount: number;
-}
-
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 100);
 }
 
 interface CollectionManagerProps {
@@ -51,7 +44,7 @@ export function CollectionManager({
 
   function handleNameChange(value: string) {
     setName(value);
-    setSlug(generateSlug(value));
+    setSlug(generateCollectionSlug(value));
   }
 
   function handleCreate() {

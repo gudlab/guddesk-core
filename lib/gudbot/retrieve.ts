@@ -1,3 +1,5 @@
+import { articlePublicPath } from "@/lib/help-center/seo";
+
 export interface RetrievableArticle {
   id: string;
   title: string;
@@ -166,5 +168,5 @@ export function helpCenterArticleUrl(
 ): string | null {
   if (!article.collectionSlug) return null;
   const base = appUrl.replace(/\/+$/, "");
-  return `${base}/help/${workspaceSlug}/${article.collectionSlug}/${article.slug}`;
+  return `${base}${articlePublicPath(workspaceSlug, article.collectionSlug, article.slug)}`;
 }

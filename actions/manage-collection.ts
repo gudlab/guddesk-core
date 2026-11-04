@@ -4,6 +4,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceRole } from "@/lib/workspace";
 import { collectionSchema } from "@/lib/validations/article";
+import {
+  HELP_SLUG_MAX,
+  isReservedCollectionSlug,
+  isUrlSafeSlug,
+  nextStoredSlug,
+} from "@/lib/help-center/slug";
 import { revalidatePath } from "next/cache";
 
 export async function createCollection(
@@ -71,12 +77,24 @@ export async function updateCollection(
 
     await requireWorkspaceRole(collection.workspaceId, session.user.id, ["OWNER", "ADMIN"]);
 
-    if (data.slug && data.slug !== collection.slug) {
-      const existing = await prisma.collection.findUnique({
-        where: { workspaceId_slug: { workspaceId: collection.workspaceId, slug: data.slug } },
-      });
-      if (existing) {
-        return { status: "error" as const, message: "Slug already in use" };
+    let nextSlug = collection.slug;
+    if (data.slug !== undefined) {
+      nextSlug = nextStoredSlug(data.slug, collection.slug, HELP_SLUG_MAX.collection);
+      if (!isUrlSafeSlug(nextSlug) || isReservedCollectionSlug(nextSlug)) {
+        return {
+          status: "error" as const,
+          message: isReservedCollectionSlug(nextSlug)
+            ? "That slug is reserved for help center search"
+            : "Slug must be lowercase letters, numbers, and hyphens",
+        };
+      }
+      if (nextSlug !== collection.slug) {
+        const existing = await prisma.collection.findUnique({
+          where: { workspaceId_slug: { workspaceId: collection.workspaceId, slug: nextSlug } },
+        });
+        if (existing) {
+          return { status: "error" as const, message: "Slug already in use" };
+        }
       }
     }
 
@@ -84,7 +102,7 @@ export async function updateCollection(
       where: { id: collectionId },
       data: {
         ...(data.name !== undefined && { name: data.name }),
-        ...(data.slug !== undefined && { slug: data.slug }),
+        ...(data.slug !== undefined && { slug: nextSlug }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.icon !== undefined && { icon: data.icon }),
         ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
