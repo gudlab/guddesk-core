@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Post } from "contentlayer/generated";
 
@@ -52,11 +51,11 @@ export function BlogCard({
         )}
       >
         <div className="w-full">
-          <h2 className="my-1.5 line-clamp-2 font-heading text-2xl">
+          <h2 className="my-1.5 line-clamp-2 text-balance font-heading text-2xl">
             {data.title}
           </h2>
           {data.description && (
-            <p className="line-clamp-2 text-muted-foreground">
+            <p className="line-clamp-2 text-pretty text-neutral-600 dark:text-neutral-300">
               {data.description}
             </p>
           )}
@@ -71,7 +70,7 @@ export function BlogCard({
           </div>
 
           {data.date && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
               {formatDate(data.date)}
             </p>
           )}

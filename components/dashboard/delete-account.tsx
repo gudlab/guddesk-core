@@ -20,7 +20,7 @@ export function DeleteAccountSection() {
         <div className="flex flex-col gap-4 rounded-xl border border-red-400 p-4 dark:border-red-900">
           <div className="flex flex-col gap-2">
             <span className="text-[15px] font-medium">Are you sure?</span>
-            <div className="text-balance text-sm text-muted-foreground">
+            <div className="text-sm text-balance text-neutral-600 dark:text-neutral-300">
               Permanently delete your {siteConfig.name} account and all
               associated data. This action cannot be undone.
             </div>

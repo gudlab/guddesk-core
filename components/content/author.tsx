@@ -38,7 +38,7 @@ export default async function Author({
         <p className="font-semibold text-foreground max-md:text-sm">
           {authors[username].name}
         </p>
-        <p className="text-sm text-muted-foreground">@{authors[username].twitter}</p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">@{authors[username].twitter}</p>
       </div>
     </Link>
   );

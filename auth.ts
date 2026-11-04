@@ -6,6 +6,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import { withCaseInsensitiveEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
 import { getUserById } from "@/lib/user";
+import { magicLinkSignInGate } from "@/lib/magic-link";
 
 // More info: https://authjs.dev/getting-started/typescript#module-augmentation
 declare module "next-auth" {
@@ -30,6 +31,12 @@ export const {
     signIn: "/login",
   },
   callbacks: {
+    // Stops a magic link where email is blocked before Auth.js writes a
+    // verification token. Other sign-ins pass through.
+    async signIn(params) {
+      return magicLinkSignInGate(params);
+    },
+
     async session({ token, session }) {
       if (session.user) {
         if (token.sub) {
