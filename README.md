@@ -1,48 +1,58 @@
+# GudDesk
+
+Open-source live chat and a shared inbox, with a help center. Bring your own AI agent.
+
+[Website](https://guddesk.com) · [Docs](https://guddesk.com/docs) · [Roadmap](ROADMAP.md) · [Contributing](CONTRIBUTING.md)
+
+GudDesk is an Intercom and Zendesk alternative with flat pricing. Use GudDesk Cloud, or self-host this AGPL-3.0 code with no plan limits. If it's useful to you, a star helps other people find it.
+
 <p align="center">
   <a href="https://guddesk.com">
-    <img src="public/_static/og.jpg" alt="GudDesk" />
+    <img src="docs/assets/guddesk-hero.svg" alt="GudDesk inbox and chat widget" width="800" />
   </a>
 </p>
 
-<p align="center">
-  <strong>GudDesk</strong><br />
-  Open-source live chat and a shared inbox, with a help center. Bring your own AI agent.
-</p>
+## Plans on GudDesk Cloud
 
-<p align="center">
-  <a href="https://guddesk.com">Website</a> ·
-  <a href="https://guddesk.com/docs">Documentation</a> ·
-  <a href="https://github.com/gudlab/guddesk-core">Public source</a> ·
-  <a href="https://gudlab.org">GudLab</a>
-</p>
-
-Star this repo if GudDesk is useful. Hosted cloud is [guddesk.com](https://guddesk.com). This is the public **AGPL-3.0** core (`package.json` name `guddesk`).
-
----
-
-## About
-
-GudDesk is an Intercom / Zendesk alternative without per-seat pricing. Self-host the AGPL core, or use cloud:
-
-| Cloud plan | Price | Notes |
+| Plan | Price | What you get |
 |---|---|---|
-| Free | $0 | 2 members, 500 conversations/month |
-| Pro | **$29/mo** flat | Unlimited seats, branding off |
-| Business | **~$99/mo** flat | Same no-per-seat rule; talk to us to enable |
+| Free | $0 | 2 members, 500 conversations a month |
+| Pro | $29 a month flat | Unlimited seats and conversations, no GudDesk branding |
 
-Self-host is uncapped. WhatsApp, SSO, and GudBot v1 are **not** in this release.
+Self-hosting has no plan limits.
+
+## What works today
+
+| Feature | GudDesk Cloud | Self-hosted |
+|---|---|---|
+| Chat widget (one script tag, with page rules) | Yes | Yes |
+| Verified identity for logged-in users (HMAC) | Yes | Yes |
+| Shared inbox with assignment and tags | Yes | Yes |
+| Email | Outbound via Resend; inbound receiving not live yet | Yes, with Resend inbound |
+| Live replies and typing indicators | Yes (Pusher) | With your Pusher keys. Without them, polling every 4 to 10 seconds |
+| Public help center | Yes | Yes |
+| GudBot (KB-grounded AI replies; default OFF) | Yes | Yes |
+| Intercom file importer | Yes | Yes |
+| Automation rules | Rules save, but don't run yet | Yes |
+| Agent API: your own bot replies as BOT | Yes | Yes |
+| REST API and webhooks | Yes | Yes |
+
+## Planned
+
+| Feature | Status |
+|---|---|
+| Docker image | Planned. Today you run from source |
+| WhatsApp and SSO | Not in this release |
+
+See [ROADMAP.md](ROADMAP.md) for the full list.
+
+<p align="center">
+  <a href="https://guddesk.com">
+    <img src="docs/assets/guddesk-tour.svg" alt="GudDesk product tour" width="800" />
+  </a>
+</p>
 
 Built by [GudLab](https://gudlab.org).
-
-### Key Features
-
-- **Live Chat Widget**: two-line snippet via `cdn.guddesk.com`
-- **Shared Inbox**: assignment and tagging. On hosted, new messages reach the inbox and the widget live over Pusher
-- **Knowledge Base**: collections, publish workflow, public help center
-- **AI assist (planned)**: reply suggestions and summaries, shipping with GudBot v1
-- **AI Agent Plugins**: external bots via REST + webhooks (`BOT` messages)
-- **Automation rules**: a rule builder for conversation events. Rules are saved but not run yet
-- **Self-Hosted**: your Postgres, your keys
 
 ## Install the widget (hosted)
 
@@ -63,8 +73,8 @@ Self-host: keep the same `appId` and load `https://your-domain/widget.js` instea
 | Language | [TypeScript](https://typescriptlang.org) |
 | Database | [PostgreSQL](https://postgresql.org) via [Prisma 7](https://prisma.io) |
 | Auth | [Auth.js v5](https://authjs.dev) |
-| Real-time | [Pusher](https://pusher.com) (on hosted; without Pusher keys the inbox and widget poll every few seconds) |
-| AI (planned) | [Anthropic Claude](https://anthropic.com) |
+| Real-time | [Pusher](https://pusher.com) (optional; the widget polls every 4 seconds without it) |
+| AI | Optional GudBot / [Anthropic](https://anthropic.com) (default OFF) |
 | Email | [Resend](https://resend.com) + [React Email](https://react.email) |
 | UI | [Tailwind CSS](https://tailwindcss.com), [Radix UI](https://radix-ui.com), [shadcn/ui](https://ui.shadcn.com) |
 | Widget | [Preact](https://preactjs.com) + [Vite](https://vitejs.dev) (Shadow DOM) |
@@ -73,7 +83,7 @@ Self-host: keep the same `appId` and load `https://your-domain/widget.js` instea
 
 ### Prerequisites
 
-- **Node.js 20.19+**
+- **Node.js 20.19+** (Prisma 7; 20.18 throws `ERR_REQUIRE_ESM` on `prisma generate`)
 - **pnpm**
 - **PostgreSQL** (e.g. [Neon](https://neon.tech) or local)
 
@@ -91,7 +101,7 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Fill `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`, and Google OAuth. Leave Pusher / Stripe / Anthropic empty until you need them. **Do not commit `.env*` files.**
+Fill `DATABASE_URL`, `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`, `RESEND_FROM` (a sender on a domain you have verified in Resend), and Google OAuth. Leave Pusher / Stripe / Anthropic empty until you need them. **Do not commit `.env*` files.**
 
 ### 3. Database + widget + dev
 

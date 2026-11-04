@@ -36,8 +36,14 @@ python3 - "$ROOT" "$WORKDIR/guddesk-core" << 'PY'
 import os, shutil, sys
 from pathlib import Path
 src, dst = Path(sys.argv[1]), Path(sys.argv[2])
-exclude_dirs = {".git", ".next", "node_modules", ".contentlayer", ".vercel"}
-exclude_files = {"docs/gudbot-v1.md", "vercel.md"}
+exclude_dirs = {".git", ".next", "node_modules", ".contentlayer", ".vercel", ".impeccable"}
+exclude_files = {
+    "docs/gudbot-v1.md",
+    "vercel.md",
+    "PRODUCT.md",
+    "DESIGN.md",
+    ".github/workflows/cron.yml",
+}
 src_files = set()
 for dirpath, dirnames, filenames in os.walk(src):
     dirnames[:] = [d for d in dirnames if d not in exclude_dirs]
@@ -68,7 +74,11 @@ rm -f "$WORKDIR/guddesk-core/.env" \
   "$WORKDIR/guddesk-core/.env.loc" \
   "$WORKDIR/guddesk-core/.env.production" \
   "$WORKDIR/guddesk-core/docs/gudbot-v1.md" \
-  "$WORKDIR/guddesk-core/vercel.md"
+  "$WORKDIR/guddesk-core/vercel.md" \
+  "$WORKDIR/guddesk-core/PRODUCT.md" \
+  "$WORKDIR/guddesk-core/DESIGN.md" \
+  "$WORKDIR/guddesk-core/.github/workflows/cron.yml"
+rm -rf "$WORKDIR/guddesk-core/.impeccable"
 
 # Public README: this tree is gudlab/guddesk-core, not the private SaaS copy.
 python3 - "$WORKDIR/guddesk-core/README.md" << 'PY'
