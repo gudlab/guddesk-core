@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { getAppUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { getWorkspaceBySlug, requireWorkspaceRole } from "@/lib/workspace";
@@ -48,19 +49,18 @@ export default async function IntegrationsPage({
         <section>
           <h2 className="mb-4 text-lg font-medium">Email (Reply-by-Email)</h2>
           <div className="rounded-lg border p-4">
-            <p className="text-sm text-muted-foreground">
-              Agents can reply to conversations directly from their email.
-              When a visitor sends a message, the assigned agent receives an
-              email notification. Replying to that email posts the response
-              back to the conversation.
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+              Agents can reply to conversations from their email. When a visitor
+              sends a chat message, the assigned agent gets an email
+              notification. Replying to that email posts the response back.
             </p>
-            <div className="mt-3 rounded bg-muted p-3 font-mono text-xs">
+            <div className="bg-muted mt-3 rounded p-3 font-mono text-sm">
               Inbound webhook endpoint:{" "}
-              <code>{process.env.NEXT_PUBLIC_APP_URL ?? "https://your-domain.com"}/api/email/inbound</code>
+              <code>{getAppUrl()}/api/email/inbound</code>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Configure this URL as a Resend inbound webhook to enable
-              reply-by-email.
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+              Use this URL for reply-by-email. Cloud inbound receiving (customer
+              mail into the inbox) is still being set up.
             </p>
           </div>
         </section>

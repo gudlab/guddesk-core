@@ -1,7 +1,8 @@
 import { SidebarNavItem, SiteConfig } from "types";
 import { env } from "@/env.mjs";
+import { getAppUrl } from "@/lib/app-url";
 
-const site_url = env.NEXT_PUBLIC_APP_URL;
+const site_url = getAppUrl();
 
 export const siteConfig: SiteConfig = {
   name: "GudDesk",

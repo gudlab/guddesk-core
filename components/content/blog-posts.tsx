@@ -9,6 +9,14 @@ export function BlogPosts({
     blurDataURL: string;
   })[];
 }) {
+  if (posts.length === 0) {
+    return (
+      <p className="text-neutral-600 dark:text-neutral-300">
+        No posts yet.
+      </p>
+    );
+  }
+
   return (
     <main className="space-y-8">
       <BlogCard data={posts[0]} horizontale priority />

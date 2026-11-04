@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
+
 import { useMessages } from "@/hooks/use-messages";
-import { MessageBubble } from "./message-bubble";
 import { Icons } from "@/components/shared/icons";
+
 import { LoadError } from "./load-error";
+import { MessageBubble } from "./message-bubble";
 
 interface MessageThreadProps {
   conversationId: string;
@@ -20,7 +22,8 @@ export function MessageThread({
   typingUser,
   onUnavailableChange,
 }: MessageThreadProps) {
-  const { messages, isLoading, loadError, unavailable, refetch } = useMessages(conversationId);
+  const { messages, isLoading, loadError, unavailable, refetch } =
+    useMessages(conversationId);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,7 +37,7 @@ export function MessageThread({
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <Icons.spinner className="size-5 animate-spin text-muted-foreground" />
+        <Icons.spinner className="size-5 animate-spin text-neutral-600 dark:text-neutral-300" />
       </div>
     );
   }
@@ -55,10 +58,8 @@ export function MessageThread({
       ))}
 
       {isAgentTyping && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="animate-pulse">
-            {typingUser ?? "Someone"} is typing...
-          </span>
+        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+          <span>{typingUser ?? "Someone"} is typing...</span>
         </div>
       )}
 

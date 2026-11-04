@@ -1,0 +1,128 @@
+[
+  {
+    "slug": "install-widget",
+    "title": "Install the chat widget",
+    "collectionSlug": "widget",
+    "excerpt": "Add the GudDesk messenger to any website with two snippets: settings first, then the async widget.js script.",
+    "body": "To install the GudDesk chat widget, paste two snippets before the closing </body> tag of every page where the messenger should appear.\n\nStep 1 — define your settings first:\n<script>window.GudDeskSettings = { appId: \"gd_pub_YOUR_APP_ID\" };</script>\n\nStep 2 — load the widget script asynchronously:\n<script async src=\"https://cdn.guddesk.com/widget.js\"></script>\n\nOrder matters: window.GudDeskSettings must be set BEFORE widget.js loads. The widget only initializes when it finds window.GudDeskSettings with a valid appId. Your public appId starts with gd_pub_ and is shown in Settings → Widget → Installation. The appId is public and safe to put in page HTML; never put API keys or your identity secret in the page.\n\nHTML-only install: a single tag with data attributes is not supported yet. You need the JavaScript settings object (window.GudDeskSettings) plus the script tag.\n\nWorks with any site or framework (plain HTML, React, Next.js, WordPress, Webflow) as long as both snippets run in the browser in that order."
+  },
+  {
+    "slug": "widget-not-showing",
+    "title": "Troubleshooting: the widget is not showing",
+    "collectionSlug": "widget",
+    "excerpt": "Checklist for when the GudDesk launcher does not appear on your site.",
+    "body": "If the chat launcher does not appear:\n\n1. Check the order: window.GudDeskSettings must be defined before cdn.guddesk.com/widget.js loads. If the script loads first, the widget will not initialize.\n2. Check the appId: it must be your workspace's public appId (starts with gd_pub_). A typo or an appId from another workspace will stop the widget loading.\n3. Check hideOnMobile: if hideOnMobile is true, the launcher is hidden on phones by design.\n4. Check that the script tag uses https://cdn.guddesk.com/widget.js and is not blocked by a Content Security Policy or an ad blocker.\n5. Open the browser console and look for GudDesk errors, then hard-refresh the page.\n\nIf the launcher still does not show after these checks, contact support with your page URL."
+  },
+  {
+    "slug": "customize-widget",
+    "title": "Customize the widget",
+    "collectionSlug": "widget",
+    "excerpt": "Change the accent color, position, greeting and visibility of the GudDesk messenger.",
+    "body": "You can customize the widget in Settings → Widget → Appearance, or with options in window.GudDeskSettings.\n\nSupported options:\n- accentColor: the accent color used for the launcher and buttons (for example \"#4F46E5\").\n- position: \"right\" (default) or \"left\" — which bottom corner the launcher sits in.\n- greeting: the welcome message visitors see when they open the messenger.\n- openOnLoad: true opens the messenger automatically when the page loads.\n- hideOnMobile: true hides the launcher on mobile devices.\n- showBranding: controls the \"Powered by GudDesk\" branding in the messenger.\n\nExample:\nwindow.GudDeskSettings = { appId: \"gd_pub_YOUR_APP_ID\", accentColor: \"#4F46E5\", position: \"left\", greeting: \"Hi! How can we help?\", openOnLoad: false, hideOnMobile: true, showBranding: true };"
+  },
+  {
+    "slug": "identify-users",
+    "title": "Identify logged-in users",
+    "collectionSlug": "widget",
+    "excerpt": "Use GudDesk.identify to attach your signed-in user's ID, name, email and metadata to conversations.",
+    "body": "When a visitor is signed in to your product, call GudDesk.identify so conversations are linked to the right person:\n\nGudDesk.identify({ userId: \"user_123\", name: \"Ada Lovelace\", email: \"ada@example.com\", metadata: { plan: \"pro\", company: \"Acme\" } });\n\n- userId: your stable internal user ID (required).\n- name and email: shown to your team in the inbox.\n- metadata: any extra key/value attributes you want to see next to the conversation.\n\nCall identify after login and after the widget has loaded. For production, turn on identity verification so nobody can impersonate a user by guessing their userId — see \"Identity verification (userHash)\"."
+  },
+  {
+    "slug": "identity-verification",
+    "title": "Identity verification (userHash)",
+    "collectionSlug": "widget",
+    "excerpt": "Prevent impersonation by signing each userId with HMAC-SHA256 on your server and passing it as userHash.",
+    "body": "Identity verification proves that an identify call really comes from your app and prevents impersonation of your users.\n\nHow it works:\n1. Copy the identity secret from Settings → Widget → Identity verification. Keep it on your server only — never in browser code.\n2. On your server, compute the userHash as HMAC-SHA256(identitySecret, userId), hex-encoded.\n3. Pass it to the widget: GudDesk.identify({ userId: \"user_123\", userHash: \"<hex digest>\", name, email }).\n\nNode.js example (server-side):\nconst userHash = crypto.createHmac(\"sha256\", identitySecret).update(userId).digest(\"hex\");\n\nError \"Invalid identity hash\": the userHash does not match the HMAC-SHA256 of the exact userId with your current identity secret. Common causes: hashing a different value than the userId you pass (for example email instead of ID), extra whitespace, using an old secret after rotating it, or computing the hash in the browser. Regenerate the hash server-side with the exact userId string."
+  },
+  {
+    "slug": "assign-and-close-conversations",
+    "title": "Assign and close conversations",
+    "collectionSlug": "inbox",
+    "excerpt": "Route conversations to teammates and close them when they are resolved.",
+    "body": "In the GudDesk inbox, open a conversation and use the Assign menu to assign it to yourself or a teammate. The assignee sees it in their \"Assigned to me\" view.\n\nWhen the issue is resolved, click Close. Closed conversations leave the open inbox.\n\nUse tags (see \"Snooze and tag conversations\") to group conversations by topic, and internal notes to discuss a conversation with your team."
+  },
+  {
+    "slug": "internal-notes",
+    "title": "Internal notes",
+    "collectionSlug": "inbox",
+    "excerpt": "Leave team-only notes on a conversation that customers never see.",
+    "body": "Internal notes let your team discuss a conversation privately. In the reply box switch from Reply to Note, write your note and send it.\n\nNotes are team-only: they are visible to teammates in the inbox and are never shown to the customer in the widget or in email. Notes are highlighted so they are easy to tell apart from replies.\n\nGudBot also writes an internal note when it hands a conversation over to your team, explaining the handoff reason."
+  },
+  {
+    "slug": "snooze-and-tag-conversations",
+    "title": "Snooze and tag conversations",
+    "collectionSlug": "inbox",
+    "excerpt": "Snooze a conversation until later and organize the inbox with tags.",
+    "body": "Snooze: open a conversation, click Snooze and pick when it should come back. The conversation is hidden from the open inbox and reopens automatically at the chosen time.\n\nTags: add one or more tags to a conversation (for example \"billing\" or \"bug\") from the conversation sidebar. Use tags to filter the inbox and to see which topics come up most."
+  },
+  {
+    "slug": "publish-help-articles",
+    "title": "Publish help center articles",
+    "collectionSlug": "knowledge-base",
+    "excerpt": "Write articles, group them in collections and publish them to your public help center.",
+    "body": "Your knowledge base is organized into collections (for example \"Billing\" or \"Getting started\").\n\nTo publish an article:\n1. Go to Knowledge base and create or choose a collection.\n2. Click New article, write a title and the article body.\n3. Click Publish.\n\nDraft articles are only visible to your team. Once published, the article appears in your public help center, in widget article search, and becomes a source that GudBot can use (when GudBot is enabled). Unpublish an article to remove it from the help center."
+  },
+  {
+    "slug": "widget-article-search",
+    "title": "Article search in the widget",
+    "collectionSlug": "knowledge-base",
+    "excerpt": "Visitors can search your published help articles directly inside the chat widget.",
+    "body": "Customers can search your knowledge base from inside the GudDesk widget. Widget article search returns published articles from your help center, so visitors can find answers without waiting for a reply.\n\nOnly published articles appear in widget search; drafts never do. Search results are limited to your own workspace's articles."
+  },
+  {
+    "slug": "help-center-branding",
+    "title": "Brand your help center",
+    "collectionSlug": "knowledge-base",
+    "excerpt": "Make the public help center match your brand.",
+    "body": "Your public help center supports custom branding. In Knowledge base → Help center settings you can set your branding (such as logo and brand color) so it matches your product.\n\nBranding applies to the public help center pages that list your collections and published articles."
+  },
+  {
+    "slug": "plans-and-pricing",
+    "title": "Plans and pricing (GudDesk Cloud)",
+    "collectionSlug": "billing",
+    "excerpt": "GudDesk Cloud has two plans: Free ($0) and Pro ($29/month).",
+    "body": "GudDesk Cloud (hosted at guddesk.com) has two plans:\n\n- Free — $0. Includes up to 2 team members and 500 conversations per month.\n- Pro — $29 per month. Removes the Free plan limits on members and conversations.\n\nThere are only two Cloud plans: Free and Pro. GudBot, the AI assistant, is optional and is off by default on every workspace.\n\nSelf-hosting the open-source edition does not require a Cloud plan."
+  },
+  {
+    "slug": "manage-billing",
+    "title": "Upgrade, manage or cancel your subscription",
+    "collectionSlug": "billing",
+    "excerpt": "Only the workspace owner can manage billing. Upgrades use Stripe Checkout; changes and cancellation use the Stripe customer portal.",
+    "body": "Billing can only be managed by the workspace owner. Admins and agents cannot see or change billing.\n\nUpgrade from Free to Pro: as the owner, go to Settings → Billing and click Upgrade to Pro. You are taken to Stripe Checkout to enter payment details. When checkout completes, your workspace is on Pro.\n\nManage or cancel: in Settings → Billing click Manage billing to open the Stripe customer portal. There you can update your card, download invoices or cancel Pro. After cancellation the workspace returns to the Free plan.\n\nIf you are not the owner, ask your workspace owner to make billing changes."
+  },
+  {
+    "slug": "open-source-and-self-hosting",
+    "title": "Open source and self-hosting",
+    "collectionSlug": "self-hosting",
+    "excerpt": "GudDesk is an open-source (AGPL) Intercom alternative. Use the hosted Cloud at guddesk.com or self-host it.",
+    "body": "GudDesk is an open-source Intercom alternative licensed under the AGPL (AGPL-3.0).\n\nYou can use it two ways:\n- GudDesk Cloud: hosted for you at guddesk.com, with Free and Pro plans.\n- Self-hosted: GudDesk is self-hostable — run it on your own infrastructure. Follow the self-hosting guide in the docs for requirements, environment variables and deployment steps.\n\nBecause the license is AGPL, if you modify GudDesk and offer it to users over a network, you must make your modified source available under the same license."
+  },
+  {
+    "slug": "quickstart",
+    "title": "Quickstart: set up GudDesk in minutes",
+    "collectionSlug": "getting-started",
+    "excerpt": "Create a workspace, install the widget, publish your first articles and invite your team.",
+    "body": "1. Sign up at guddesk.com and create a workspace (the Free plan is $0).\n2. Install the widget: set window.GudDeskSettings = { appId: \"gd_pub_…\" } and then load https://cdn.guddesk.com/widget.js with async.\n3. Publish a few help articles in a knowledge base collection so visitors can search them.\n4. Invite a teammate (Free includes 2 members).\n5. Answer conversations from the inbox.\nOptional: enable GudBot in AI settings once your knowledge base has articles. GudBot is off by default."
+  },
+  {
+    "slug": "api-authentication",
+    "title": "REST API authentication",
+    "collectionSlug": "api",
+    "excerpt": "Authenticate REST API requests with your API key as a Bearer token or in the x-api-key header.",
+    "body": "The GudDesk REST API uses API keys. Create a key in Settings → API keys; keys start with gd_.\n\nSend the key on every request in one of two ways:\n- Authorization header: Authorization: Bearer gd_YOUR_KEY\n- x-api-key header: x-api-key: gd_YOUR_KEY\n\nKeep API keys secret and server-side. Never embed them in widget code or public pages — the public appId (gd_pub_…) is the only value meant for the browser. Revoke a key in Settings → API keys if it leaks."
+  },
+  {
+    "slug": "mcp-server",
+    "title": "Connect AI agents with the MCP server",
+    "collectionSlug": "api",
+    "excerpt": "GudDesk exposes an MCP endpoint at POST /api/mcp, authenticated with a gd_ API key.",
+    "body": "GudDesk includes a Model Context Protocol (MCP) server so AI agents and tools (for example Claude or Cursor) can work with your workspace.\n\nEndpoint: POST /api/mcp on your GudDesk host (for example https://www.guddesk.com/api/mcp).\nAuthentication: your gd_ API key as a Bearer token (Authorization: Bearer gd_YOUR_KEY).\n\nThe MCP server speaks JSON-RPC and exposes tools such as listing conversations. Use it to connect your own AI agent to read conversations and help your team. Treat the gd_ key like a password."
+  },
+  {
+    "slug": "gudbot-overview",
+    "title": "GudBot: AI answers from your knowledge base",
+    "collectionSlug": "agents",
+    "excerpt": "GudBot is an optional AI assistant, off by default, that answers visitors using only your published articles and cites its sources.",
+    "body": "GudBot is GudDesk's optional AI assistant. It is OFF by default; turn it on in your workspace's AI settings.\n\nWhen enabled, GudBot answers visitor questions in the widget using only your published knowledge base articles. Each answer includes Sources — links to the articles it used — so visitors can read more.\n\nHandoff to your team: when GudBot has low confidence or finds no matching knowledge base articles, it does not guess. It hands the conversation off to a human: the visitor sees a system message saying a teammate will follow up, and your team gets an internal note in the inbox with the reason (the note is not shown in the widget). Handoff reasons include low_confidence, max_turns, explicit (the visitor asked for a human) and no_evidence (\"no matching knowledge base articles\").\n\nAfter a handoff, GudBot stops replying in that conversation so your team can take over.\n\nSettings: you can set a confidence threshold and a maximum number of GudBot turns per conversation. Publish good articles first — GudBot is only as good as your knowledge base."
+  }
+]

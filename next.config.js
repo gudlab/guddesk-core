@@ -1,9 +1,10 @@
 const { withContentlayer } = require("next-contentlayer2");
-const { apexWwwRedirects } = require("./config/apex-www-redirect.cjs");
+
 const {
   securityHeaders,
   helpRedirects,
 } = require("./config/security-headers.cjs");
+const { apiHostRedirects, cdnHostRedirects } = require("./config/api-host.cjs");
 
 import("./env.mjs");
 
@@ -11,11 +12,12 @@ import("./env.mjs");
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  async redirects() {
-    return [...apexWwwRedirects(), ...helpRedirects()];
-  },
   async headers() {
     return securityHeaders();
+  },
+  async redirects() {
+    // The api and cdn host rules come first, so they win on those hosts.
+    return [...apiHostRedirects(), ...cdnHostRedirects(), ...helpRedirects()];
   },
   images: {
     remotePatterns: [

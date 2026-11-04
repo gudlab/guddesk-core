@@ -4,10 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { UserAuthForm } from "@/components/forms/user-auth-form";
+import { canonicalUrl } from "@/lib/canonical";
 
 export const metadata: Metadata = {
   title: "Sign Up | GudDesk",
   description: "Create your GudDesk account",
+  alternates: { canonical: canonicalUrl("/register") },
 };
 
 export default function RegisterPage() {

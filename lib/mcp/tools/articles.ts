@@ -16,7 +16,7 @@ function json(data: unknown) {
 // ---------------------------------------------------------------------------
 
 export function registerArticleTools(server: McpServer, auth: McpAuthContext) {
-  // ── list_articles ─────────────────────────────────────────────────────────
+  // ── list_articles ───────────────────────────────────────────────────────
   server.registerTool(
     "list_articles",
     {
@@ -74,7 +74,7 @@ export function registerArticleTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── get_article ───────────────────────────────────────────────────────────
+  // ── get_article ─────────────────────────────────────────────────────────
   server.registerTool(
     "get_article",
     {
@@ -118,7 +118,7 @@ export function registerArticleTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── search_articles ───────────────────────────────────────────────────────
+  // ── search_articles ─────────────────────────────────────────────────────
   server.registerTool(
     "search_articles",
     {

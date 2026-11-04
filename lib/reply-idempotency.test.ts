@@ -451,7 +451,10 @@ describe("reply idempotency wiring", () => {
 
   it("the email step gives Resend an idempotency key per message", () => {
     assert.match(read("lib", "channels", "email", "provider.ts"), /idempotencyKey: `email-channel-reply\/\$\{message\.id\}`/);
-    assert.match(read("lib", "email", "send.ts"), /\.emails\.send\(email, options\.idempotencyKey \? \{ idempotencyKey: options\.idempotencyKey \} : undefined\)/);
+    assert.match(
+      read("lib", "outbound-email.ts"),
+      /\.emails\.send\(\s*email,\s*options\.idempotencyKey \? \{ idempotencyKey: options\.idempotencyKey \} : undefined,\s*\)/,
+    );
   });
 
   it("the client catches a failed submit, keeps the key in shared storage, and Retry email reuses its key", () => {

@@ -1,21 +1,10 @@
 import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 
-import { isOpen, config, configLoaded, conversationId, messages, showOfflineForm, restoreState, visitorId } from "./stores/state";
-import { initClient, fetchConfig, fetchMessages, identify } from "./api/client";
+import { isOpen, config, configLoaded, conversationId, messages, showOfflineForm, restoreState } from "./stores/state";
+import { initClient, fetchConfig, fetchMessages } from "./api/client";
 import { shouldShowWidget } from "./utils/page-match";
-import { initPusher, subscribeToConversation, disconnect, isConnected } from "./api/pusher";
-import {
-  applySnippetAppearance,
-  shouldHideOnMobile,
-  type WidgetSnippetSettings,
-} from "./utils/snippet-settings";
-import { safeCssColor } from "./utils/css-color";
-import {
-  browserIdentifyStorage,
-  rememberIdentify,
-  shouldSendIdentify,
-} from "./utils/identify-cache";
+import { initPusher, subscribeToConversation, disconnect, isConnected, onReconnect } from "./api/pusher";
 import { getStyles } from "./utils/styles";
 import { ChatWindow } from "./components/chat-window";
 import { ChatBubble } from "./components/chat-bubble";
@@ -25,19 +14,12 @@ interface WidgetAppProps {
   baseUrl: string;
   pusherKey?: string;
   pusherCluster?: string;
-  snippet?: WidgetSnippetSettings;
 }
 
 // Polling interval when Pusher is not available (4 seconds)
 const POLL_INTERVAL = 4000;
 
-export function WidgetApp({
-  appId,
-  baseUrl,
-  pusherKey,
-  pusherCluster,
-  snippet = {},
-}: WidgetAppProps) {
+export function WidgetApp({ appId, baseUrl, pusherKey, pusherCluster }: WidgetAppProps) {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pusherInitRef = useRef(false);
   const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,6 +53,12 @@ export function WidgetApp({
       if (conversationId.value) {
         subscribeToConversation();
       }
+      // Resync messages whenever we recover from a connection drop.
+      onReconnect(() => {
+        if (conversationId.value) {
+          fetchMessages().catch(() => {});
+        }
+      });
       // Pusher connected — stop polling if active
       stopPolling();
     } catch {
@@ -88,45 +76,15 @@ export function WidgetApp({
     // (POST /api/widget/conversations) or by identify(), not on every page
     // view. A restored token from localStorage is still used as before.
     fetchConfig().catch(() => {}).then(() => {
-      const appearance = applySnippetAppearance(config.value, snippet);
-      config.value = { ...config.value, ...appearance };
-
       // Check if widget should be hidden on this page
       const visible = shouldShowWidget(
         window.location.pathname,
         config.value.pageVisibilityMode,
         config.value.pageVisibilityPatterns,
       );
-      if (!visible || shouldHideOnMobile(snippet.hideOnMobile, window.innerWidth)) {
+      if (!visible) {
         isHidden.value = true;
         return;
-      }
-
-      if (snippet.openOnLoad) {
-        isOpen.value = true;
-      }
-
-      // Only identify when the snippet identity changed since the last
-      // identify for this appId and visitor. Each identify adds a timeline
-      // event on the server, so do not repeat it on every page load.
-      if (snippet.name || snippet.email) {
-        const storage = browserIdentifyStorage();
-        const identity = { name: snippet.name, email: snippet.email };
-        if (
-          shouldSendIdentify(storage, appId, {
-            ...identity,
-            visitorId: visitorId.value,
-          })
-        ) {
-          identify(identity)
-            .then(() => {
-              rememberIdentify(storage, appId, {
-                ...identity,
-                visitorId: visitorId.value,
-              });
-            })
-            .catch(() => {});
-        }
       }
 
       // If we have a restored conversation, fetch its messages
@@ -224,7 +182,7 @@ export function WidgetApp({
 
   return (
     <>
-      <style>{getStyles(safeCssColor(config.value.primaryColor), config.value.position)}</style>
+      <style>{getStyles(config.value.primaryColor, config.value.position)}</style>
       <div class="fc-container">
         {isOpen.value && <ChatWindow />}
         <ChatBubble />

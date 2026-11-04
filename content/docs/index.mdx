@@ -9,11 +9,11 @@ GudDesk gives you live chat, a shared inbox, a knowledge base, an agent API and 
 
 ## What You Can Do
 
-- **Talk to customers** with an embeddable chat widget, in real time when you add Pusher keys
+- **Talk to customers** with an embeddable chat widget. Replies show up in the open widget within seconds
 - **Manage all conversations** from a unified shared inbox (chat, email, bots)
-- **Connect your own AI agent** to reply as BOT through the API
+- **Connect your own AI agent** through the API so it can reply as BOT
 - **Build a knowledge base** so customers can help themselves
-- **Set SLA policies** with first-response and resolution deadlines, and automation rules that assign, tag, reply or close conversations
+- **Set SLA policies** with first-response and resolution deadlines. Automation rules can be saved but don't run yet
 - **Extend GudDesk** with the REST API and webhooks. AI assistants can connect through the MCP server
 
 ## Quick Links
@@ -45,7 +45,7 @@ GudDesk is built with modern, battle-tested technologies:
 - **PostgreSQL**: Primary database (via Prisma ORM)
 - **Auth.js**: Authentication with Google OAuth and magic links
 - **Resend**: Transactional email delivery
-- **Pusher**: optional real-time messaging for live chat. Without it the widget polls every 4 seconds
+- **Pusher**: real-time messaging for live chat. GudDesk Cloud uses it. Without Pusher keys, the widget polls for replies every 4 seconds
 - **Tailwind CSS**: Utility-first styling
 - **Shadcn/ui**: Accessible component library
 

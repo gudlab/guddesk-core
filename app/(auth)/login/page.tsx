@@ -4,13 +4,27 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { UserAuthForm } from "@/components/forms/user-auth-form";
+import { canonicalUrl } from "@/lib/canonical";
+import { loginErrorMessage } from "@/lib/magic-link";
+import { isEmailSendingAllowed } from "@/lib/outbound-email";
 
 export const metadata: Metadata = {
   title: "Login | GudDesk",
   description: "Sign in to your GudDesk account",
+  alternates: { canonical: canonicalUrl("/login") },
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string | string[] }>;
+}) {
+  const { error } = await searchParams;
+  const errorMessage = loginErrorMessage(
+    Array.isArray(error) ? error[0] : error,
+    isEmailSendingAllowed(),
+  );
+
   return (
     <section className="py-16 sm:py-20">
       <div className="mx-auto flex w-full max-w-md flex-col items-center px-4">
@@ -29,6 +43,15 @@ export default function LoginPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           Sign in to your GudDesk account
         </p>
+
+        {errorMessage && (
+          <p
+            role="alert"
+            className="mt-6 w-full rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100"
+          >
+            {errorMessage}
+          </p>
+        )}
 
         {/* Form */}
         <div className="mt-8 w-full">

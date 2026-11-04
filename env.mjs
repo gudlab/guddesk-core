@@ -1,17 +1,7 @@
 import { createEnv } from "@t3-oss/env-nextjs"
 import { z } from "zod"
 
-// SKIP_ENV_VALIDATION=1 exists only for the MCP stdio server in
-// bin/guddesk-mcp.ts, which runs outside Next.js and needs only DATABASE_URL.
-// It is ignored on Vercel and whenever NODE_ENV is production, so a hosted or
-// production app always validates its env.
-const skipValidation =
-  process.env.SKIP_ENV_VALIDATION === "1" &&
-  !process.env.VERCEL &&
-  process.env.NODE_ENV !== "production"
-
 export const env = createEnv({
-  skipValidation,
   server: {
     // This is optional because it's only used in development.
     // See https://next-auth.js.org/deployment.
@@ -21,7 +11,8 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     DATABASE_URL: z.string().min(1),
     RESEND_API_KEY: z.string().min(1),
-    // Sender for every app email. Self-hosters must set it (see .env.example).
+    // Sender for app email, "Name <address>" (lib/email/from.ts).
+    // Default: GudDesk <notifications@guddesk.com>.
     RESEND_FROM: z.string().optional(),
     // Signing secret (whsec_...) of the Resend inbound webhook. Optional,
     // but /api/email/inbound refuses every request without it.

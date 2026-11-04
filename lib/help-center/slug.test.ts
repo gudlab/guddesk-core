@@ -9,17 +9,14 @@ import {
   nextStoredSlug,
   normalizeSlug,
   pickBySlugPreference,
-  slugify,
   slugLookupCandidates,
+  slugify,
   uniqueSlug,
 } from "./slug";
 
 describe("normalizeSlug", () => {
   it("lowercases, strips accents, and collapses punctuation to single hyphens", () => {
-    assert.equal(
-      normalizeSlug("Cómo resetear  la contraseña!"),
-      "como-resetear-la-contrasena",
-    );
+    assert.equal(normalizeSlug("Cómo resetear  la contraseña!"), "como-resetear-la-contrasena");
     assert.equal(normalizeSlug("Hello--World__API"), "hello-world-api");
     assert.equal(normalizeSlug("  /Billing & invoices/  "), "billing-invoices");
   });
@@ -69,17 +66,11 @@ describe("slugLookupCandidates", () => {
 
 describe("nextStoredSlug", () => {
   it("leaves an existing published slug unchanged when the editor resubmits it", () => {
-    assert.equal(
-      nextStoredSlug("hello--world", "hello--world", 200),
-      "hello--world",
-    );
+    assert.equal(nextStoredSlug("hello--world", "hello--world", 200), "hello--world");
   });
 
   it("normalizes only when the slug actually changes", () => {
-    assert.equal(
-      nextStoredSlug("Hello World", "hello--world", 200),
-      "hello-world",
-    );
+    assert.equal(nextStoredSlug("Hello World", "hello--world", 200), "hello-world");
   });
 });
 
@@ -88,10 +79,7 @@ describe("uniqueSlug", () => {
     const taken = async (slug: string) => slug === "billing";
     assert.equal(await uniqueSlug("docs", taken), "docs");
     assert.equal(await uniqueSlug("billing", taken), "billing-2");
-    assert.equal(
-      await uniqueSlug("search", taken, new Set(["search"])),
-      "search-2",
-    );
+    assert.equal(await uniqueSlug("search", taken, new Set(["search"])), "search-2");
   });
 });
 

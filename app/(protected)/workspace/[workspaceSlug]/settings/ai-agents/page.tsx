@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 
-import { getCurrentUser } from "@/lib/session";
-import { getWorkspaceBySlug, requireWorkspaceRole } from "@/lib/workspace";
-import { constructMetadata } from "@/lib/utils";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/session";
+import { constructMetadata } from "@/lib/utils";
+import { getWorkspaceBySlug, requireWorkspaceRole } from "@/lib/workspace";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { AgentSettings } from "@/components/settings/agent-settings";
 import { GudBotSettingsForm } from "@/components/settings/gudbot-settings";
@@ -70,7 +70,7 @@ export default async function AIAgentsPage({
     <>
       <DashboardHeader
         heading="AI"
-        text="GudBot answers from your knowledge base. Installed agents receive events and act through the API."
+        text="GudBot answers from your knowledge base. Installed agents use the API."
       />
 
       <div className="space-y-8">
@@ -82,9 +82,9 @@ export default async function AIAgentsPage({
         <div className="space-y-4">
           <div>
             <h2 className="text-lg font-semibold">Installed agents</h2>
-            <p className="text-sm text-muted-foreground">
-              External services that receive events and automate conversations via
-              the API.
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+              External services that receive events and automate conversations
+              via the API.
             </p>
           </div>
           <AgentSettings workspaceId={workspace.id} agents={agents} />

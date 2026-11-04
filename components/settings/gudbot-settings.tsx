@@ -1,10 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { updateGudBotSettings } from "@/actions/update-gudbot-settings";
 import { toast } from "sonner";
 
-import { updateGudBotSettings } from "@/actions/update-gudbot-settings";
-import { Icons } from "@/components/shared/icons";
+import {
+  DEFAULT_CONFIDENCE_THRESHOLD,
+  DEFAULT_HANDOFF_MESSAGE,
+  DEFAULT_MAX_TURNS,
+  MAX_CONFIDENCE_THRESHOLD,
+  MAX_MAX_TURNS,
+  MIN_CONFIDENCE_THRESHOLD,
+  MIN_MAX_TURNS,
+} from "@/lib/gudbot/settings";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,15 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  DEFAULT_CONFIDENCE_THRESHOLD,
-  DEFAULT_HANDOFF_MESSAGE,
-  DEFAULT_MAX_TURNS,
-  MAX_CONFIDENCE_THRESHOLD,
-  MAX_MAX_TURNS,
-  MIN_CONFIDENCE_THRESHOLD,
-  MIN_MAX_TURNS,
-} from "@/lib/gudbot/settings";
+import { Icons } from "@/components/shared/icons";
 
 export interface GudBotSettingsValues {
   enabled: boolean;
@@ -79,9 +79,8 @@ export function GudBotSettingsForm({
           <div>
             <CardTitle className="text-base">GudBot</CardTitle>
             <CardDescription>
-              Answer widget questions from published knowledge base articles.
-              Off by default. Below the confidence threshold, GudBot hands the
-              conversation to your team with a suggested reply.
+              Off by default. Answers visitors from published help articles,
+              then hands off with a suggested reply.
             </CardDescription>
           </div>
           <Switch
@@ -93,10 +92,13 @@ export function GudBotSettingsForm({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        <p className="max-w-prose text-sm text-neutral-600 dark:text-neutral-300">
+          Pro inbox reply suggestions are separate from this toggle.
+        </p>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="gudbot-threshold">Confidence threshold</Label>
-            <span className="text-sm tabular-nums text-muted-foreground">
+            <span className="text-sm text-neutral-600 tabular-nums dark:text-neutral-300">
               {confidenceThreshold.toFixed(2)}
             </span>
           </div>
@@ -111,7 +113,7 @@ export function GudBotSettingsForm({
             }
             disabled={!enabled}
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-neutral-600 dark:text-neutral-300">
             Replies below this score are not shown to the visitor. Range{" "}
             {MIN_CONFIDENCE_THRESHOLD.toFixed(2)} to{" "}
             {MAX_CONFIDENCE_THRESHOLD.toFixed(2)}. Default{" "}
@@ -122,7 +124,7 @@ export function GudBotSettingsForm({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="gudbot-max-turns">Max turns</Label>
-            <span className="text-sm tabular-nums text-muted-foreground">
+            <span className="text-sm text-neutral-600 tabular-nums dark:text-neutral-300">
               {maxTurns}
             </span>
           </div>
@@ -137,7 +139,7 @@ export function GudBotSettingsForm({
             }
             disabled={!enabled}
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-neutral-600 dark:text-neutral-300">
             Hand off after this many GudBot replies. Range {MIN_MAX_TURNS} to{" "}
             {MAX_MAX_TURNS}. Default {DEFAULT_MAX_TURNS}.
           </p>
@@ -152,7 +154,7 @@ export function GudBotSettingsForm({
             disabled={!enabled}
             maxLength={500}
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-neutral-600 dark:text-neutral-300">
             Shown to the visitor when GudBot passes the conversation to a human.
           </p>
         </div>

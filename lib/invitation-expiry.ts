@@ -1,17 +1,18 @@
 /**
  * How the members page shows when a pending invitation expires.
  *
- * It used to print expiresAt.toLocaleDateString() with no locale
- * or time zone. On an en-US server such as Vercel's, a 7-day invite sent on
- * 25 Oct 2026 shows "Expires 11/1/2026", which a UK reader takes as
+ * It used to print new Date(expiresAt).toLocaleDateString() with no locale
+ * or time zone. On Vercel (and in an en-US browser) a 7-day invite sent on
+ * 25 Oct 2026 showed "Expires 11/1/2026", which a UK reader takes as
  * 11 January 2026, a date before the invite was even sent, while the email
- * says "expires in 7 days". The text also changed with the server locale.
+ * says "expires in 7 days". The text also changed with the server and
+ * browser locale.
  *
  * Now the label is relative ("Expires in 7 days"), matching the email, and
  * the exact time is spelled out with a month name in UTC
  * ("1 Nov 2026, 23:03 UTC"). Both are plain functions of the stored
  * expiresAt and the current time, with no locale or time zone lookups, so
- * the text is the same on every server.
+ * the server render and the browser agree.
  */
 
 const MINUTE_MS = 60 * 1000;

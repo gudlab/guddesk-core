@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Member {
@@ -41,7 +42,7 @@ export function MentionPicker({ members, onSelect, onClose }: Props) {
   return (
     <div
       ref={ref}
-      className="absolute bottom-full left-0 z-10 mb-1 max-h-[200px] w-[220px] overflow-y-auto rounded-md border bg-popover p-1 shadow-md"
+      className="bg-popover absolute bottom-full left-0 z-10 mb-1 max-h-[200px] w-[220px] overflow-y-auto rounded-md border p-1 shadow-md"
     >
       {members.slice(0, 10).map((member) => {
         const name = member.user.name ?? "Unknown";
@@ -49,12 +50,12 @@ export function MentionPicker({ members, onSelect, onClose }: Props) {
         return (
           <button
             key={member.id}
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+            className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
             onClick={() => onSelect(member)}
           >
             <Avatar className="size-5">
               {member.user.image && <AvatarImage src={member.user.image} />}
-              <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
             </Avatar>
             <span className="truncate">{name}</span>
           </button>

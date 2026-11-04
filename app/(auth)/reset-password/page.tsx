@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ResetPasswordForm } from "@/components/forms/reset-password-form";
 
 export const metadata: Metadata = {
-  title: "Reset Password – GudDesk",
+  title: "Reset Password | GudDesk",
   description: "Set a new password for your GudDesk account",
 };
 

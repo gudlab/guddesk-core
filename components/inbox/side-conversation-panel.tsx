@@ -1,20 +1,24 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
-import { toast } from "sonner";
-
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
+  closeSideConversation,
   createSideConversation,
   sendSideMessage,
-  closeSideConversation,
 } from "@/actions/manage-side-conversation";
-import { useSideConversations, type SideConversationItem } from "@/hooks/use-side-conversations";
+import { toast } from "sonner";
+
+import { callAction } from "@/lib/network";
+import {
+  useSideConversations,
+  type SideConversationItem,
+} from "@/hooks/use-side-conversations";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Icons } from "@/components/shared/icons";
-import { callAction } from "@/lib/network";
+
 import { LoadError } from "./load-error";
 
 interface Member {
@@ -31,8 +35,14 @@ interface Props {
   onClose?: () => void;
 }
 
-export function SideConversationPanel({ conversationId, members, currentUserId, onClose }: Props) {
-  const { sideConversations, isLoading, loadError, refetch } = useSideConversations(conversationId);
+export function SideConversationPanel({
+  conversationId,
+  members,
+  currentUserId,
+  onClose,
+}: Props) {
+  const { sideConversations, isLoading, loadError, refetch } =
+    useSideConversations(conversationId);
   const [selectedThread, setSelectedThread] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -52,20 +62,23 @@ export function SideConversationPanel({ conversationId, members, currentUserId, 
   return (
     <div className="flex h-full w-[300px] shrink-0 flex-col border-l">
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <h4 className="text-xs font-semibold uppercase text-muted-foreground">
-          Side Conversations
-        </h4>
+        <h2 className="text-sm font-semibold">Side conversations</h2>
         <div className="flex items-center gap-1">
           <Button
             size="sm"
             variant="ghost"
-            className="h-6 px-2 text-xs"
+            className="h-7 px-2 text-sm"
             onClick={() => setShowCreate(true)}
           >
             + New
           </Button>
           {onClose && (
-            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={onClose}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+              onClick={onClose}
+            >
               <Icons.close className="size-3" />
             </Button>
           )}
@@ -83,36 +96,45 @@ export function SideConversationPanel({ conversationId, members, currentUserId, 
 
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
-          <p className="p-4 text-center text-xs text-muted-foreground">Loading...</p>
+          <p className="p-4 text-center text-sm text-neutral-600 dark:text-neutral-300">
+            Loading...
+          </p>
         )}
         {!isLoading && loadError && (
-          <LoadError what="side conversations" onRetry={refetch} compact={sideConversations.length > 0} />
+          <LoadError
+            what="side conversations"
+            onRetry={refetch}
+            compact={sideConversations.length > 0}
+          />
         )}
         {!isLoading && !loadError && sideConversations.length === 0 && (
-          <p className="p-4 text-center text-xs text-muted-foreground">
+          <p className="p-4 text-center text-sm text-neutral-600 dark:text-neutral-300">
             No side conversations yet
           </p>
         )}
         {sideConversations.map((sc) => (
           <button
             key={sc.id}
-            className="flex w-full items-center gap-2 border-b px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
+            className="hover:bg-muted/50 flex w-full items-center gap-2 border-b px-4 py-2.5 text-left transition-colors"
             onClick={() => setSelectedThread(sc.id)}
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="truncate text-sm font-medium">{sc.subject}</span>
+                <span className="truncate text-sm font-medium">
+                  {sc.subject}
+                </span>
                 {sc.status === "CLOSED" && (
-                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                  <Badge variant="secondary" className="px-1.5 py-0 text-xs">
                     Closed
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {sc.messages.length} message{sc.messages.length !== 1 ? "s" : ""}
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                {sc.messages.length} message
+                {sc.messages.length !== 1 ? "s" : ""}
               </p>
             </div>
-            <Icons.chevronRight className="size-4 text-muted-foreground" />
+            <Icons.chevronRight className="size-4 text-neutral-600 dark:text-neutral-300" />
           </button>
         ))}
       </div>
@@ -159,19 +181,30 @@ function CreateForm({
   }
 
   return (
-    <form onSubmit={handleCreate} className="border-b p-3 space-y-2">
+    <form onSubmit={handleCreate} className="space-y-2 border-b p-3">
       <Input
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
         placeholder="Thread subject..."
-        className="h-8 text-xs"
+        className="h-8 text-sm"
         autoFocus
       />
       <div className="flex gap-1">
-        <Button type="submit" size="sm" className="text-xs" disabled={!subject.trim() || isPending}>
+        <Button
+          type="submit"
+          size="sm"
+          className="text-sm"
+          disabled={!subject.trim() || isPending}
+        >
           Create
         </Button>
-        <Button type="button" size="sm" variant="ghost" className="text-xs" onClick={onClose}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="text-sm"
+          onClick={onClose}
+        >
           Cancel
         </Button>
       </div>
@@ -205,7 +238,10 @@ function ThreadView({
     if (!trimmed) return;
 
     startTransition(async () => {
-      const result = await callAction(() => sendSideMessage(thread.id, trimmed), toast.error);
+      const result = await callAction(
+        () => sendSideMessage(thread.id, trimmed),
+        toast.error,
+      );
       if (!result) return;
       if (result.status === "error") {
         toast.error(result.message);
@@ -217,7 +253,10 @@ function ThreadView({
 
   function handleClose() {
     startTransition(async () => {
-      const result = await callAction(() => closeSideConversation(thread.id), toast.error);
+      const result = await callAction(
+        () => closeSideConversation(thread.id),
+        toast.error,
+      );
       if (result?.status === "error") toast.error(result.message);
     });
   }
@@ -226,14 +265,22 @@ function ThreadView({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 border-b px-3 py-2">
-        <button onClick={onBack} className="text-muted-foreground hover:text-foreground">
+        <button
+          onClick={onBack}
+          className="hover:text-foreground text-neutral-600 dark:text-neutral-300"
+        >
           <Icons.arrowLeft className="size-4" />
         </button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{thread.subject}</p>
         </div>
         {thread.status === "OPEN" && (
-          <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={handleClose}>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-sm"
+            onClick={handleClose}
+          >
             Close
           </Button>
         )}
@@ -248,7 +295,7 @@ function ThreadView({
           return (
             <div key={msg.id} className="flex gap-2">
               <Avatar className="size-6 shrink-0">
-                <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
               </Avatar>
               <div>
                 <span className="text-xs font-medium">{name}</span>
@@ -265,7 +312,7 @@ function ThreadView({
         <div className="border-t p-2">
           <div className="flex gap-1">
             <input
-              className="flex-1 rounded-md border bg-transparent px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ring"
+              className="focus:ring-ring flex-1 rounded-md border bg-transparent px-2 py-1 text-sm outline-none focus:ring-1"
               placeholder="Reply..."
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -276,7 +323,12 @@ function ThreadView({
                 }
               }}
             />
-            <Button size="sm" className="h-7 px-2" onClick={handleSend} disabled={!body.trim() || isPending}>
+            <Button
+              size="sm"
+              className="h-7 px-2"
+              onClick={handleSend}
+              disabled={!body.trim() || isPending}
+            >
               Send
             </Button>
           </div>

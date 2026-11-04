@@ -27,6 +27,7 @@ export default async function SegmentsPage({
     orderBy: { createdAt: "desc" },
   });
 
+  // Count customers for each segment
   const segmentsWithCounts = await Promise.all(
     segments.map(async (segment) => {
       const conditions = (segment.conditions as unknown as SegmentCondition[]) || [];
@@ -38,6 +39,7 @@ export default async function SegmentsPage({
     }),
   );
 
+  // Fetch custom fields for condition builder field options
   const customFields = await prisma.customField.findMany({
     where: { workspaceId: workspace.id, entityType: "customer" },
     orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],

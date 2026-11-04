@@ -42,14 +42,14 @@ export function NavMobile() {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "fixed right-2 top-2.5 z-50 rounded-full p-2 transition-colors duration-200 hover:bg-muted focus:outline-none active:bg-muted md:hidden",
+          "fixed right-2 top-2.5 z-50 rounded-full p-2 text-foreground transition-colors duration-200 hover:bg-muted focus:outline-none active:bg-muted md:hidden",
           open && "hover:bg-muted active:bg-muted",
         )}
       >
         {open ? (
-          <X className="size-5 text-muted-foreground" />
+          <X className="size-5" />
         ) : (
-          <Menu className="size-5 text-muted-foreground" />
+          <Menu className="size-5" />
         )}
       </button>
 
@@ -74,6 +74,18 @@ export function NavMobile() {
 
           {session ? (
             <>
+              {session.user.role === "ADMIN" ? (
+                <li className="py-3">
+                  <Link
+                    href="/admin"
+                    onClick={() => setOpen(false)}
+                    className="flex w-full font-medium capitalize"
+                  >
+                    Admin
+                  </Link>
+                </li>
+              ) : null}
+
               <li className="py-3">
                 <Link
                   href="/dashboard"

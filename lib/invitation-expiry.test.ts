@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-// actions/invite-workspace-member.ts stores expiresAt = now + 7 days.
-const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+import { INVITATION_TTL_MS } from "./invitations";
 import { invitationExpiryLabel, invitationExpiryTitle } from "./invitation-expiry";
 
 // The prod invite from the 450ffa2 smoke: sent 25 Oct 2026 23:03:47 UTC,
@@ -18,7 +17,7 @@ describe("invitation expiry display", () => {
   });
 
   it("repro: the old toLocaleDateString() text reads as a past date day-first", () => {
-    // The members page rendered new Date(expiresAt).toLocaleDateString()
+    // pending-invitations.tsx rendered new Date(expiresAt).toLocaleDateString()
     // with no locale. Vercel's runtime (and an en-US browser) gives M/D/YYYY.
     const old = EXPIRES.toLocaleDateString("en-US", { timeZone: "UTC" });
     assert.equal(old, "11/1/2026");
@@ -71,7 +70,7 @@ describe("invitation expiry display", () => {
     }
   });
 
-  it("accepts an ISO string as well as a Date", () => {
+  it("accepts the ISO string the members page passes to the client", () => {
     assert.equal(invitationExpiryLabel(EXPIRES.toISOString(), CREATED), "Expires in 7 days");
     assert.equal(invitationExpiryTitle(EXPIRES.toISOString()), "1 Nov 2026, 23:03 UTC");
   });

@@ -55,6 +55,14 @@ export async function callClaude(opts: {
   const anthropic = getAnthropicClient();
   if (!anthropic) return null;
 
+  // Check workspace plan
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: opts.workspaceId },
+    select: { plan: true },
+  });
+
+  if (!workspace || workspace.plan !== "PRO") return null;
+
   try {
     const response = await anthropic.messages.create({
       model: DEFAULT_MODEL,
@@ -102,6 +110,7 @@ export async function callClaudeWithTools(opts: {
     const response = await anthropic.messages.create({
       model: DEFAULT_MODEL,
       max_tokens: opts.maxTokens ?? 1024,
+      temperature: 0,
       system: opts.system,
       messages: opts.messages,
       tools: opts.tools as Anthropic.Tool[],

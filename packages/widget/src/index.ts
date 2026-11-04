@@ -1,23 +1,14 @@
-import { h, render } from "preact";
-
-import { identify as identifyVisitor } from "./api/client";
-import type { IdentifyVisitorInfo } from "./api/identify-payload";
-import { isOpen } from "./stores/state";
-import {
-  findWidgetScriptSrc,
-  resolveDefaultApiOrigin,
-} from "./utils/api-origin";
-import { isolateShadowKeyboard } from "./utils/isolate-events";
-import {
-  findWidgetScriptElement,
-  mergeSnippetSettings,
-  parseScriptTagSettings,
-  type WidgetSnippetSettings,
-} from "./utils/snippet-settings";
+import { render, h } from "preact";
 import { WidgetApp } from "./widget";
+import { isOpen } from "./stores/state";
+import { identify as identifyVisitor } from "./api/client";
+import { isolateShadowKeyboard } from "./utils/isolate-events";
 
-interface GudDeskSettings extends WidgetSnippetSettings {
+interface GudDeskSettings {
   appId: string;
+  baseUrl?: string;
+  pusherKey?: string;
+  pusherCluster?: string;
 }
 
 declare global {
@@ -25,7 +16,13 @@ declare global {
     GudDeskSettings?: GudDeskSettings;
     GudDesk?: {
       init: (settings: GudDeskSettings) => void;
-      identify: (info: IdentifyVisitorInfo) => Promise<void>;
+      identify: (info: {
+        userId?: string;
+        name?: string;
+        email?: string;
+        metadata?: Record<string, unknown>;
+        userHash?: string;
+      }) => Promise<void>;
       open: () => void;
       close: () => void;
       destroy: () => void;
@@ -36,26 +33,47 @@ declare global {
 let shadowRoot: ShadowRoot | null = null;
 let unbindShadowKeyboard: (() => void) | null = null;
 
-function getBaseUrl(explicitBaseUrl?: string): string {
-  const scripts = Array.from(document.querySelectorAll("script[src]")).map(
-    (el) => ({ src: (el as HTMLScriptElement).src }),
-  );
-  return resolveDefaultApiOrigin(
-    findWidgetScriptSrc(scripts),
-    window.location.origin,
-    explicitBaseUrl,
-  );
+// Hosted SaaS API is on www. Vercel redirects guddesk.com → www.guddesk.com
+// with a 307 that has no CORS headers, so a browser preflight from a
+// customer origin to the apex fails. Code cannot skip that domain redirect.
+const HOSTED_WIDGET_API_BASE = "https://www.guddesk.com";
+
+function hostedWidgetApiBaseUrl(hostname: string): string | null {
+  if (
+    hostname === "cdn.guddesk.com" ||
+    hostname === "www.guddesk.com" ||
+    hostname === "guddesk.com"
+  ) {
+    return HOSTED_WIDGET_API_BASE;
+  }
+  return null;
 }
 
-function resolveInitSettings(): GudDeskSettings | null {
-  const scripts = Array.from(document.querySelectorAll("script"));
-  const script = findWidgetScriptElement(
-    scripts.map((el) => el as HTMLScriptElement),
-  );
-  const fromScript = script ? parseScriptTagSettings(script) : {};
-  const merged = mergeSnippetSettings(fromScript, window.GudDeskSettings);
-  if (!merged.appId) return null;
-  return merged as GudDeskSettings;
+function getBaseUrl(): string {
+  // Detect the script's origin to derive the base URL
+  const scripts = document.querySelectorAll("script[src]");
+  for (let i = scripts.length - 1; i >= 0; i--) {
+    const src = (scripts[i] as HTMLScriptElement).src;
+    if (src.includes("guddesk") || src.includes("widget")) {
+      try {
+        const url = new URL(src);
+        return hostedWidgetApiBaseUrl(url.hostname) ?? url.origin;
+      } catch {
+        // continue
+      }
+    }
+  }
+  return window.location.origin;
+}
+
+function resolveBaseUrl(settingsBaseUrl?: string): string {
+  if (!settingsBaseUrl) return getBaseUrl();
+  try {
+    const url = new URL(settingsBaseUrl);
+    return hostedWidgetApiBaseUrl(url.hostname) ?? settingsBaseUrl.replace(/\/$/, "");
+  } catch {
+    return settingsBaseUrl.replace(/\/$/, "");
+  }
 }
 
 function init(settings: GudDeskSettings) {
@@ -67,7 +85,7 @@ function init(settings: GudDeskSettings) {
     return;
   }
 
-  const baseUrl = getBaseUrl(settings.baseUrl);
+  const baseUrl = resolveBaseUrl(settings.baseUrl);
 
   // Create host element + shadow DOM for style isolation
   const host = document.createElement("div");
@@ -83,7 +101,6 @@ function init(settings: GudDeskSettings) {
       baseUrl,
       pusherKey: settings.pusherKey,
       pusherCluster: settings.pusherCluster,
-      snippet: settings,
     }),
     shadowRoot,
   );
@@ -100,15 +117,16 @@ function destroy() {
   }
 }
 
-function boot() {
-  const settings = resolveInitSettings();
-  if (settings) init(settings);
-}
-
 // Public API
 const GudDesk = {
   init,
-  identify: (info: IdentifyVisitorInfo) => identifyVisitor(info),
+  identify: (info: {
+    userId?: string;
+    name?: string;
+    email?: string;
+    metadata?: Record<string, unknown>;
+    userHash?: string;
+  }) => identifyVisitor(info),
   open: () => {
     isOpen.value = true;
   },
@@ -121,10 +139,16 @@ const GudDesk = {
 // Expose globally
 window.GudDesk = GudDesk;
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", boot);
-} else {
-  boot();
+// Auto-init if settings are present
+if (window.GudDeskSettings) {
+  // Wait for DOM ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () =>
+      init(window.GudDeskSettings!),
+    );
+  } else {
+    init(window.GudDeskSettings);
+  }
 }
 
 export default GudDesk;

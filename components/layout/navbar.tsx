@@ -88,10 +88,10 @@ export function NavBar({ scroll = false }: NavBarProps) {
                   href={item.disabled ? "#" : item.href}
                   prefetch={true}
                   className={cn(
-                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:text-foreground/80",
+                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:text-foreground",
                     item.href.startsWith(`/${selectedLayout}`)
                       ? "text-foreground"
-                      : "text-foreground/60",
+                      : "text-neutral-600 dark:text-neutral-300",
                     item.disabled && "cursor-not-allowed opacity-80",
                   )}
                 >
@@ -107,7 +107,7 @@ export function NavBar({ scroll = false }: NavBarProps) {
           {/* Auth buttons */}
           {session ? (
             <Link
-              href="/dashboard"
+              href={session.user.role === "ADMIN" ? "/admin" : "/dashboard"}
               className="hidden md:block"
             >
               <Button

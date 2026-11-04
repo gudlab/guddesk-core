@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
+import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { getWorkspaceBySlug, requireWorkspaceMember } from "@/lib/workspace";
-import { prisma } from "@/lib/db";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { EmailChannelSettings } from "@/components/settings/email-channel-settings";
 
@@ -30,7 +30,7 @@ export default async function EmailChannelSettingsPage({
     <>
       <DashboardHeader
         heading="Email Channel"
-        text="Allow customers to contact your team via email."
+        text="Send email replies from the inbox. Cloud inbound receiving is still being set up."
       />
 
       <EmailChannelSettings

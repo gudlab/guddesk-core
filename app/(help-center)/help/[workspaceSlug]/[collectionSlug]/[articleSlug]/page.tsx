@@ -1,63 +1,141 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { prisma } from "@/lib/db";
 import { ArticleFeedbackButtons } from "@/components/articles/article-feedback-buttons";
+import { JsonLdScript } from "@/components/shared/json-ld";
+import { canonicalUrl } from "@/lib/canonical";
+import { helpRouteMetadata } from "@/lib/help-center/metadata";
+import {
+  findPublishedArticleBySlug,
+  getHelpWorkspaceBySlug,
+  incrementArticleViews,
+} from "@/lib/help-center/public";
+import { FALLBACK_COLLECTION_SLUG } from "@/lib/help-center/slug";
+import {
+  articleJsonLd,
+  articlePublicPath,
+  breadcrumbListJsonLd,
+  extractFaqPairs,
+  faqPageJsonLd,
+  helpCenterPath,
+  helpCenterTitle,
+  helpMetaDescription,
+} from "@/lib/help-center/seo";
 
-export default async function ArticlePage({
-  params,
-}: {
+type PageProps = {
   params: Promise<{
     workspaceSlug: string;
     collectionSlug: string;
     articleSlug: string;
   }>;
-}) {
-  const { workspaceSlug, collectionSlug, articleSlug } = await params;
+};
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug: workspaceSlug },
-    select: { id: true, helpCenterSettings: true },
-  });
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { workspaceSlug, articleSlug } = await params;
+  const workspace = await getHelpWorkspaceBySlug(workspaceSlug);
+  if (!workspace) return {};
 
-  if (!workspace) notFound();
+  const article = await findPublishedArticleBySlug(workspace.id, articleSlug);
+  if (!article) return {};
 
-  const article = await prisma.article.findUnique({
-    where: { workspaceId_slug: { workspaceId: workspace.id, slug: articleSlug } },
-    include: {
-      author: { select: { name: true } },
-      collection: { select: { name: true, slug: true } },
+  const title = helpCenterTitle(workspace.helpCenterSettings?.title, workspace.name);
+  const description = helpMetaDescription(
+    article.excerpt,
+    article.body,
+  );
+  return helpRouteMetadata({
+    title: `${article.title} | ${title}`,
+    description,
+    path: articlePublicPath(
+      workspace.slug,
+      article.collection?.slug,
+      article.slug,
+    ),
+    article: {
+      publishedAt: article.publishedAt,
+      updatedAt: article.updatedAt,
+      authorName: article.author?.name,
     },
   });
+}
 
-  if (!article || !article.isPublished) notFound();
+export default async function ArticlePage({ params }: PageProps) {
+  const { workspaceSlug, collectionSlug, articleSlug } = await params;
+  const workspace = await getHelpWorkspaceBySlug(workspaceSlug);
+  if (!workspace) notFound();
 
-  // Increment view count
-  await prisma.article.update({
-    where: { id: article.id },
-    data: { viewCount: { increment: 1 } },
-  });
+  const article = await findPublishedArticleBySlug(workspace.id, articleSlug);
+  if (!article) notFound();
 
+  const canonicalPath = articlePublicPath(
+    workspace.slug,
+    article.collection?.slug,
+    article.slug,
+  );
+  if (
+    articleSlug !== article.slug ||
+    collectionSlug !== (article.collection?.slug ?? FALLBACK_COLLECTION_SLUG)
+  ) {
+    redirect(canonicalPath);
+  }
+
+  await incrementArticleViews(article.id);
+
+  const helpTitle = helpCenterTitle(
+    workspace.helpCenterSettings?.title,
+    workspace.name,
+  );
+  const description = helpMetaDescription(article.excerpt, article.body);
   const primaryColor = workspace.helpCenterSettings?.primaryColor ?? "#3ECF8E";
+  const indexPath = helpCenterPath({ workspaceSlug: workspace.slug });
+  const collectionPath = article.collection
+    ? helpCenterPath({
+        workspaceSlug: workspace.slug,
+        collectionSlug: article.collection.slug,
+      })
+    : null;
+  const canonical = canonicalUrl(canonicalPath);
+  const faqs = extractFaqPairs(article.body);
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <JsonLdScript
+        data={articleJsonLd({
+          url: canonical,
+          headline: article.title,
+          description,
+          datePublished: article.publishedAt,
+          dateModified: article.updatedAt,
+          authorName: article.author?.name,
+          publisherName: workspace.name,
+        })}
+      />
+      <JsonLdScript data={faqPageJsonLd(faqs)} />
+      <JsonLdScript
+        data={breadcrumbListJsonLd([
+          { name: helpTitle, url: canonicalUrl(indexPath) },
+          ...(article.collection && collectionPath
+            ? [{ name: article.collection.name, url: canonicalUrl(collectionPath) }]
+            : []),
+          { name: article.title, url: canonical },
+        ])}
+      />
       <div
         className="px-4 py-6 text-white"
         style={{ backgroundColor: primaryColor }}
       >
         <div className="mx-auto max-w-3xl">
           <div className="flex items-center gap-2 text-sm opacity-80">
-            <Link href={`/help/${workspaceSlug}`} className="hover:opacity-100">
+            <Link href={indexPath} className="hover:opacity-100">
               Help Center
             </Link>
             <span>/</span>
-            {article.collection && (
+            {article.collection && collectionPath && (
               <>
-                <Link
-                  href={`/help/${workspaceSlug}/${collectionSlug}`}
-                  className="hover:opacity-100"
-                >
+                <Link href={collectionPath} className="hover:opacity-100">
                   {article.collection.name}
                 </Link>
                 <span>/</span>
@@ -82,7 +160,6 @@ export default async function ArticlePage({
             )}
           </div>
 
-          {/* Article body rendered as prose */}
           <div className="prose prose-gray mt-6 max-w-none">
             {article.body.split("\n").map((paragraph, i) => (
               <p key={i}>{paragraph}</p>
@@ -90,7 +167,6 @@ export default async function ArticlePage({
           </div>
         </article>
 
-        {/* Feedback */}
         <div className="mt-6 rounded-lg border bg-white px-8 py-6 text-center shadow-sm">
           <p className="text-sm font-medium text-gray-700">
             Was this article helpful?

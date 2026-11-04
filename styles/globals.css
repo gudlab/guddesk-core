@@ -91,7 +91,7 @@
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
+    --muted-foreground: 0 0% 32%;
     --accent: 0 0% 98%;
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
@@ -158,9 +158,11 @@
   content: counter(step);
 }
 
+/* Solid brand ink, not a gradient. Emerald-800 on light (~7.5:1 on white). */
 .text-gradient_brand {
-  background: linear-gradient(90deg, #3ECF8E 0%, #2DD4BF 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #065f46;
+}
+
+.dark .text-gradient_brand {
+  color: #6ee7b7;
 }

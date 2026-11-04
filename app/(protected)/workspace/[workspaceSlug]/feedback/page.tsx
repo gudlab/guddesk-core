@@ -21,6 +21,7 @@ export default async function FeedbackPage({
 
   await requireWorkspaceMember(workspace.id, user.id!);
 
+  // Default: last 30 days
   const to = new Date();
   const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
 

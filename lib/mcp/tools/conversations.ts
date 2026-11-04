@@ -1,8 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-import { fireAutomations } from "@/lib/automations/dispatch";
-import { conversationClosedEvent, conversationUpdateEvents, origin } from "@/lib/automations/events";
 import { prisma } from "@/lib/db";
 import type { McpAuthContext } from "../auth";
 
@@ -18,7 +16,7 @@ function json(data: unknown) {
 // ---------------------------------------------------------------------------
 
 export function registerConversationTools(server: McpServer, auth: McpAuthContext) {
-  // ── list_conversations ────────────────────────────────────────────────────
+  // ── list_conversations ──────────────────────────────────────────────────
   server.registerTool(
     "list_conversations",
     {
@@ -78,7 +76,7 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
     },
   );
 
-  // ── get_conversation ──────────────────────────────────────────────────────
+  // ── get_conversation ────────────────────────────────────────────────────
   server.registerTool(
     "get_conversation",
     {
@@ -127,7 +125,7 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
     },
   );
 
-  // ── update_conversation ───────────────────────────────────────────────────
+  // ── update_conversation ─────────────────────────────────────────────────
   server.registerTool(
     "update_conversation",
     {
@@ -145,7 +143,7 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
     async ({ conversationId, status, assigneeId, priority, tags, subject }) => {
       const existing = await prisma.conversation.findUnique({
         where: { id: conversationId },
-        select: { workspaceId: true, status: true, tags: true, assigneeId: true },
+        select: { workspaceId: true, status: true },
       });
 
       if (!existing || existing.workspaceId !== auth.workspaceId) {
@@ -167,7 +165,6 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
       if (assigneeId !== undefined) {
         if (assigneeId === null) {
           updateData.assigneeId = null;
-          if (existing.assigneeId) updateData.unassignedAt = new Date();
         } else {
           const member = await prisma.workspaceMember.findUnique({
             where: { id: assigneeId },
@@ -204,21 +201,11 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
         },
       });
 
-      fireAutomations(
-        conversationUpdateEvents({
-          workspaceId: auth.workspaceId,
-          conversationId,
-          before: existing,
-          after: conversation,
-          origin: origin("api"),
-        }),
-      );
-
       return json(conversation);
     },
   );
 
-  // ── assign_conversation ───────────────────────────────────────────────────
+  // ── assign_conversation ─────────────────────────────────────────────────
   server.registerTool(
     "assign_conversation",
     {
@@ -262,7 +249,7 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
     },
   );
 
-  // ── close_conversation ────────────────────────────────────────────────────
+  // ── close_conversation ──────────────────────────────────────────────────
   server.registerTool(
     "close_conversation",
     {
@@ -294,17 +281,6 @@ export function registerConversationTools(server: McpServer, auth: McpAuthContex
           updatedAt: true,
         },
       });
-
-      if (existing.status !== "CLOSED" && conversation.closedAt) {
-        fireAutomations(
-          conversationClosedEvent({
-            workspaceId: auth.workspaceId,
-            conversationId,
-            closedAt: conversation.closedAt,
-            origin: origin("api"),
-          }),
-        );
-      }
 
       return json(conversation);
     },

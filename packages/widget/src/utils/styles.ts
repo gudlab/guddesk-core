@@ -127,6 +127,14 @@ export function getStyles(primaryColor: string, position: string): string {
       color: #1f2937;
       border-bottom-left-radius: 4px;
     }
+    .fc-msg-system {
+      align-self: center;
+      font-size: 11px;
+      color: #6b7280;
+      background: #f3f4f6;
+      border-radius: 999px;
+      padding: 4px 12px;
+    }
     .fc-msg-sender {
       font-size: 11px;
       color: #6b7280;

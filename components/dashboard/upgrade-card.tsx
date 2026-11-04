@@ -15,13 +15,13 @@ export function UpgradeCard() {
       <CardHeader className="md:max-xl:px-4">
         <CardTitle>Upgrade to Pro</CardTitle>
         <CardDescription>
-          Unlock all features and get unlimited access to our support team.
+          Pro is $29 a month for the whole workspace.
         </CardDescription>
       </CardHeader>
       <CardContent className="md:max-xl:px-4">
         <Link href="/dashboard/billing">
           <Button size="sm" className="w-full">
-            Upgrade
+            Go to billing
           </Button>
         </Link>
       </CardContent>

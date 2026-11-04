@@ -12,7 +12,7 @@ related:
   - ai-agents-customer-support
 ---
 
-Update, October 2026: GudBot is not shipped yet. It's on the roadmap. Today GudDesk works with your own AI agent through the API.
+Update, November 2026: GudBot is available. It is optional and off by default. When you turn it on, it answers from your knowledge base with citations and hands off to a human when it isn't sure. You can also connect your own agent through the API.
 
 Customer support tools have a problem. They're either expensive, locked-in, or both. When we needed a modern messaging platform for our own projects, we kept running into the same wall: pay $50+ per seat per month for features that should be table stakes, or duct-tape together a dozen open-source tools that don't talk to each other.
 
@@ -20,7 +20,7 @@ So we built GudDesk.
 
 ## What is GudDesk?
 
-GudDesk is a complete customer messaging platform: live chat, shared inbox, knowledge base, an AI agent API and SLA policies, all bundled into a single open-source project licensed under AGPL-3.0.
+GudDesk is a complete customer messaging platform - live chat, shared inbox, knowledge base, an AI agent API, and SLA policies - all bundled into a single open-source project licensed under AGPL-3.0.
 
 Think of it as the Intercom experience without the Intercom price tag.
 
@@ -29,7 +29,7 @@ Think of it as the Intercom experience without the Intercom price tag.
 Three things frustrated us about the current landscape:
 
 1. **Per-seat pricing is broken.** Your entire team should be able to jump into a conversation without your CFO having a panic attack.
-2. **AI should be a first-class citizen.** Not an upsell. Not an add-on. Today that means your own agent through the API. A built-in GudDesk agent is planned.
+2. **GudBot is optional.** It stays off by default. When you turn it on, it answers from your knowledge base with citations and hands off to a human when it isn't sure. You can also connect your own agent through the API.
 3. **You should own your data.** Full stop. Self-host it, export it, move it wherever you want.
 
 GudDesk addresses all three.
@@ -38,12 +38,12 @@ GudDesk addresses all three.
 
 Out of the box, you get:
 
-- **Live Chat Widget**: A lightweight, embeddable widget you can drop into any site with two lines of code.
-- **Shared Inbox**: Email, chat, and bot conversations unified in a single view for your whole team.
+- **Live Chat Widget** - A lightweight, embeddable widget you can drop into any site with two lines of code.
+- **Shared Inbox** - Chat and bot conversations in one view for your whole team. You can send replies by email. Incoming customer email on Cloud is still being set up.
 - **Knowledge Base**: write help articles and organise them into collections.
-- **AI agents**: a first-party agent is planned. Today you connect your own agent through the API.
-- **Automation rules**: a rule builder for conversation events. Each rule runs when its trigger fires.
-- **Plugin API**: Build custom integrations on the REST API and webhooks.
+- **GudBot**: optional, off by default. When enabled, it answers from your knowledge base with citations and hands off when it isn't sure. You can also connect your own agent through the API.
+- **Automation rules**: a rule builder for conversation events. Rules are saved but don't run yet.
+- **Plugin API** - Build custom integrations on the REST API and webhooks.
 
 ## Free for Small Teams
 
@@ -59,10 +59,10 @@ Every line of GudDesk is open source. Clone the gudlab/guddesk-core repo, instal
 
 We're just getting started. Here's what's on the roadmap:
 
-- **Slack and Teams integrations**: Reply to customers from where your team already works.
-- **Custom agent builder**: A visual editor for creating AI agent workflows.
-- **Mobile app**: Native iOS and Android apps for on-the-go support.
-- **Multilingual knowledge base**: Auto-translate articles for global teams.
+- **Slack and Teams integrations** - Reply to customers from where your team already works.
+- **Custom agent builder** - A visual editor for creating AI agent workflows.
+- **Mobile app** - Native iOS and Android apps for on-the-go support.
+- **Multilingual knowledge base** - Auto-translate articles for global teams.
 
 We'd love for you to try GudDesk and tell us what you think. Star us on [GitHub](https://github.com/gudlab/guddesk-core), file an issue, or just say hi on Twitter.
 

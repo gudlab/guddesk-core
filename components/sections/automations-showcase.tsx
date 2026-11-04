@@ -1,21 +1,19 @@
-import { Icons } from "@/components/shared/icons";
-import { Badge } from "@/components/ui/badge";
 import { HeaderSection } from "@/components/shared/header-section";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
 const triggers = [
-  "Conversation Created",
-  "Message Received",
-  "Tag Added",
-  "Unassigned For",
-  "Conversation Closed",
+  "Conversation created",
+  "Message received",
+  "Tag added",
+  "Unassigned for",
+  "Conversation closed",
 ];
 
 const actions = [
-  "Assign To",
-  "Add Tag",
-  "Change Status",
-  "Send Message",
+  "Assign to",
+  "Add tag",
+  "Change status",
+  "Send message",
   "Notify Slack",
 ];
 
@@ -24,112 +22,67 @@ export default function AutomationsShowcase() {
     <section className="py-16 sm:py-20 lg:py-24">
       <MaxWidthWrapper>
         <HeaderSection
-          label="Work smarter"
           title="Build rules for the repetitive stuff"
-          subtitle="Pick a trigger and an action without writing code. Each rule runs when its trigger fires."
+          subtitle="Pick a trigger and an action without writing code. Rules are saved today but do not run yet."
         />
 
-        {/* Flow diagram */}
-        <div className="mt-12 flex flex-col items-center gap-4 md:flex-row md:justify-center md:gap-0">
-          {/* Trigger */}
-          <div className="w-full max-w-[240px] rounded-lg border bg-card p-4 shadow-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <Icons.automations className="size-4 text-amber-500" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
-                Trigger
-              </span>
-            </div>
-            <p className="text-sm font-medium">New conversation created</p>
-          </div>
-
-          {/* Arrow */}
-          <div className="flex items-center justify-center text-muted-foreground md:px-3">
-            <Icons.arrowRight className="hidden size-5 md:block" />
-            <svg
-              className="size-5 rotate-90 md:hidden"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </div>
-
-          {/* Condition */}
-          <div className="w-full max-w-[240px] rounded-lg border bg-card p-4 shadow-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <Icons.settings className="size-4 text-blue-500" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                Condition
-              </span>
-            </div>
-            <p className="text-sm font-medium">
-              Contains tag &ldquo;billing&rdquo;
+        <div className="mt-12 grid gap-8 md:grid-cols-3">
+          <div>
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              Trigger
+            </p>
+            <p className="mt-1 text-sm font-medium text-pretty">
+              New conversation created
             </p>
           </div>
-
-          {/* Arrow */}
-          <div className="flex items-center justify-center text-muted-foreground md:px-3">
-            <Icons.arrowRight className="hidden size-5 md:block" />
-            <svg
-              className="size-5 rotate-90 md:hidden"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
+          <div>
+            <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+              Condition
+            </p>
+            <p className="mt-1 text-sm font-medium text-pretty">
+              Contains the billing tag
+            </p>
           </div>
-
-          {/* Action */}
-          <div className="w-full max-w-[240px] rounded-lg border bg-card p-4 shadow-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <Icons.check className="size-4 text-green-500" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
-                Action
-              </span>
-            </div>
-            <p className="text-sm font-medium">
-              Assign to Billing Team + Notify #billing
+          <div>
+            <p className="text-sm font-semibold text-green-900 dark:text-green-200">
+              Action
+            </p>
+            <p className="mt-1 text-sm font-medium text-pretty">
+              Assign to Billing and notify Slack
             </p>
           </div>
         </div>
 
-        {/* Trigger and action pills */}
         <div className="mt-12 grid gap-8 sm:grid-cols-2">
           <div>
-            <h4 className="mb-3 text-sm font-semibold text-muted-foreground">
-              Supported Triggers
-            </h4>
-            <div className="flex flex-wrap gap-2">
+            <h3 className="mb-3 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+              Supported triggers
+            </h3>
+            <ul className="flex flex-wrap gap-2">
               {triggers.map((t) => (
-                <Badge key={t} variant="secondary">
+                <li
+                  key={t}
+                  className="rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200"
+                >
                   {t}
-                </Badge>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
           <div>
-            <h4 className="mb-3 text-sm font-semibold text-muted-foreground">
-              Available Actions
-            </h4>
-            <div className="flex flex-wrap gap-2">
+            <h3 className="mb-3 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+              Available actions
+            </h3>
+            <ul className="flex flex-wrap gap-2">
               {actions.map((a) => (
-                <Badge key={a} variant="secondary">
+                <li
+                  key={a}
+                  className="rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200"
+                >
                   {a}
-                </Badge>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </div>
       </MaxWidthWrapper>

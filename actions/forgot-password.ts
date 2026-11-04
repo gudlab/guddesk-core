@@ -5,19 +5,28 @@ import { after } from "next/server";
 
 import { findUserByEmail, normalizeEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
+import { sendEmail } from "@/lib/outbound-email";
 import { emailFrom } from "@/lib/email/from";
-import { sendEmail } from "@/lib/email/send";
-import { PASSWORD_RESET_NEUTRAL_MESSAGE } from "@/lib/password-reset-neutral";
-import { deferPasswordReset } from "@/lib/password-reset-request";
 import { env } from "@/env.mjs";
 import { forgotPasswordSchema } from "@/lib/validations/auth";
+import { getAppUrl } from "@/lib/app-url";
+import { passwordResetBlocked } from "@/lib/password-reset-notice";
+import { PASSWORD_RESET_NEUTRAL_MESSAGE } from "@/lib/password-reset-neutral";
+import { deferPasswordReset } from "@/lib/password-reset-request";
 
-export async function forgotPassword(values: { email: string }) {
+export async function forgotPassword(
+  values: { email: string },
+): Promise<{ error?: string; success?: string; blocked?: string }> {
   const validated = forgotPasswordSchema.safeParse(values);
 
   if (!validated.success) {
     return { error: "Invalid email address" };
   }
+
+  // No email can go out here (Preview or Development), so say so instead
+  // of "check your email". Checked before the user lookup on purpose.
+  const blocked = passwordResetBlocked();
+  if (blocked) return blocked;
 
   const { email } = validated.data;
   const normalizedEmail = normalizeEmail(email);
@@ -53,37 +62,39 @@ async function sendResetIfAccount(normalizedEmail: string): Promise<void> {
     },
   });
 
-  const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
+  const resetUrl = `${getAppUrl()}/reset-password?token=${token}`;
 
-  // A failed send is logged, redacted, inside sendEmail.
+  // sendEmail never throws. A failure is logged there (redacted).
   await sendEmail("password-reset", {
     from: emailFrom(),
+    // In development nothing is sent unless EMAIL_SEND_IN_DEV=1, and then
+    // it goes to the address that asked for it.
     to: normalizedEmail,
     subject: "Reset your GudDesk password",
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 0;">
-          <div style="background-color: #3ECF8E; border-radius: 8px 8px 0 0; padding: 20px 24px; text-align: center;">
-            <span style="color: white; font-size: 18px; font-weight: 700;">GudDesk</span>
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 0;">
+        <div style="background-color: #3ECF8E; border-radius: 8px 8px 0 0; padding: 20px 24px; text-align: center;">
+          <span style="color: white; font-size: 18px; font-weight: 700;">GudDesk</span>
+        </div>
+        <div style="border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background: white; padding: 24px;">
+          <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 12px; color: #1f2937;">Reset your password</h2>
+          <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+            We received a request to reset the password for your GudDesk account.
+            Click the button below to choose a new password. This link expires in 1 hour.
+          </p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${resetUrl}" style="display: inline-block; background-color: #3ECF8E; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;">
+              Reset Password
+            </a>
           </div>
-          <div style="border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background: white; padding: 24px;">
-            <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 12px; color: #1f2937;">Reset your password</h2>
-            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
-              We received a request to reset the password for your GudDesk account.
-              Click the button below to choose a new password. This link expires in 1 hour.
-            </p>
-            <div style="text-align: center; margin: 24px 0;">
-              <a href="${resetUrl}" style="display: inline-block; background-color: #3ECF8E; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;">
-                Reset Password
-              </a>
-            </div>
-            <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; line-height: 1.5;">
-              If you didn't request this, you can safely ignore this email. Your password will not be changed.
-            </p>
-          </div>
-          <p style="color: #9ca3af; font-size: 11px; text-align: center; margin-top: 16px;">
-            GudDesk — Open-source customer messaging platform
+          <p style="color: #9ca3af; font-size: 12px; margin-top: 24px; line-height: 1.5;">
+            If you didn't request this, you can safely ignore this email. Your password will not be changed.
           </p>
         </div>
-      `,
+        <p style="color: #9ca3af; font-size: 11px; text-align: center; margin-top: 16px;">
+          GudDesk: open-source customer messaging platform
+        </p>
+      </div>
+    `,
   });
 }

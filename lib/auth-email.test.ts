@@ -110,11 +110,10 @@ describe("account email lookup ignores case", () => {
     assert.match(register, /findUserByEmail\(prisma, email\)/);
     assert.match(read("actions/forgot-password.ts"), /findUserByEmail\(prisma, normalizedEmail\)/);
     assert.match(read("actions/reset-password.ts"), /findUserByEmail\(prisma, resetToken\.email\)/);
-    const invite = read("actions/invite-workspace-member.ts");
-    assert.match(invite, /findUserByEmail\(prisma, email\)/);
-    assert.match(invite, /email: \{ equals: email, mode: "insensitive" \}/);
-    assert.match(read("actions/accept-invitation.ts"), /normalizeEmail\(invitation\.email\) !== normalizeEmail\(session\.user\.email\)/);
-    for (const file of ["auth.config.ts", "actions/register.ts", "actions/forgot-password.ts", "actions/reset-password.ts", "actions/invite-workspace-member.ts", "lib/user.ts"]) {
+    // Invites already match case-insensitively (lib/invitations.ts emailMatch).
+    assert.match(read("lib/invitations.ts"), /where: \{ email: emailMatch\(email\) \}/);
+    assert.match(read("actions/accept-invitation.ts"), /normalizeInviteEmail\(invitation\.email\) !== normalizeInviteEmail\(session\.user\.email\)/);
+    for (const file of ["auth.config.ts", "actions/register.ts", "actions/forgot-password.ts", "actions/reset-password.ts", "lib/user.ts"]) {
       assert.doesNotMatch(read(file), /user\.findUnique\(\{\s*where: \{\s*email/, file);
     }
   });

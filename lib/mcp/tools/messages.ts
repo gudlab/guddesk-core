@@ -18,7 +18,7 @@ function json(data: unknown) {
 // ---------------------------------------------------------------------------
 
 export function registerMessageTools(server: McpServer, auth: McpAuthContext) {
-  // ── list_messages ─────────────────────────────────────────────────────────
+  // ── list_messages ───────────────────────────────────────────────────────
   server.registerTool(
     "list_messages",
     {
@@ -67,7 +67,7 @@ export function registerMessageTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── send_message ──────────────────────────────────────────────────────────
+  // ── send_message ────────────────────────────────────────────────────────
   server.registerTool(
     "send_message",
     {
@@ -155,7 +155,7 @@ export function registerMessageTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── add_internal_note ─────────────────────────────────────────────────────
+  // ── add_internal_note ───────────────────────────────────────────────────
   server.registerTool(
     "add_internal_note",
     {

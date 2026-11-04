@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useEffect, useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
+import { deleteSharedDraft } from "@/actions/manage-shared-draft";
 import { toast } from "sonner";
 
-import { deleteSharedDraft } from "@/actions/manage-shared-draft";
+import { claimSubmit, releaseSubmit } from "@/lib/submit-guard";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
-import { claimSubmit, releaseSubmit } from "@/lib/submit-guard";
+
 import { deliverReply } from "./deliver-reply";
 
 interface Props {
@@ -25,7 +26,7 @@ export function SharedDraftEditor({
   onSent,
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // Set synchronously, so a second click in the same tick can't send twice.
+  // Set synchronously, so a second Enter or click in the same tick can't send twice.
   const inFlight = useRef(false);
   const [isPending, startTransition] = useTransition();
 
@@ -50,14 +51,20 @@ export function SharedDraftEditor({
   async function send(trimmed: string) {
     // deliverReply keeps the reply's idempotency key in localStorage (shared by tabs), so
     // sending the same text again after a failure can't post it twice.
-    const outcome = await deliverReply({ conversationId, body: trimmed, type: "AGENT" });
+    const outcome = await deliverReply({
+      conversationId,
+      body: trimmed,
+      type: "AGENT",
+    });
     if (outcome !== "posted") return;
 
     // Delete the draft after sending
     try {
       await deleteSharedDraft(conversationId);
     } catch {
-      toast.error("Your reply was sent, but the shared draft couldn't be cleared. Discard it when you're back online.");
+      toast.error(
+        "Your reply was sent, but the shared draft couldn't be cleared. Discard it when you're back online.",
+      );
     }
     onSent();
   }
@@ -68,7 +75,9 @@ export function SharedDraftEditor({
         await deleteSharedDraft(conversationId);
         onBodyChange("");
       } catch {
-        toast.error("The draft couldn't be discarded. Check your connection and try again.");
+        toast.error(
+          "The draft couldn't be discarded. Check your connection and try again.",
+        );
       }
     });
   }
@@ -76,11 +85,11 @@ export function SharedDraftEditor({
   return (
     <div className="p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">
-          Shared Draft
+        <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+          Shared draft
         </span>
         {lastEditedByName && (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-xs text-neutral-600 dark:text-neutral-300">
             Last edited by {lastEditedByName}
           </span>
         )}
@@ -88,7 +97,7 @@ export function SharedDraftEditor({
 
       <textarea
         ref={textareaRef}
-        className="min-h-[80px] w-full resize-none rounded-md border border-dashed border-blue-300 bg-blue-50/50 px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring dark:border-blue-700 dark:bg-blue-950/30"
+        className="focus:ring-ring min-h-[80px] w-full resize-none rounded-md border border-dashed border-blue-700 bg-blue-50 px-3 py-2 text-sm outline-none placeholder:text-neutral-600 focus:ring-1 dark:border-blue-400 dark:bg-blue-950/30 dark:placeholder:text-neutral-300"
         placeholder="Write a shared draft... Other agents can see and edit this."
         value={body}
         onChange={(e) => onBodyChange(e.target.value)}
@@ -98,7 +107,7 @@ export function SharedDraftEditor({
         <Button
           size="sm"
           variant="ghost"
-          className="text-xs text-muted-foreground"
+          className="text-sm text-neutral-600 dark:text-neutral-300"
           onClick={handleDiscard}
           disabled={isPending || !body.trim()}
         >
@@ -109,7 +118,9 @@ export function SharedDraftEditor({
           onClick={handleSendAsReply}
           disabled={!body.trim() || isPending}
         >
-          {isPending && <Icons.spinner className="mr-1.5 size-3 animate-spin" />}
+          {isPending && (
+            <Icons.spinner className="mr-1.5 size-3 animate-spin" />
+          )}
           Send as Reply
         </Button>
       </div>

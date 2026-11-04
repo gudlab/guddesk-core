@@ -11,6 +11,9 @@ import OpenSourceSection from "@/components/sections/open-source-section";
 
 import FAQSection from "@/components/sections/faq-section";
 import CTASection from "@/components/sections/cta-section";
+import { constructMetadata } from "@/lib/utils";
+
+export const metadata = constructMetadata({ path: "/" });
 
 interface IndexPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

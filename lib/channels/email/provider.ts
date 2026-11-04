@@ -13,16 +13,13 @@ import type {
   OutboundContext,
 } from "../types";
 import { prisma } from "@/lib/db";
-import { cleanDisplayName, emailFrom } from "@/lib/email/from";
-import { deliveryFailure, type OutboundDelivery } from "@/lib/email/delivery-notice";
-import { sendEmail } from "@/lib/email/send";
 import { safeTrigger, safeTriggerBatch } from "@/lib/pusher-server";
 import { dispatchWebhooks } from "@/lib/webhooks";
 import { computeSlaDeadlines } from "@/lib/sla/compute";
 import { generateMessageId, buildReplyHeaders } from "./threading";
 import { renderOutboundEmail } from "./templates";
-import { fireAutomations } from "@/lib/automations/dispatch";
-import { conversationCreatedEvents, messageReceivedEvent, origin } from "@/lib/automations/events";
+import { buildConversationReplyTo, sendEmail } from "@/lib/outbound-email";
+import { deliveryFailure, type OutboundDelivery } from "@/lib/email/delivery-notice";
 
 export class EmailChannelProvider implements ChannelProvider {
   channel: ConversationChannel = "EMAIL";
@@ -91,11 +88,9 @@ export class EmailChannelProvider implements ChannelProvider {
     });
 
     const fromName = config.fromName ?? "Support";
-    // The workspace's own verified address, else the instance sender (RESEND_FROM).
-    const from = config.fromAddress
-      ? `${cleanDisplayName(fromName) || "Support"} <${config.fromAddress}>`
-      : emailFrom(fromName);
-    const replyTo = `reply+${context.conversationId}@mail.guddesk.com`;
+    const fromAddress = config.fromAddress ?? "support@mail.guddesk.com";
+    // undefined on Preview and Development, where nothing is sent.
+    const replyTo = buildConversationReplyTo(context.conversationId);
 
     const subjectLine = context.subject
       ? (context.subject.startsWith("Re:") ? context.subject : `Re: ${context.subject}`)
@@ -107,10 +102,12 @@ export class EmailChannelProvider implements ChannelProvider {
       signature: config.signature ?? undefined,
     });
 
-    // A failed send is logged, redacted, inside sendEmail. The outcome goes
-    // back to the agent's reply box.
+    // sendEmail never throws; a failure is logged there, redacted, and the
+    // outcome goes back to the agent's reply box. The idempotency key per
+    // message means a retry of a send that did go through isn't delivered
+    // twice.
     const sent = await sendEmail("email-channel-reply", {
-      from,
+      from: `${fromName} <${fromAddress}>`,
       to: context.visitorEmail,
       subject: subjectLine,
       replyTo,
@@ -125,7 +122,8 @@ export class EmailChannelProvider implements ChannelProvider {
         }),
       },
     }, { sender: "workspace", idempotencyKey: `email-channel-reply/${message.id}` });
-    return sent.status === "failed" ? deliveryFailure(sent.error) : { status: "sent" };
+    if (sent.status === "failed") return deliveryFailure(sent.error);
+    return sent.status === "skipped" ? { status: "skipped" } : { status: "sent" };
   }
 
   // ── Private helpers ──────────────────────────────────────────────
@@ -204,16 +202,6 @@ export class EmailChannelProvider implements ChannelProvider {
       workspaceId,
     });
 
-    fireAutomations(
-      messageReceivedEvent({
-        workspaceId,
-        conversationId: conversation.id,
-        messageId: message.id,
-        body,
-        origin: origin("visitor"),
-      }),
-    );
-
     return {
       conversationId: conversation.id,
       messageId: message.id,
@@ -262,8 +250,6 @@ export class EmailChannelProvider implements ChannelProvider {
         visitorId: visitor.id,
         channel: "EMAIL",
         status: "OPEN",
-        // Created unassigned: the "unassigned for" automation counts from here.
-        unassignedAt: new Date(),
         subject: subject ?? null,
         lastMessageAt: new Date(),
         lastMessagePreview: preview,
@@ -334,15 +320,6 @@ export class EmailChannelProvider implements ChannelProvider {
         workspaceId,
       });
     }
-
-    fireAutomations(
-      conversationCreatedEvents({
-        workspaceId,
-        conversationId: conversation.id,
-        firstMessage: firstMessage ? { id: firstMessage.id, body } : null,
-        origin: origin("visitor"),
-      }),
-    );
 
     return {
       conversationId: conversation.id,

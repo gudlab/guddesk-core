@@ -16,7 +16,7 @@ function json(data: unknown) {
 // ---------------------------------------------------------------------------
 
 export function registerAgentTools(server: McpServer, auth: McpAuthContext) {
-  // ── list_agents ───────────────────────────────────────────────────────────
+  // ── list_agents ─────────────────────────────────────────────────────────
   server.registerTool(
     "list_agents",
     {
@@ -69,7 +69,7 @@ export function registerAgentTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── get_agent ─────────────────────────────────────────────────────────────
+  // ── get_agent ───────────────────────────────────────────────────────────
   server.registerTool(
     "get_agent",
     {

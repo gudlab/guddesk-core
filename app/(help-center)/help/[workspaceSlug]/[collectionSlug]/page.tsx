@@ -1,49 +1,96 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { prisma } from "@/lib/db";
+import { JsonLdScript } from "@/components/shared/json-ld";
+import { canonicalUrl } from "@/lib/canonical";
+import { helpRouteMetadata } from "@/lib/help-center/metadata";
+import {
+  findPublishedCollectionBySlug,
+  getHelpWorkspaceBySlug,
+  listPublishedArticlesInCollection,
+} from "@/lib/help-center/public";
+import {
+  articlePublicPath,
+  breadcrumbListJsonLd,
+  helpCenterPath,
+  helpCenterTitle,
+  helpMetaDescription,
+} from "@/lib/help-center/seo";
 
-export default async function CollectionPage({
-  params,
-}: {
+type PageProps = {
   params: Promise<{ workspaceSlug: string; collectionSlug: string }>;
-}) {
+};
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { workspaceSlug, collectionSlug } = await params;
+  const workspace = await getHelpWorkspaceBySlug(workspaceSlug);
+  if (!workspace) return {};
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug: workspaceSlug },
-    select: { id: true, name: true, helpCenterSettings: true },
+  const collection = await findPublishedCollectionBySlug(
+    workspace.id,
+    collectionSlug,
+  );
+  if (!collection) return {};
+
+  const title = helpCenterTitle(workspace.helpCenterSettings?.title, workspace.name);
+  return helpRouteMetadata({
+    title: `${collection.name} | ${title}`,
+    description: helpMetaDescription(
+      collection.description,
+      `Articles in ${collection.name}.`,
+    ),
+    path: helpCenterPath({
+      workspaceSlug: workspace.slug,
+      collectionSlug: collection.slug,
+    }),
   });
+}
 
+export default async function CollectionPage({ params }: PageProps) {
+  const { workspaceSlug, collectionSlug } = await params;
+  const workspace = await getHelpWorkspaceBySlug(workspaceSlug);
   if (!workspace) notFound();
 
-  const collection = await prisma.collection.findUnique({
-    where: { workspaceId_slug: { workspaceId: workspace.id, slug: collectionSlug } },
+  const collection = await findPublishedCollectionBySlug(
+    workspace.id,
+    collectionSlug,
+  );
+  if (!collection) notFound();
+
+  const canonicalPath = helpCenterPath({
+    workspaceSlug: workspace.slug,
+    collectionSlug: collection.slug,
   });
+  if (collectionSlug !== collection.slug) {
+    redirect(canonicalPath);
+  }
 
-  if (!collection || !collection.isPublished) notFound();
-
-  const articles = await prisma.article.findMany({
-    where: {
-      workspaceId: workspace.id,
-      collectionId: collection.id,
-      isPublished: true,
-    },
-    select: { id: true, title: true, slug: true, excerpt: true },
-    orderBy: { order: "asc" },
-  });
-
+  const articles = await listPublishedArticlesInCollection(
+    workspace.id,
+    collection.id,
+  );
+  const title = helpCenterTitle(workspace.helpCenterSettings?.title, workspace.name);
   const primaryColor = workspace.helpCenterSettings?.primaryColor ?? "#3ECF8E";
+  const indexPath = helpCenterPath({ workspaceSlug: workspace.slug });
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <JsonLdScript
+        data={breadcrumbListJsonLd([
+          { name: title, url: canonicalUrl(indexPath) },
+          { name: collection.name, url: canonicalUrl(canonicalPath) },
+        ])}
+      />
       <div
         className="px-4 py-10 text-white"
         style={{ backgroundColor: primaryColor }}
       >
         <div className="mx-auto max-w-3xl">
           <Link
-            href={`/help/${workspaceSlug}`}
+            href={indexPath}
             className="text-sm opacity-80 hover:opacity-100"
           >
             &larr; Back to Help Center
@@ -68,7 +115,11 @@ export default async function CollectionPage({
             {articles.map((article) => (
               <Link
                 key={article.id}
-                href={`/help/${workspaceSlug}/${collectionSlug}/${article.slug}`}
+                href={articlePublicPath(
+                  workspace.slug,
+                  collection.slug,
+                  article.slug,
+                )}
                 className="block rounded-lg border bg-white px-5 py-4 transition-shadow hover:shadow-sm"
               >
                 <h3 className="font-medium text-gray-900">{article.title}</h3>

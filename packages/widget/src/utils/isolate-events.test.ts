@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import {
   insertAtCaret,
-  ISOLATED_KEY_EVENTS,
   isolateShadowKeyboard,
+  ISOLATED_KEY_EVENTS,
   stolenPrintableKey,
 } from "./isolate-events";
 

@@ -35,7 +35,7 @@ export const useCases: UseCase[] = [
       {
         title: "Reduce churn with fast responses",
         description:
-          "Embed the chat widget in your app. Your own AI agent can answer L1 questions through the agent API while your team focuses on complex issues.",
+          "Embed the chat widget in your app. Your team focuses on complex issues. Connect your own agent if you want a bot answering first.",
         icon: "zap",
       },
       {
@@ -61,7 +61,7 @@ export const useCases: UseCase[] = [
       {
         title: "New trial user asks a question",
         description:
-          "The widget opens in-app. Visitors can search your help center. If you connected your own agent, it can reply as BOT. Otherwise a teammate picks it up in the inbox.",
+          "Visitors can search your help center.",
       },
       {
         title: "Customer reports a bug",
@@ -90,7 +90,7 @@ export const useCases: UseCase[] = [
       {
         question: "Can GudDesk handle our volume?",
         answer:
-          "GudDesk is designed for small to mid-size SaaS teams handling hundreds to thousands of conversations per month. Connect your own agent to answer first. AI reply suggestions for your team are planned.",
+          "GudDesk is designed for small to mid-size SaaS teams handling hundreds to thousands of conversations per month. Connect your own agent to answer first. GudBot can suggest replies. It stays off until you turn it on.",
       },
       {
         question: "Does it integrate with our billing system?",
@@ -141,7 +141,7 @@ export const useCases: UseCase[] = [
       {
         title: "Visitor asks about product availability",
         description:
-          "Your own agent can reply as BOT if you have one connected.",
+          "If you connected your own agent, it can reply as BOT with stock details from your systems.",
       },
       {
         title: "Customer needs to return an item",
@@ -190,7 +190,7 @@ export const useCases: UseCase[] = [
     tagline: "Support that grows with your startup",
     headline: "Customer support at a flat price for startups",
     description:
-      "Startups need support tools at a flat $29 a month. GudDesk Cloud Free covers 2 members. Connect your own agent through the API. Self-host if you need no caps.",
+      "Startups need support tools at a flat $29 a month. GudDesk Cloud Free covers 2 members. Connect your own agent via the API.",
     benefits: [
       {
         title: "Cloud Free: 2 members",
@@ -207,7 +207,7 @@ export const useCases: UseCase[] = [
       {
         title: "Connect your own agent",
         description:
-          "Connect your own agent to answer as BOT. A first-party GudDesk agent is on the roadmap.",
+          "Install your own bot: it gets a webhook and an API key and replies as BOT. GudBot can suggest replies. It stays off until you turn it on.",
         icon: "bot",
       },
       {
@@ -221,7 +221,7 @@ export const useCases: UseCase[] = [
       {
         title: "Solo founder handling support",
         description:
-          "Your own agent can take first replies as BOT. Canned responses let you answer quickly when you do step in.",
+          "Your own agent can answer first if you connected one. Canned responses let you reply in seconds when you do step in.",
       },
       {
         title: "Scaling to your first support hire",
@@ -231,7 +231,7 @@ export const useCases: UseCase[] = [
       {
         title: "Investor demo or launch day",
         description:
-          "The widget handles the traffic spike. Your help center answers common questions. You focus on the conversations that matter, such as potential customers and partners.",
+          "Your help center answers common questions.",
       },
     ],
     features: [
@@ -381,21 +381,21 @@ export const useCases: UseCase[] = [
       {
         title: "User finds a bug in your library",
         description:
-          "They click the chat widget on your docs site and open a conversation. You tag it as a bug and review it when you are ready.",
+          "They click the chat widget on your docs site. You tag it as a bug report and leave it in the inbox. You review it when you're ready.",
       },
       {
         title: "New contributor needs guidance",
         description:
-          "Point contributors to setup articles in your knowledge base. If the contributor needs a person, a teammate replies in the same thread.",
+          "Point contributors to setup articles in your knowledge base.",
       },
       {
         title: "Release day support spike",
         description:
-          "Your own agent can reply as BOT if you connected one. You step in only for issues that need a person.",
+          "You step in only for genuine issues.",
       },
     ],
     features: [
-      "Free forever",
+      "Cloud Free for 2 members",
       "Self-hostable (AGPL-3.0)",
       "Agent API (reply as BOT)",
       "Knowledge base",
@@ -410,7 +410,7 @@ export const useCases: UseCase[] = [
       {
         question: "Is GudDesk really free for open-source projects?",
         answer:
-          "Yes. Cloud Free includes 2 members and 500 conversations/month. Self-host the AGPL-3.0 core with no per-seat fee, or upgrade hosted Pro ($29/mo) / Business (~$99/mo).",
+          "Yes. Cloud Free includes 2 members and 500 conversations a month. Self-host the AGPL-3.0 core with no per-seat fee, or upgrade hosted Pro ($29 a month).",
       },
       {
         question: "Can I connect it to GitHub Issues?",

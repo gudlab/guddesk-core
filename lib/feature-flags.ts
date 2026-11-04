@@ -23,11 +23,45 @@ export function getPlanLimits(_plan?: string): PlanLimits {
   return UNLIMITED;
 }
 
+export type SeatDecision = {
+  allowed: boolean;
+  plan: string;
+  members: number;
+  pendingInvites: number;
+  used: number;
+  maxSeats: number;
+};
+
+export type ConversationBanner = {
+  level: "warning" | "over";
+  count: number;
+  limit: number;
+  monthKey: string;
+};
+
+export async function checkSeatAvailability(
+  _workspaceId: string,
+): Promise<SeatDecision> {
+  return {
+    allowed: true,
+    plan: "CORE",
+    members: 0,
+    pendingInvites: 0,
+    used: 0,
+    maxSeats: Infinity,
+  };
+}
+
+export async function getConversationLimitBanner(
+  _workspaceId: string,
+): Promise<ConversationBanner | null> {
+  return null;
+}
+
 export async function canUserCreateWorkspace(_userId: string): Promise<{
   allowed: boolean;
   currentCount: number;
   maxAllowed: number;
-  reason?: string;
 }> {
   return { allowed: true, currentCount: 0, maxAllowed: Infinity };
 }

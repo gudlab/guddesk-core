@@ -37,6 +37,7 @@ export default async function CustomersPage({
   const search = query.search?.trim() || undefined;
   const segmentId = query.segment || undefined;
 
+  // Build where clause
   const where: Prisma.VisitorWhereInput = { workspaceId: workspace.id };
   if (search) {
     where.OR = [
@@ -46,6 +47,7 @@ export default async function CustomersPage({
     ];
   }
 
+  // Apply segment conditions if a segment is selected
   let activeSegment: { id: string; name: string; color: string | null } | null = null;
   if (segmentId) {
     const segment = await prisma.customerSegment.findUnique({
@@ -61,6 +63,7 @@ export default async function CustomersPage({
     }
   }
 
+  // Fetch all segments for the filter dropdown
   const [customers, total, segments] = await Promise.all([
     prisma.visitor.findMany({
       where,

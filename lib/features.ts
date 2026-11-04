@@ -29,13 +29,13 @@ export const features: Feature[] = [
     tagline: "Live chat with your customers",
     headline: "Embed live chat with two lines of JavaScript.",
     description:
-      "Add a customizable chat widget to your website or app with two lines of JavaScript. Customers reach your team without reloading the page, in the same thread as any BOT replies from an agent you connect.",
+      "Add a customizable chat widget to your website or app with two lines of JavaScript. Customers reach your team in the same thread as any BOT replies from an agent you connect.",
     icon: "messageCircle",
     highlights: [
       {
         title: "Two-line installation",
         description:
-          "Paste a JavaScript snippet into your site. The widget handles authentication and theming. Messages arrive in real time when you add Pusher keys, and within seconds without them.",
+          "Paste a JavaScript snippet into your site. The widget handles authentication and theming, and replies show up as they're sent.",
         icon: "code",
       },
       {
@@ -62,8 +62,7 @@ export const features: Feature[] = [
       "Custom branding and colors",
       "Page-based visibility rules",
       "Identity verification (HMAC)",
-      "Typing indicators (with Pusher keys)",
-      "Real-time messaging via Pusher (optional)",
+      "Live replies and typing indicators in the widget",
       "Offline form fallback",
       "Mobile responsive",
     ],
@@ -83,7 +82,7 @@ export const features: Feature[] = [
       {
         question: "Does the widget slow down my website?",
         answer:
-          "The snippet loads the script with the async attribute, so it does not block your page from rendering. The script is about 35 kB gzipped.",
+          "The snippet loads the script with the async attribute, so it does not block your page from rendering. The script is about 34 kB gzipped.",
       },
       {
         question: "Can I control which pages show the widget?",
@@ -101,10 +100,10 @@ export const features: Feature[] = [
   {
     slug: "ai-agents",
     name: "AI Agents",
-    tagline: "Connect your own bot. AI assist for your team is planned.",
+    tagline: "Connect your own bot. GudBot stays off until you turn it on.",
     headline: "Your agent replies as BOT through the API.",
     description:
-      "Reply as BOT through the API. AI reply suggestions and summaries for your team are planned.",
+      "Reply as BOT through the API. GudBot can suggest replies and summaries. It stays off until you turn it on.",
     icon: "sparkles",
     highlights: [
       {
@@ -120,15 +119,15 @@ export const features: Feature[] = [
         icon: "bot",
       },
       {
-        title: "AI assist (planned)",
+        title: "GudBot for your team",
         description:
-          "Reply suggestions and summaries for your team. Planned, shipping with GudBot v1.",
+          "Reply suggestions and summaries. Optional, and off until you turn it on.",
         icon: "sparkles",
       },
       {
         title: "No per-resolution fee",
         description:
-          "GudDesk does not charge per AI outcome. A built-in GudDesk AI agent that answers on its own is on the roadmap.",
+          "GudDesk does not charge per AI outcome. GudBot stays off until you turn it on.",
         icon: "users",
       },
     ],
@@ -136,9 +135,9 @@ export const features: Feature[] = [
       "Agent webhooks",
       "REST API and MCP",
       "BOT message type",
-      "AI reply suggestions and summaries: planned",
+      "GudBot suggestions (optional, default off)",
       "No per-resolution fees",
-      "Built-in agent on the roadmap",
+      "Bring your own agent via the API",
     ],
     useCaseExamples: [
       {
@@ -156,7 +155,7 @@ export const features: Feature[] = [
       {
         question: "Is there a built-in AI agent?",
         answer:
-          "Not yet. One is on the roadmap. Today you connect your own agent through the API.",
+          "GudBot can suggest replies and summaries. It stays off until you turn it on. You can also connect your own agent through the API.",
       },
       {
         question: "Can I build my own AI agent?",
@@ -164,9 +163,9 @@ export const features: Feature[] = [
           "Yes. Installing an agent gives it a webhook and an API key. It hears about new messages and replies as BOT through the REST API or the MCP server.",
       },
       {
-        question: "Will GudDesk add AI assist for agents?",
+        question: "Does GudDesk have AI assist for agents?",
         answer:
-          "Yes. Reply suggestions and summaries are planned and will ship with GudBot v1. Custom agents you connect today can use any model you like.",
+          "GudBot can suggest replies and summaries. It stays off until you turn it on. Custom agents you connect today can use any model you like.",
       },
     ],
     relatedFeatures: ["live-chat", "shared-inbox", "automation-rules"],
@@ -175,9 +174,9 @@ export const features: Feature[] = [
     slug: "shared-inbox",
     name: "Shared Inbox",
     tagline: "One inbox for your entire support team",
-    headline: "Every conversation, every channel, one inbox.",
+    headline: "Every widget conversation in one inbox.",
     description:
-      "Chat and email conversations land in one shared inbox, next to any BOT replies. Assign, tag, prioritize and resolve conversations as a team.",
+      "Widget conversations and BOT replies land in one shared inbox. Assign, tag, prioritize and resolve them as a team. You can send replies by email. Incoming customer email on Cloud is still being set up.",
     icon: "inbox",
     highlights: [
       {
@@ -232,12 +231,12 @@ export const features: Feature[] = [
       {
         question: "What channels does the inbox support?",
         answer:
-          "Currently: live chat (widget), email, and API-created conversations. WhatsApp is on the roadmap.",
+          "Live chat (widget) and API-created conversations. You can send replies by email. Incoming customer email on Cloud is still being set up. WhatsApp is not available yet.",
       },
       {
         question: "Can I see who else is looking at a conversation?",
         answer:
-          "Not yet. A collision banner is built, but the inbox does not show it yet. Until then, assign a conversation before you reply so teammates know it's yours.",
+          "Yes. When a teammate has the same conversation open, a banner says they are viewing it, and it changes to \"is replying\" while they type a reply.",
       },
       {
         question: "How do shared drafts work?",
@@ -328,13 +327,13 @@ export const features: Feature[] = [
     tagline: "Rule builder and SLA policies",
     headline: "Set up rules and SLA deadlines.",
     description:
-      "Build rules with a trigger, conditions and one action. GudDesk runs each rule when its trigger fires. SLA policies with first-response and resolution deadlines work today.",
+      "Build rules with a trigger, conditions and one action. Rules are saved today, but GudDesk does not run them yet. SLA policies with first-response and resolution deadlines work today.",
     icon: "automations",
     highlights: [
       {
         title: "Triggers",
         description:
-          "Pick a trigger for each rule: conversation created, message received, conversation closed, tag added, or unassigned for a set time.",
+          "Pick a trigger for each rule: conversation created, message received, conversation closed, tag added, or unassigned for a set time. Rules do not run yet.",
         icon: "zap",
       },
       {
@@ -352,12 +351,12 @@ export const features: Feature[] = [
       {
         title: "SLA enforcement",
         description:
-          "Define SLA policies with first-response and resolution deadlines. GudDesk checks for breaches about every 5 minutes in each workspace while your team uses the inbox or API, and on the schedule you set for the SLA cron route. A breached conversation gets a note and the assignee gets an email.",
+          "Define SLA policies with first-response and resolution deadlines. GudDesk checks for breaches about every 5 minutes in each workspace while your team uses the inbox or API, plus an hourly scheduled run. A breached conversation gets a note and the assignee gets an email.",
         icon: "clock",
       },
     ],
     capabilities: [
-      "Rule builder with one action per rule",
+      "Rule builder (rules do not run yet)",
       "5 trigger types",
       "6 action types",
       "Tag, email and message conditions",
@@ -381,12 +380,12 @@ export const features: Feature[] = [
       {
         question: "How many automation rules can I create?",
         answer:
-          "There is no limit on the number of rules. Rules run in the order you set. To stop loops, one conversation runs at most 20 rules an hour.",
+          "There is no limit on the number of rules. Rules are saved with an order, but GudDesk does not run them yet.",
       },
       {
         question: "Can automations send messages to customers?",
         answer:
-          "Yes. A rule with a send-message action posts a bot reply with the text you set. On email conversations the reply shows in the thread but is not emailed yet.",
+          "Not yet. You can save a rule with a send-message action, but rules do not run yet. Agents can send canned responses from the reply box today.",
       },
       {
         question: "Do SLA timers account for business hours?",

@@ -18,13 +18,13 @@ export function CannedResponsePicker({
   onClose,
 }: CannedResponsePickerProps) {
   return (
-    <div className="absolute inset-x-0 bottom-full mb-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-md">
+    <div className="bg-popover absolute inset-x-0 bottom-full mb-1 max-h-48 overflow-y-auto rounded-md border shadow-md">
       <div className="flex items-center justify-between border-b px-3 py-1.5">
-        <span className="text-xs font-medium text-muted-foreground">
-          Canned Responses
+        <span className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+          Canned responses
         </span>
         <button
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="hover:text-foreground text-sm text-neutral-600 dark:text-neutral-300"
           onClick={onClose}
         >
           Esc
@@ -33,11 +33,11 @@ export function CannedResponsePicker({
       {responses.map((r) => (
         <button
           key={r.id}
-          className="flex w-full flex-col gap-0.5 px-3 py-2 text-left hover:bg-muted"
+          className="hover:bg-muted flex w-full flex-col gap-0.5 px-3 py-2 text-left"
           onClick={() => onSelect(r)}
         >
-          <span className="text-xs font-medium">{r.title}</span>
-          <span className="truncate text-xs text-muted-foreground">
+          <span className="text-sm font-medium">{r.title}</span>
+          <span className="truncate text-sm text-neutral-600 dark:text-neutral-300">
             {r.body}
           </span>
         </button>

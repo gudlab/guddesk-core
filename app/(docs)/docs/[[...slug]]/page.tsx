@@ -41,6 +41,7 @@ export async function generateMetadata({
   return constructMetadata({
     title: `${title} | GudDesk`,
     description: description,
+    path: doc.slug,
   });
 }
 

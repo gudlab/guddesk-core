@@ -14,7 +14,11 @@ interface Props {
   replyingUser: string | null;
 }
 
-export function CollisionBanner({ viewers, isOtherReplying, replyingUser }: Props) {
+export function CollisionBanner({
+  viewers,
+  isOtherReplying,
+  replyingUser,
+}: Props) {
   if (viewers.length === 0 && !isOtherReplying) return null;
 
   const viewerNames = viewers.map((v) => v.name);
@@ -26,7 +30,7 @@ export function CollisionBanner({ viewers, isOtherReplying, replyingUser }: Prop
         : `${viewerNames[0]} and ${viewerNames.length - 1} others are also viewing`;
 
   return (
-    <div className="flex items-center gap-2 border-b bg-blue-50 px-4 py-1.5 text-xs text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+    <div className="flex items-center gap-2 border-b bg-blue-50 px-4 py-1.5 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-200">
       <Icons.eye className="size-3.5 shrink-0" />
       <span>
         {isOtherReplying && replyingUser

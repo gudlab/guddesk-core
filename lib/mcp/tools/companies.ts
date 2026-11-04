@@ -17,7 +17,7 @@ function json(data: unknown) {
 // ---------------------------------------------------------------------------
 
 export function registerCompanyTools(server: McpServer, auth: McpAuthContext) {
-  // ── list_companies ────────────────────────────────────────────────────────
+  // ── list_companies ──────────────────────────────────────────────────────
   server.registerTool(
     "list_companies",
     {
@@ -65,7 +65,7 @@ export function registerCompanyTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── get_company ───────────────────────────────────────────────────────────
+  // ── get_company ────────────────────────────────────────────────────────
   server.registerTool(
     "get_company",
     {
@@ -116,7 +116,7 @@ export function registerCompanyTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── create_company ────────────────────────────────────────────────────────
+  // ── create_company ────────────────────────────────────────────────────
   server.registerTool(
     "create_company",
     {
@@ -170,7 +170,7 @@ export function registerCompanyTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── update_company ────────────────────────────────────────────────────────
+  // ── update_company ────────────────────────────────────────────────────
   server.registerTool(
     "update_company",
     {

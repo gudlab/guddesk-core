@@ -18,7 +18,7 @@ function json(data: unknown) {
 // ---------------------------------------------------------------------------
 
 export function registerWorkspaceTools(server: McpServer, auth: McpAuthContext) {
-  // ── get_workspace ─────────────────────────────────────────────────────────
+  // ── get_workspace ───────────────────────────────────────────────────────
   server.registerTool(
     "get_workspace",
     {
@@ -54,7 +54,7 @@ export function registerWorkspaceTools(server: McpServer, auth: McpAuthContext) 
     },
   );
 
-  // ── list_workspace_members ────────────────────────────────────────────────
+  // ── list_workspace_members ──────────────────────────────────────────────
   server.registerTool(
     "list_workspace_members",
     {

@@ -2,8 +2,6 @@ import { NextRequest } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { withApiAuth, withHeaders, apiOk, apiError } from "@/lib/api-utils";
-import { fireAutomations } from "@/lib/automations/dispatch";
-import { conversationUpdateEvents, origin } from "@/lib/automations/events";
 
 // ---------------------------------------------------------------------------
 // GET /api/v1/conversations/:conversationId  —  Get a conversation
@@ -81,7 +79,7 @@ export async function PATCH(
     // Verify conversation belongs to workspace
     const existing = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      select: { workspaceId: true, status: true, tags: true, assigneeId: true },
+      select: { workspaceId: true, status: true },
     });
 
     if (!existing || existing.workspaceId !== ctx.workspaceId) {
@@ -110,7 +108,6 @@ export async function PATCH(
     if (body.assigneeId !== undefined) {
       if (body.assigneeId === null) {
         updateData.assigneeId = null;
-        if (existing.assigneeId) updateData.unassignedAt = new Date();
       } else {
         // Verify the assignee is a member of this workspace
         const member = await prisma.workspaceMember.findUnique({
@@ -165,16 +162,6 @@ export async function PATCH(
         updatedAt: true,
       },
     });
-
-    fireAutomations(
-      conversationUpdateEvents({
-        workspaceId: ctx.workspaceId,
-        conversationId,
-        before: existing,
-        after: conversation,
-        origin: origin("api"),
-      }),
-    );
 
     return withHeaders(apiOk(conversation), rateLimitHeaders);
   } catch (error) {

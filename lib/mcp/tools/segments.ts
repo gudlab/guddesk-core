@@ -16,7 +16,7 @@ function json(data: unknown) {
 // ---------------------------------------------------------------------------
 
 export function registerSegmentTools(server: McpServer, auth: McpAuthContext) {
-  // ── list_segments ─────────────────────────────────────────────────────────
+  // ── list_segments ──────────────────────────────────────────────────────
   server.registerTool(
     "list_segments",
     {
@@ -50,7 +50,7 @@ export function registerSegmentTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── get_segment ───────────────────────────────────────────────────────────
+  // ── get_segment ────────────────────────────────────────────────────────
   server.registerTool(
     "get_segment",
     {
@@ -72,7 +72,7 @@ export function registerSegmentTools(server: McpServer, auth: McpAuthContext) {
     },
   );
 
-  // ── create_segment ────────────────────────────────────────────────────────
+  // ── create_segment ────────────────────────────────────────────────────
   server.registerTool(
     "create_segment",
     {

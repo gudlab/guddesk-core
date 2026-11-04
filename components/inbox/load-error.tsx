@@ -17,21 +17,29 @@ export function LoadError({ what, onRetry, compact = false }: LoadErrorProps) {
     return (
       <div
         role="status"
-        className="flex items-center justify-between gap-2 border-b bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground"
+        className="bg-muted/60 flex items-center justify-between gap-2 border-b px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300"
       >
         <span>Can&apos;t reach GudDesk. Showing the last loaded {what}.</span>
-        <button type="button" onClick={onRetry} className="font-medium text-foreground underline-offset-2 hover:underline">
+        <button
+          type="button"
+          onClick={onRetry}
+          className="text-foreground font-medium underline-offset-2 hover:underline"
+        >
           Retry
         </button>
       </div>
     );
   }
   return (
-    <div role="alert" className="flex flex-col items-center justify-center gap-2 p-8 text-center">
-      <Icons.warning className="size-6 text-muted-foreground" />
+    <div
+      role="alert"
+      className="flex flex-col items-center justify-center gap-2 p-8 text-center"
+    >
+      <Icons.warning className="size-6 text-neutral-600 dark:text-neutral-300" />
       <p className="text-sm font-medium">Couldn&apos;t load {what}</p>
-      <p className="text-xs text-muted-foreground">
-        Check your connection. We&apos;ll try again when you&apos;re back online.
+      <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        Check your connection. We&apos;ll try again when you&apos;re back
+        online.
       </p>
       <Button type="button" size="sm" variant="outline" onClick={onRetry}>
         Try again

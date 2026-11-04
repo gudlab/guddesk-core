@@ -20,6 +20,7 @@ type FormData = z.infer<typeof forgotPasswordSchema>;
 export function ForgotPasswordForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const [blockedNotice, setBlockedNotice] = React.useState<string | null>(null);
 
   const {
     register,
@@ -35,7 +36,9 @@ export function ForgotPasswordForm() {
     try {
       const result = await forgotPassword(data);
 
-      if (result.error) {
+      if (result.blocked) {
+        setBlockedNotice(result.blocked);
+      } else if (result.error) {
         toast.error(result.error);
       } else if (result.success) {
         setIsSubmitted(true);
@@ -46,6 +49,29 @@ export function ForgotPasswordForm() {
     }
 
     setIsLoading(false);
+  }
+
+  if (blockedNotice) {
+    return (
+      <div className="flex flex-col items-center space-y-4 text-center">
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-left text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+        >
+          <p className="font-medium">Email not sent on this environment</p>
+          <p className="mt-1">{blockedNotice}</p>
+        </div>
+        <Link
+          href="/login"
+          className={cn(
+            buttonVariants({ variant: "outline", rounded: "xl" }),
+            "mt-4",
+          )}
+        >
+          Back to login
+        </Link>
+      </div>
+    );
   }
 
   if (isSubmitted) {

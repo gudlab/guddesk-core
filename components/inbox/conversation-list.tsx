@@ -1,8 +1,10 @@
 "use client";
 
 import type { ConversationListItem } from "@/hooks/use-conversations";
-import { ConversationListItemComponent } from "./conversation-list-item";
+import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
+
+import { ConversationListItemComponent } from "./conversation-list-item";
 import { LoadError } from "./load-error";
 
 interface ConversationListProps {
@@ -11,7 +13,9 @@ interface ConversationListProps {
   /** The last load failed; the list may be stale or empty. */
   loadError?: boolean;
   onRetry?: () => void;
-  status: "OPEN" | "SNOOZED" | "CLOSED";
+  hasMore: boolean;
+  total: number;
+  loadMore: () => void;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }
@@ -21,15 +25,16 @@ export function ConversationList({
   isLoading,
   loadError = false,
   onRetry = () => {},
-  status,
+  hasMore,
+  total,
+  loadMore,
   selectedId,
   onSelect,
 }: ConversationListProps) {
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Icons.spinner className="size-5 animate-spin text-muted-foreground" />
+        <Icons.spinner className="size-5 animate-spin text-neutral-600 dark:text-neutral-300" />
       </div>
     );
   }
@@ -41,25 +46,47 @@ export function ConversationList({
   if (conversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
-        <Icons.inbox className="size-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">
-          No {status.toLowerCase()} conversations
+        <Icons.inbox className="size-8 text-neutral-600 dark:text-neutral-300" />
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          No conversations
         </p>
       </div>
     );
   }
 
   return (
-    <div className="divide-y overflow-y-auto">
-      {loadError && <LoadError what="conversations" onRetry={onRetry} compact />}
-      {conversations.map((conversation) => (
-        <ConversationListItemComponent
-          key={conversation.id}
-          conversation={conversation}
-          isSelected={selectedId === conversation.id}
-          onClick={() => onSelect(conversation.id)}
-        />
-      ))}
+    <div className="flex flex-col overflow-y-auto">
+      {loadError && (
+        <LoadError what="conversations" onRetry={onRetry} compact />
+      )}
+      <div className="divide-y">
+        {conversations.map((conversation) => (
+          <ConversationListItemComponent
+            key={conversation.id}
+            conversation={conversation}
+            isSelected={selectedId === conversation.id}
+            onClick={() => onSelect(conversation.id)}
+          />
+        ))}
+      </div>
+
+      {/* Load more / count */}
+      <div className="shrink-0 border-t px-3 py-2">
+        {hasMore ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-sm"
+            onClick={loadMore}
+          >
+            Load more
+          </Button>
+        ) : (
+          <p className="text-center text-sm text-neutral-600 dark:text-neutral-300">
+            {total} {total === 1 ? "conversation" : "conversations"}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
