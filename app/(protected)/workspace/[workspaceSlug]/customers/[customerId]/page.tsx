@@ -55,15 +55,18 @@ export default async function CustomerDetailPage({
         _count: { select: { conversations: true } },
       },
     }),
+    // Fetch all companies for the assign-to-company dropdown
     prisma.company.findMany({
       where: { workspaceId: workspace.id },
       select: { id: true, name: true, domain: true },
       orderBy: { name: "asc" },
     }),
+    // Fetch custom fields for customer entity type
     prisma.customField.findMany({
       where: { workspaceId: workspace.id, entityType: "customer" },
       orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
     }),
+    // Fetch recent timeline events
     prisma.customerEvent.findMany({
       where: { visitorId: customerId, workspaceId: workspace.id },
       orderBy: { createdAt: "desc" },
@@ -75,6 +78,7 @@ export default async function CustomerDetailPage({
     notFound();
   }
 
+  // Strip workspaceId before passing to client
   const { workspaceId: _ws, ...customerData } = customer;
 
   return (
