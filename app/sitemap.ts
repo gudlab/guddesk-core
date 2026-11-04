@@ -2,13 +2,16 @@ import { MetadataRoute } from "next";
 
 import { allDocs, allPosts } from "contentlayer/generated";
 
-import { env } from "@/env.mjs";
 import { getAllAlternativeSlugs } from "@/lib/alternatives";
 import { getAllFeatureSlugs } from "@/lib/features";
+import { getPublicHelpSitemapEntries } from "@/lib/help-center/sitemap";
 import { getAllUseCaseSlugs } from "@/lib/use-cases";
+import { CANONICAL_ORIGIN } from "@/lib/canonical";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = env.NEXT_PUBLIC_APP_URL;
+export const revalidate = 3600;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const siteUrl = CANONICAL_ORIGIN;
 
   // Static marketing pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -77,6 +80,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }),
   );
 
+  let helpPages: MetadataRoute.Sitemap = [];
+  try {
+    const helpEntries = await getPublicHelpSitemapEntries();
+    helpPages = helpEntries.map((entry) => ({
+      url: `${siteUrl}${entry.path}`,
+      lastModified: entry.lastModified,
+      changeFrequency: "weekly" as const,
+      priority: entry.path.split("/").length <= 3 ? 0.6 : 0.5,
+    }));
+  } catch {
+    helpPages = [];
+  }
+
   return [
     ...staticPages,
     ...blogPages,
@@ -84,5 +100,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...alternativePages,
     ...featurePages,
     ...useCasePages,
+    ...helpPages,
   ];
 }

@@ -1,8 +1,12 @@
 import { MetadataRoute } from "next";
 
-import { env } from "@/env.mjs";
+import { CANONICAL_ORIGIN, isIndexableDeployment } from "@/lib/canonical";
 
 export default function robots(): MetadataRoute.Robots {
+  // Preview, Development and local builds: keep crawlers out entirely.
+  if (!isIndexableDeployment()) {
+    return { rules: [{ userAgent: "*", disallow: "/" }] };
+  }
   return {
     rules: [
       {
@@ -16,9 +20,10 @@ export default function robots(): MetadataRoute.Robots {
           "/login",
           "/register",
           "/onboarding/",
+          "/help/*/search",
         ],
       },
     ],
-    sitemap: `${env.NEXT_PUBLIC_APP_URL}/sitemap.xml`,
+    sitemap: `${CANONICAL_ORIGIN}/sitemap.xml`,
   };
 }
