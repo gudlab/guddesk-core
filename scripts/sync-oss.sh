@@ -43,6 +43,7 @@ exclude_files = {
     "PRODUCT.md",
     "DESIGN.md",
     ".github/workflows/cron.yml",
+    "lib/scheduled/cron-workflow.test.ts",
 }
 src_files = set()
 for dirpath, dirnames, filenames in os.walk(src):
@@ -77,7 +78,8 @@ rm -f "$WORKDIR/guddesk-core/.env" \
   "$WORKDIR/guddesk-core/vercel.md" \
   "$WORKDIR/guddesk-core/PRODUCT.md" \
   "$WORKDIR/guddesk-core/DESIGN.md" \
-  "$WORKDIR/guddesk-core/.github/workflows/cron.yml"
+  "$WORKDIR/guddesk-core/.github/workflows/cron.yml" \
+  "$WORKDIR/guddesk-core/lib/scheduled/cron-workflow.test.ts"
 rm -rf "$WORKDIR/guddesk-core/.impeccable"
 
 # Public README: this tree is gudlab/guddesk-core, not the private SaaS copy.
