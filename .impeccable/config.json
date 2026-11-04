@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-11-02T20:12:50.388Z",
+        "reason": "Inter is the incumbent body face (next/font/google in assets/fonts). DESIGN.md keeps it as temporary brand inertia until Tim/Kim approve a type pass. This polish must not introduce Fraunces, Geist, Plus Jakarta Sans, or Space Grotesk."
+      }
+    ]
+  }
+}

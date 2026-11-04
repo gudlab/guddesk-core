@@ -1,0 +1,70 @@
+name: Scheduled jobs
+
+# Vercel Hobby only runs crons once a day, so this calls the time-sensitive
+# cron routes once an hour, at 7 minutes past (about 720 Actions minutes a
+# month). The main SLA path is the throttled 5-minute check that inbox and
+# API requests run (lib/scheduled); this hourly run covers quiet
+# workspaces. GitHub may start scheduled runs a few minutes late under
+# load. Schedules only run from the default branch.
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: scheduled-jobs
+  cancel-in-progress: false
+
+jobs:
+  call-cron-routes:
+    runs-on: ubuntu-latest
+    # Worst case per path: 4 attempts x 20 s max-time + 5 + 10 + 20 s
+    # backoff = 115 s, so two paths fit in 5 minutes.
+    timeout-minutes: 5
+    env:
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      BASE_URL: https://www.guddesk.com
+      # Space-separated cron paths. Hook: add /api/cron/automations here
+      # once that route exists.
+      CRON_PATHS: /api/cron/sla-check
+    steps:
+      - name: Skip without CRON_SECRET
+        if: env.CRON_SECRET == ''
+        run: echo "::notice title=Scheduled jobs skipped::The CRON_SECRET repository secret is not set, so no cron routes were called."
+
+      - name: Call cron routes
+        if: env.CRON_SECRET != ''
+        shell: bash
+        run: |
+          set -u
+          failed=0
+          for path in $CRON_PATHS; do
+            ok=0
+            for attempt in 1 2 3 4; do
+              code=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+                --max-time 20 --connect-timeout 10 \
+                --request GET \
+                --header "Authorization: Bearer ${CRON_SECRET}" \
+                "${BASE_URL}${path}") || code=000
+              if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then
+                echo "${path}: HTTP ${code}"
+                ok=1
+                break
+              fi
+              echo "${path}: attempt ${attempt} got HTTP ${code}"
+              if [ "$code" = "401" ] || [ "$code" = "403" ]; then
+                echo "::error title=${path} rejected::HTTP ${code}. CRON_SECRET here and on Vercel must match."
+                break
+              fi
+              if [ "$attempt" -lt 4 ]; then
+                sleep $(( 5 * 2 ** (attempt - 1) ))
+              fi
+            done
+            if [ "$ok" != 1 ]; then
+              echo "::error title=${path} failed::No 2xx response after retries."
+              failed=1
+            fi
+          done
+          exit "$failed"

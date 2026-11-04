@@ -42,3 +42,7 @@ next-env.d.ts
 
 .vscode
 .contentlayer
+
+# GudBot AI eval run artifacts (per-release; do not commit)
+qa/ai-eval/results*.jsonl
+qa/ai-eval/summary*.json
