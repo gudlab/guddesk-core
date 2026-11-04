@@ -31,6 +31,7 @@ export async function generateMetadata({
   return constructMetadata({
     title: `${title} | GudDesk`,
     description: description,
+    path: `/${slug}`,
   });
 }
 
@@ -49,17 +50,21 @@ export default async function PagePage({
   }
 
   return (
-    <article className="container mx-auto max-w-3xl py-6 lg:py-12">
+    <article className="mx-auto max-w-[60ch] px-4 py-12 lg:py-20">
       <div className="space-y-4">
-        <h1 className="inline-block font-heading text-4xl lg:text-5xl">
+        <h1 className="text-balance font-heading text-4xl lg:text-5xl">
           {page.title}
         </h1>
-        {page.description && (
-          <p className="text-xl text-muted-foreground">{page.description}</p>
-        )}
+        {page.description ? (
+          <p className="text-pretty text-lg text-neutral-600 dark:text-neutral-300">
+            {page.description}
+          </p>
+        ) : null}
       </div>
-      <hr className="my-4" />
-      <Mdx code={page.body.code} />
+      <hr className="my-8 border-neutral-200 dark:border-neutral-800" />
+      <div className="text-neutral-700 dark:text-neutral-300">
+        <Mdx code={page.body.code} />
+      </div>
     </article>
   );
 }

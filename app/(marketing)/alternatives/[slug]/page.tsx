@@ -14,11 +14,14 @@ import {
 } from "@/components/ui/table";
 import { Icons } from "@/components/shared/icons";
 import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
+import { MarketingFaq } from "@/components/sections/marketing-faq";
+import { MarketingPageCta } from "@/components/sections/marketing-page-cta";
 import {
   alternatives,
   getAlternativeBySlug,
   getAllAlternativeSlugs,
 } from "@/lib/alternatives";
+import { withCanonical } from "@/lib/canonical";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -35,10 +38,10 @@ export async function generateMetadata({
   const alt = getAlternativeBySlug(slug);
   if (!alt) return {};
 
-  return {
+  return withCanonical({
     title: `Free ${alt.name} Alternative | Open Source | GudDesk`,
     description: `Looking for a free ${alt.name} alternative? GudDesk is open-source customer support software with live chat and a shared inbox. Free plan for 2 members. Self-hostable.`,
-  };
+  }, `/alternatives/${alt.slug}`);
 }
 
 export default async function AlternativePage({ params }: PageProps) {
@@ -49,36 +52,27 @@ export default async function AlternativePage({ params }: PageProps) {
     notFound();
   }
 
-  // Other alternatives for cross-linking
   const otherAlts = alternatives.filter((a) => a.slug !== slug);
 
   return (
     <>
-      {/* Hero */}
-      <section className="space-y-6 py-12 sm:py-20 lg:py-24">
+      <section className="py-16 sm:py-20 lg:py-24">
         <MaxWidthWrapper className="flex flex-col items-center text-center">
-          <div className="text-gradient_brand mb-4 font-semibold">
-            {alt.tagline}
-          </div>
           <h1 className="max-w-3xl text-balance font-satoshi text-[40px] font-black leading-[1.15] tracking-tight sm:text-5xl md:text-6xl md:leading-[1.15]">
-            Looking for a free{" "}
-            <span className="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-400 bg-clip-text text-transparent">
-              {alt.name} alternative
-            </span>
-            ?
+            A free {alt.name} alternative
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-muted-foreground">
+          <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-neutral-600 dark:text-neutral-300">
             {alt.description}
           </p>
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/register"
               className={cn(
                 buttonVariants({ rounded: "xl", size: "lg" }),
-                "gap-2 px-5 text-[15px]",
+                "gap-2 px-5",
               )}
             >
-              Get Started Free
+              Create a free workspace
               <Icons.arrowRight className="size-4" />
             </Link>
             <Link
@@ -89,59 +83,65 @@ export default async function AlternativePage({ params }: PageProps) {
                   rounded: "xl",
                   size: "lg",
                 }),
-                "px-4 text-[15px]",
+                "px-5",
               )}
             >
-              Compare Pricing
+              Compare plans
             </Link>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Free plan for 2 members &middot; No credit card required &middot; Self-host the AGPL-3.0 code
+          <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-300">
+            Free for 2 members. No credit card. Self-host the AGPL-3.0 code if
+            you prefer.
           </p>
         </MaxWidthWrapper>
       </section>
 
-      {/* Competitor pricing callout */}
-      <section className="border-t py-12">
-        <MaxWidthWrapper>
-          <div className="mx-auto max-w-2xl rounded-xl border bg-card p-6 text-center shadow-sm">
-            <h2 className="font-heading text-lg">{alt.name} Pricing</h2>
-            <p className="mt-2 text-muted-foreground">{alt.pricing}</p>
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-              <Icons.check className="size-4" />
-              GudDesk: Free for 2 members and 500 conversations a month. No credit card required. Pro is $29 a month flat.
-            </div>
-          </div>
+      <section className="border-t py-16">
+        <MaxWidthWrapper className="max-w-2xl text-center">
+          <h2 className="font-heading text-xl">{alt.name} pricing</h2>
+          <p className="mt-3 text-pretty text-neutral-600 dark:text-neutral-300">
+            {alt.pricing}
+          </p>
+          <p className="mt-4 text-sm font-medium text-emerald-800 dark:text-emerald-300">
+            GudDesk Free is $0 for 2 members and 500 conversations a month.
+          </p>
+          <p className="mt-1 text-sm font-medium text-emerald-800 dark:text-emerald-300">
+            Pro is $29 a month flat.
+          </p>
         </MaxWidthWrapper>
       </section>
 
-      {/* Feature comparison table */}
-      <section className="py-16">
+      <section className="py-16 sm:py-20">
         <MaxWidthWrapper>
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              Feature Comparison
+            <h2 className="font-heading text-3xl text-balance md:text-4xl">
+              GudDesk and {alt.name}, feature by feature
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              See how GudDesk stacks up against {alt.name} feature by feature.
+            <p className="mt-4 text-pretty text-neutral-600 dark:text-neutral-300">
+              Figures for {alt.name} come from their public pricing pages. Dates
+              are on that page&apos;s source line.
             </p>
           </div>
 
-          <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-xl border shadow-sm">
+          <div className="mx-auto mt-10 max-w-3xl overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[40%]">Feature</TableHead>
-                  <TableHead className="w-[30%]">{alt.name}</TableHead>
-                  <TableHead className="w-[30%]">GudDesk</TableHead>
+                  <TableHead className="w-[40%] text-neutral-800 dark:text-neutral-200">
+                    Feature
+                  </TableHead>
+                  <TableHead className="w-[30%] text-neutral-800 dark:text-neutral-200">
+                    {alt.name}
+                  </TableHead>
+                  <TableHead className="w-[30%] text-neutral-800 dark:text-neutral-200">
+                    GudDesk
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {alt.features.map((feature) => (
                   <TableRow key={feature.name}>
-                    <TableCell className="font-medium">
-                      {feature.name}
-                    </TableCell>
+                    <TableCell className="font-medium">{feature.name}</TableCell>
                     <TableCell>
                       <FeatureValue value={feature.competitor} />
                     </TableCell>
@@ -156,23 +156,17 @@ export default async function AlternativePage({ params }: PageProps) {
         </MaxWidthWrapper>
       </section>
 
-      {/* Why switch */}
-      <section className="border-t py-16">
+      <section className="border-t py-16 sm:py-20 lg:py-24">
         <MaxWidthWrapper>
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              Why switch from {alt.name}?
-            </h2>
-          </div>
+          <h2 className="text-center font-heading text-3xl text-balance md:text-4xl">
+            Why teams leave {alt.name}
+          </h2>
 
-          <div className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-2">
+          <div className="mx-auto mt-10 grid max-w-4xl gap-8 sm:grid-cols-2">
             {alt.switchReasons.map((reason) => (
-              <div
-                key={reason.title}
-                className="rounded-xl border bg-card p-6 shadow-sm"
-              >
+              <div key={reason.title}>
                 <h3 className="font-heading text-base">{reason.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-1.5 text-sm leading-relaxed text-pretty text-neutral-600 dark:text-neutral-300">
                   {reason.description}
                 </p>
               </div>
@@ -181,44 +175,34 @@ export default async function AlternativePage({ params }: PageProps) {
         </MaxWidthWrapper>
       </section>
 
-      {/* Key differentiators */}
-      <section className="border-t bg-muted/30 py-16">
+      <section className="border-t py-16 sm:py-20 lg:py-24">
         <MaxWidthWrapper>
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              What makes GudDesk different
-            </h2>
-          </div>
+          <h2 className="text-center font-heading text-3xl text-balance md:text-4xl">
+            What you get on GudDesk that {alt.name} prices extra
+          </h2>
 
-          <div className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mx-auto mt-10 grid max-w-4xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                icon: Icons.code,
-                title: "Open Source",
+                title: "Open source",
                 desc: "AGPL-3.0 licensed. Read the code and change it.",
               },
               {
-                icon: Icons.laptop,
-                title: "Self-Hostable",
-                desc: "Run on your own infrastructure. Own your data.",
+                title: "Self-hostable",
+                desc: "Run on your own Postgres. Own the data.",
               },
               {
-                icon: Icons.sparkles,
-                title: "Bring your own AI agent",
-                desc: "Connect your bot through the agent API. No per-resolution fees.",
+                title: "Bring your own agent",
+                desc: "Connect a bot through the agent API. No per-resolution fee. GudBot stays off until you turn it on.",
               },
               {
-                icon: Icons.users,
-                title: "No Per-Seat Pricing",
+                title: "No per-seat price",
                 desc: "Free for 2 members. Pro is $29 a month for unlimited seats.",
               },
             ].map((item) => (
-              <div key={item.title} className="text-center">
-                <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40">
-                  <item.icon className="size-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <h3 className="mt-3 font-heading text-sm">{item.title}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
+              <div key={item.title}>
+                <h3 className="font-heading text-base">{item.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-pretty text-neutral-600 dark:text-neutral-300">
                   {item.desc}
                 </p>
               </div>
@@ -227,91 +211,37 @@ export default async function AlternativePage({ params }: PageProps) {
         </MaxWidthWrapper>
       </section>
 
-      {/* FAQ */}
+      <div className="border-t" />
+      <MarketingFaq faqs={alt.faqs} />
+
       <section className="border-t py-16">
         <MaxWidthWrapper>
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              Frequently Asked Questions
-            </h2>
-          </div>
-
-          <div className="mx-auto mt-10 max-w-3xl space-y-6">
-            {alt.faqs.map((faq) => (
-              <div key={faq.question} className="rounded-xl border bg-card p-6">
-                <h3 className="font-heading text-base">{faq.question}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {faq.answer}
-                </p>
-              </div>
+          <h2 className="text-center font-heading text-xl">
+            Comparing another tool?
+          </h2>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {otherAlts.map((other) => (
+              <Link
+                key={other.slug}
+                href={`/alternatives/${other.slug}`}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm", rounded: "xl" }),
+                  "px-4",
+                )}
+              >
+                vs {other.name}
+              </Link>
             ))}
           </div>
         </MaxWidthWrapper>
       </section>
 
-      {/* Other alternatives */}
-      <section className="border-t bg-muted/30 py-12">
-        <MaxWidthWrapper>
-          <div className="mx-auto max-w-3xl text-center">
-            <h3 className="font-heading text-lg">
-              Also comparing other tools?
-            </h3>
-            <div className="mt-4 flex flex-wrap justify-center gap-3">
-              {otherAlts.map((other) => (
-                <Link
-                  key={other.slug}
-                  href={`/alternatives/${other.slug}`}
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "sm", rounded: "xl" }),
-                    "px-4",
-                  )}
-                >
-                  Free {other.name} Alternative
-                </Link>
-              ))}
-            </div>
-          </div>
-        </MaxWidthWrapper>
-      </section>
-
-      {/* CTA */}
-      <section className="border-t py-16">
-        <MaxWidthWrapper>
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-satoshi text-3xl font-black tracking-tight sm:text-4xl">
-              Ready to switch from {alt.name}?
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Cloud Free for 2 members. No credit card required. Self-host the code if you prefer.
-            </p>
-            <div className="mt-8 flex justify-center gap-3">
-              <Link
-                href="/register"
-                className={cn(
-                  buttonVariants({ rounded: "xl", size: "lg" }),
-                  "gap-2 px-5 text-[15px]",
-                )}
-              >
-                Get Started Free
-                <Icons.arrowRight className="size-4" />
-              </Link>
-              <Link
-                href="/docs/quickstart"
-                className={cn(
-                  buttonVariants({
-                    variant: "outline",
-                    rounded: "xl",
-                    size: "lg",
-                  }),
-                  "px-4 text-[15px]",
-                )}
-              >
-                Read the Docs
-              </Link>
-            </div>
-          </div>
-        </MaxWidthWrapper>
-      </section>
+      <MarketingPageCta
+        title={`Switch from ${alt.name}`}
+        description="Cloud Free for 2 members. No credit card. Self-host the code if you prefer."
+        secondaryHref="/docs/quickstart"
+        secondaryLabel="Read the docs"
+      />
     </>
   );
 }
@@ -329,22 +259,22 @@ function FeatureValue({
         className={cn(
           "size-4",
           positive
-            ? "text-emerald-600 dark:text-emerald-400"
-            : "text-muted-foreground",
+            ? "text-emerald-800 dark:text-emerald-300"
+            : "text-neutral-500 dark:text-neutral-400",
         )}
       />
     );
   }
   if (value === false) {
-    return <Icons.close className="size-4 text-muted-foreground/40" />;
+    return <Icons.close className="size-4 text-neutral-400" />;
   }
   return (
     <span
       className={cn(
         "text-sm",
         positive
-          ? "font-medium text-emerald-600 dark:text-emerald-400"
-          : "text-muted-foreground",
+          ? "font-medium text-emerald-800 dark:text-emerald-300"
+          : "text-neutral-600 dark:text-neutral-300",
       )}
     >
       {value}
