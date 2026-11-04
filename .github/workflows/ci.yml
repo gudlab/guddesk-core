@@ -5,17 +5,18 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  AUTH_SECRET: ci-placeholder-auth-secret-value
+  GOOGLE_CLIENT_ID: ci-google-client-id
+  GOOGLE_CLIENT_SECRET: ci-google-client-secret
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/guddesk
+  RESEND_API_KEY: re_ci_placeholder
+
 jobs:
-  ci:
-    name: CI
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/guddesk?sslmode=disable
-      AUTH_SECRET: ci-auth-secret-not-used
-      GOOGLE_CLIENT_ID: ci-google-client-id
-      GOOGLE_CLIENT_SECRET: ci-google-client-secret
-      RESEND_API_KEY: re_ci_placeholder
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -25,16 +26,12 @@ jobs:
         with:
           node-version-file: ".nvmrc"
           cache: pnpm
-      - name: Validate GudBot AI eval set
-        run: node qa/ai-eval/score.mjs validate
       - name: Install
         run: pnpm install --frozen-lockfile
+      - name: Validate GudBot AI eval set
+        run: node qa/ai-eval/score.mjs validate
       - name: Prisma generate
-        run: pnpm prisma generate
-      - name: Typecheck
-        run: pnpm run build:content && pnpm exec tsc --noEmit
-      - name: Lint
-        run: pnpm lint
+        run: pnpm exec prisma generate
       - name: Test
         run: |
           set -o pipefail
@@ -45,5 +42,47 @@ jobs:
             exit 1
           fi
           echo "Ran $count tests"
+      - name: Build content
+        run: pnpm build:content
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+      - name: Lint
+        run: pnpm lint
       - name: Build
         run: pnpm build
+
+  migrations:
+    name: Migrations (empty Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # A throwaway service container; nothing here reaches a real database.
+      DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Prisma generate
+        run: pnpm exec prisma generate
+      - name: prisma migrate deploy on an empty database (no drift, smoke), then upgrade one with data
+        run: bash scripts/ci-migrate-check.sh

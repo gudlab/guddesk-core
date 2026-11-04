@@ -43,8 +43,12 @@ exclude_files = {
     "PRODUCT.md",
     "DESIGN.md",
     ".github/workflows/cron.yml",
+    ".github/workflows/ci.yml",
     "lib/scheduled/cron-workflow.test.ts",
 }
+# Public CI (Test + Migrations) is owned by guddesk-core. Do not overwrite
+# or delete the destination file when the private tree has a different workflow.
+keep_dest_files = {".github/workflows/ci.yml"}
 src_files = set()
 for dirpath, dirnames, filenames in os.walk(src):
     dirnames[:] = [d for d in dirnames if d not in exclude_dirs]
@@ -65,6 +69,8 @@ for dirpath, dirnames, filenames in os.walk(dst):
     for f in filenames:
         relf = str(rel / f) if rel != Path(".") else f
         if relf.startswith(".git"):
+            continue
+        if relf in keep_dest_files:
             continue
         if relf not in src_files:
             (dst / relf).unlink()
