@@ -1,15 +1,22 @@
 "use server";
 
 import { auth } from "@/auth";
-import { findUserByEmail } from "@/lib/auth-email";
 import { prisma } from "@/lib/db";
+import { sendEmail } from "@/lib/outbound-email";
 import { emailFrom } from "@/lib/email/from";
-import { sendEmail } from "@/lib/email/send";
 import { requireWorkspaceRole } from "@/lib/workspace";
+import { getPlanLimits } from "@/lib/feature-flags";
+import {
+  createInvitationWithSeatLock,
+  normalizeInviteEmail,
+  type InvitationDb,
+} from "@/lib/invitations";
+import { seatLimitMessage } from "@/lib/plan-limits";
 import { workspaceInviteSchema } from "@/lib/validations/workspace";
 import { env } from "@/env.mjs";
 import WorkspaceInvitationEmail from "@/emails/workspace-invitation-email";
 import { revalidatePath } from "next/cache";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function inviteWorkspaceMember(
   workspaceId: string,
@@ -24,43 +31,41 @@ export async function inviteWorkspaceMember(
 
     await requireWorkspaceRole(workspaceId, session.user.id, ["OWNER", "ADMIN"]);
 
-    const { email, role } = workspaceInviteSchema.parse(data);
-
-    // Check if user is already a member (email is normalized by the
-    // schema; the account may be stored with capitals).
-    const existingUser = await findUserByEmail(prisma, email);
-
-    if (existingUser) {
-      const existingMember = await prisma.workspaceMember.findUnique({
-        where: {
-          workspaceId_userId: { workspaceId, userId: existingUser.id },
-        },
-      });
-
-      if (existingMember) {
-        return { status: "error", message: "This user is already a workspace member" };
-      }
-    }
-
-    // Check for existing pending invitation
-    const existingInvitation = await prisma.workspaceInvitation.findFirst({
-      where: { workspaceId, email: { equals: email, mode: "insensitive" }, status: "PENDING" },
+    // Stored trimmed and lowercased; lookups are case-insensitive because
+    // older rows may be mixed case.
+    const { email, role } = workspaceInviteSchema.parse({
+      ...data,
+      email: normalizeInviteEmail(data.email ?? ""),
     });
 
-    if (existingInvitation) {
+    // Member check, duplicate check, seat count and create run in one transaction behind
+    // a per-workspace advisory lock, so parallel invites can't go past the
+    // seat limit or send two live invites to one email. Expired pending
+    // invites don't block a new one. Existing members are never removed; a
+    // workspace at or over the limit just can't invite more.
+    const result = await createInvitationWithSeatLock(
+      prisma as unknown as InvitationDb,
+      getPlanLimits,
+      { workspaceId, email, role, invitedById: session.user.id },
+    );
+
+    if (result.status === "already_member") {
+      return { status: "error", message: "This user is already a workspace member" };
+    }
+
+    if (result.status === "duplicate") {
       return { status: "error", message: "An invitation has already been sent to this email" };
     }
 
-    // Create invitation (expires in 7 days)
-    const invitation = await prisma.workspaceInvitation.create({
-      data: {
-        workspaceId,
-        email,
-        role,
-        invitedById: session.user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
-    });
+    if (result.status === "seat_limit") {
+      return {
+        status: "error",
+        code: "SEAT_LIMIT",
+        message: seatLimitMessage(result.decision),
+      };
+    }
+
+    const invitation = { token: result.token };
 
     // Send invitation email via Resend
     const workspace = await prisma.workspace.findUnique({
@@ -68,41 +73,41 @@ export async function inviteWorkspaceMember(
       select: { name: true },
     });
 
-    const appUrl = env.NEXT_PUBLIC_APP_URL;
+    const appUrl = getAppUrl();
     const inviteUrl = `${appUrl}/invitation?token=${invitation.token}`;
 
-    const sent = await sendEmail("workspace-invitation", {
-      from: emailFrom(),
-      to: email,
-      subject: `You've been invited to join ${workspace?.name ?? "a workspace"} on GudDesk`,
-      react: WorkspaceInvitationEmail({
-        inviterName: session.user.name ?? "A workspace member",
-        workspaceName: workspace?.name ?? "a workspace",
-        role: role,
-        actionUrl: inviteUrl,
-      }),
-    });
+    // "sent", "skipped" (the gate blocked it on this environment) or
+    // "failed". When the email did not go out, the form shows the link.
+    let emailStatus: "sent" | "skipped" | "failed" = "sent";
+    try {
+      const sent = await sendEmail("workspace-invitation", {
+        from: emailFrom(),
+        to: email,
+        subject: `You've been invited to join ${workspace?.name ?? "a workspace"} on GudDesk`,
+        react: WorkspaceInvitationEmail({
+          inviterName: session.user.name ?? "A workspace member",
+          workspaceName: workspace?.name ?? "a workspace",
+          role: role,
+          actionUrl: inviteUrl,
+        }),
+      });
+      // A Resend error is returned, not thrown; sendEmail logs it redacted.
+      if (sent.status === "skipped") emailStatus = "skipped";
+      else if (sent.status === "failed") emailStatus = "failed";
+    } catch {
+      // The invitation exists; the link can still be shared by hand.
+      emailStatus = "failed";
+    }
 
     revalidatePath(`/workspace`);
-    // The invitation exists either way. When its email did not go out, the
-    // form shows the link so it can be shared by hand.
-    if (sent.status === "failed") {
-      return {
-        status: "success",
-        token: invitation.token,
-        emailStatus: "failed",
-        inviteUrl,
-      } as const;
+    if (emailStatus !== "sent") {
+      return { status: "success", token: invitation.token, emailStatus, inviteUrl };
     }
-    return {
-      status: "success",
-      token: invitation.token,
-      emailStatus: "sent",
-    } as const;
+    return { status: "success", token: invitation.token, emailStatus };
   } catch (error) {
     if (error instanceof Error) {
-      return { status: "error", message: error.message } as const;
+      return { status: "error", message: error.message };
     }
-    return { status: "error", message: "Failed to send invitation" } as const;
+    return { status: "error", message: "Failed to send invitation" };
   }
 }

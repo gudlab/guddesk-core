@@ -2,7 +2,6 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { unassignMemberConversations } from "@/lib/conversations/unassign-member";
 import { requireWorkspaceRole } from "@/lib/workspace";
 import { revalidatePath } from "next/cache";
 
@@ -47,11 +46,7 @@ export async function removeWorkspaceMember(workspaceId: string, memberId: strin
       return { status: "error", message: "Admins cannot remove owners" };
     }
 
-    // Unassign their conversations with unassignedAt = now, then remove them.
-    await prisma.$transaction([
-      prisma.conversation.updateMany(unassignMemberConversations({ memberId }, new Date())),
-      prisma.workspaceMember.delete({ where: { id: memberId } }),
-    ]);
+    await prisma.workspaceMember.delete({ where: { id: memberId } });
 
     revalidatePath(`/workspace`);
     return { status: "success" };

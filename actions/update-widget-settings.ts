@@ -4,10 +4,6 @@ import { randomBytes } from "crypto";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import {
-  WIDGET_PRIMARY_COLOR_ERROR,
-  WIDGET_PRIMARY_COLOR_PATTERN,
-} from "@/lib/widget-color";
 import { requireWorkspaceRole } from "@/lib/workspace";
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
@@ -15,7 +11,7 @@ import * as z from "zod";
 const widgetSettingsSchema = z.object({
   primaryColor: z
     .string()
-    .regex(WIDGET_PRIMARY_COLOR_PATTERN, WIDGET_PRIMARY_COLOR_ERROR)
+    .regex(/^#[0-9a-fA-F]{6}$/)
     .optional(),
   position: z.enum(["bottom-right", "bottom-left"]).optional(),
   welcomeMessage: z.string().min(1).max(500).optional(),
@@ -45,14 +41,7 @@ export async function updateWidgetSettings(
 
     await requireWorkspaceRole(workspaceId, session.user.id, ["OWNER", "ADMIN"]);
 
-    const parsed = widgetSettingsSchema.safeParse(data);
-    if (!parsed.success) {
-      return {
-        status: "error",
-        message: parsed.error.issues[0]?.message ?? "Invalid widget settings",
-      };
-    }
-    const validated = parsed.data;
+    const validated = widgetSettingsSchema.parse(data);
 
     // Enforce branding for free plan workspaces
     if (validated.showBranding === false) {
