@@ -33,6 +33,7 @@ export default async function WebhookDeliveriesPage({
     redirect(`/workspace/${workspaceSlug}/settings/webhooks`);
   }
 
+  // Fetch initial deliveries
   const deliveries = await prisma.webhookDelivery.findMany({
     where: { endpointId },
     orderBy: { createdAt: "desc" },
@@ -51,6 +52,7 @@ export default async function WebhookDeliveriesPage({
     },
   });
 
+  // Summary stats
   const [totalCount, successCount, failedCount, pendingCount] = await Promise.all([
     prisma.webhookDelivery.count({ where: { endpointId } }),
     prisma.webhookDelivery.count({ where: { endpointId, status: "SUCCESS" } }),

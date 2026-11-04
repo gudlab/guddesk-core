@@ -22,6 +22,7 @@ export default async function WorkloadPage({
 
   const members = await getWorkspaceMembers(workspace.id);
 
+  // Get active conversation counts per member
   const membersWithCounts = await Promise.all(
     members.map(async (member) => {
       const activeCount = await prisma.conversation.count({
