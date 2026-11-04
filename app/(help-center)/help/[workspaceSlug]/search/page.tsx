@@ -1,56 +1,56 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { prisma } from "@/lib/db";
+import { helpRouteMetadata } from "@/lib/help-center/metadata";
+import {
+  getHelpWorkspaceBySlug,
+  searchPublishedArticles,
+} from "@/lib/help-center/public";
+import {
+  articlePublicPath,
+  helpCenterPath,
+  helpCenterTitle,
+} from "@/lib/help-center/seo";
+
+type PageProps = {
+  params: Promise<{ workspaceSlug: string }>;
+  searchParams: Promise<{ q?: string }>;
+};
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { workspaceSlug } = await params;
+  const workspace = await getHelpWorkspaceBySlug(workspaceSlug);
+  if (!workspace) return {};
+
+  const title = helpCenterTitle(workspace.helpCenterSettings?.title, workspace.name);
+  return helpRouteMetadata({
+    title: `Search | ${title}`,
+    description: `Search articles in ${title}.`,
+    path: `${helpCenterPath({ workspaceSlug: workspace.slug })}/search`,
+    noIndex: true,
+  });
+}
 
 export default async function SearchPage({
   params,
   searchParams,
-}: {
-  params: Promise<{ workspaceSlug: string }>;
-  searchParams: Promise<{ q?: string }>;
-}) {
+}: PageProps) {
   const { workspaceSlug } = await params;
   const { q } = await searchParams;
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug: workspaceSlug },
-    select: { id: true, helpCenterSettings: true },
-  });
-
+  const workspace = await getHelpWorkspaceBySlug(workspaceSlug);
   if (!workspace) notFound();
 
   const query = q?.trim() ?? "";
-  let articles: Array<{
-    id: string;
-    title: string;
-    slug: string;
-    excerpt: string | null;
-    collection: { slug: string; name: string } | null;
-  }> = [];
-
-  if (query) {
-    articles = await prisma.article.findMany({
-      where: {
-        workspaceId: workspace.id,
-        isPublished: true,
-        OR: [
-          { title: { contains: query, mode: "insensitive" } },
-          { body: { contains: query, mode: "insensitive" } },
-        ],
-      },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        excerpt: true,
-        collection: { select: { slug: true, name: true } },
-      },
-      take: 20,
-    });
-  }
+  const articles = query
+    ? await searchPublishedArticles(workspace.id, query)
+    : [];
 
   const primaryColor = workspace.helpCenterSettings?.primaryColor ?? "#3ECF8E";
+  const indexPath = helpCenterPath({ workspaceSlug: workspace.slug });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,13 +60,13 @@ export default async function SearchPage({
       >
         <div className="mx-auto max-w-3xl">
           <Link
-            href={`/help/${workspaceSlug}`}
+            href={indexPath}
             className="text-sm opacity-80 hover:opacity-100"
           >
             &larr; Back to Help Center
           </Link>
           <h1 className="mt-2 text-2xl font-bold">Search Results</h1>
-          <form action={`/help/${workspaceSlug}/search`} className="mt-4">
+          <form action={`${indexPath}/search`} className="mt-4">
             <input
               type="search"
               name="q"
@@ -96,7 +96,11 @@ export default async function SearchPage({
             {articles.map((article) => (
               <Link
                 key={article.id}
-                href={`/help/${workspaceSlug}/${article.collection?.slug ?? "uncategorized"}/${article.slug}`}
+                href={articlePublicPath(
+                  workspace.slug,
+                  article.collection?.slug,
+                  article.slug,
+                )}
                 className="block rounded-lg border bg-white px-5 py-4 transition-shadow hover:shadow-sm"
               >
                 <h3 className="font-medium text-gray-900">{article.title}</h3>
