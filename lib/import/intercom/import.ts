@@ -7,7 +7,7 @@ import type {
   NormalizedConversation,
   NormalizedDump,
 } from "./types";
-import { uniqueSlug, slugify } from "./slug";
+import { RESERVED_COLLECTION_SLUGS, slugify, uniqueSlug } from "./slug";
 import type { ImportStore } from "./store";
 
 export interface ImportContext {
@@ -120,7 +120,11 @@ async function importCollection(
       return mapped;
     }
     const base = slugify(collection.name, "collection");
-    const slug = await uniqueSlug(base, (value) => store.collectionSlugTaken(value));
+    const slug = await uniqueSlug(
+      base,
+      (value) => store.collectionSlugTaken(value),
+      RESERVED_COLLECTION_SLUGS,
+    );
     const created = await store.createCollection({
       name: collection.name.slice(0, 100),
       slug,

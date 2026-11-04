@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { requireWorkspaceRole } from "@/lib/workspace";
 import { articleSchema } from "@/lib/validations/article";
+import { HELP_SLUG_MAX, isUrlSafeSlug, nextStoredSlug } from "@/lib/help-center/slug";
 import { revalidatePath } from "next/cache";
 
 export async function createArticle(
@@ -87,13 +88,19 @@ export async function updateArticle(
 
     await requireWorkspaceRole(article.workspaceId, session.user.id, ["OWNER", "ADMIN", "AGENT"]);
 
-    // Check slug uniqueness if changed
-    if (data.slug && data.slug !== article.slug) {
-      const existing = await prisma.article.findUnique({
-        where: { workspaceId_slug: { workspaceId: article.workspaceId, slug: data.slug } },
-      });
-      if (existing) {
-        return { status: "error" as const, message: "Slug already in use" };
+    let nextSlug = article.slug;
+    if (data.slug !== undefined) {
+      nextSlug = nextStoredSlug(data.slug, article.slug, HELP_SLUG_MAX.article);
+      if (!isUrlSafeSlug(nextSlug)) {
+        return { status: "error" as const, message: "Slug must be lowercase letters, numbers, and hyphens" };
+      }
+      if (nextSlug !== article.slug) {
+        const existing = await prisma.article.findUnique({
+          where: { workspaceId_slug: { workspaceId: article.workspaceId, slug: nextSlug } },
+        });
+        if (existing) {
+          return { status: "error" as const, message: "Slug already in use" };
+        }
       }
     }
 
@@ -101,7 +108,7 @@ export async function updateArticle(
       where: { id: articleId },
       data: {
         ...(data.title !== undefined && { title: data.title }),
-        ...(data.slug !== undefined && { slug: data.slug }),
+        ...(data.slug !== undefined && { slug: nextSlug }),
         ...(data.body !== undefined && { body: data.body }),
         ...(data.excerpt !== undefined && { excerpt: data.excerpt }),
         ...(data.collectionId !== undefined && { collectionId: data.collectionId }),

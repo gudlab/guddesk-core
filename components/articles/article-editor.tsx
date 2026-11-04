@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { createArticle, updateArticle, publishArticle, deleteArticle } from "@/actions/manage-article";
+import { generateArticleSlug } from "@/lib/help-center/slug";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,14 +38,6 @@ interface ArticleEditorProps {
   };
 }
 
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 200);
-}
-
 export function ArticleEditor({
   workspaceId,
   workspaceSlug,
@@ -66,7 +59,7 @@ export function ArticleEditor({
   function handleTitleChange(value: string) {
     setTitle(value);
     if (!isEditing) {
-      setSlug(generateSlug(value));
+      setSlug(generateArticleSlug(value));
     }
   }
 

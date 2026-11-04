@@ -1,12 +1,28 @@
 import { z } from "zod";
 
+import {
+  HELP_SLUG_MAX,
+  isReservedCollectionSlug,
+  normalizeSlug,
+} from "@/lib/help-center/slug";
+
+const slugSchema = (maxLength: number) =>
+  z.preprocess(
+    (value) =>
+      typeof value === "string" ? normalizeSlug(value, maxLength) : value,
+    z
+      .string()
+      .min(1)
+      .max(maxLength)
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        "Slug must be lowercase letters, numbers, and single hyphens",
+      ),
+  );
+
 export const articleSchema = z.object({
   title: z.string().min(1).max(200),
-  slug: z
-    .string()
-    .min(1)
-    .max(200)
-    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens only"),
+  slug: slugSchema(HELP_SLUG_MAX.article),
   body: z.string().min(1).max(100000),
   excerpt: z.string().max(500).optional(),
   collectionId: z.string().min(1).nullable(),
@@ -15,11 +31,10 @@ export const articleSchema = z.object({
 
 export const collectionSchema = z.object({
   name: z.string().min(1).max(100),
-  slug: z
-    .string()
-    .min(1)
-    .max(100)
-    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens only"),
+  slug: slugSchema(HELP_SLUG_MAX.collection).refine(
+    (slug) => !isReservedCollectionSlug(slug),
+    { message: "That slug is reserved for help center search" },
+  ),
   description: z.string().max(500).optional(),
   icon: z.string().max(50).optional(),
 });
