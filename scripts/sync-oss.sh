@@ -46,13 +46,23 @@ exclude_files = {
     ".github/workflows/ci.yml",
     "lib/scheduled/cron-workflow.test.ts",
 }
-# Public CI (Test + Migrations) is owned by guddesk-core. Do not overwrite
-# or delete the destination file when the private tree has a different workflow.
+# Core owns CI and prisma/migrations. Do not copy hosted versions over them
+# and do not delete dest files hosted omitted. Hosted numbering can skip
+# catch-up migrations; #74 wiped 0005_schema_catch_up that way.
+exclude_rel_dirs = {"prisma/migrations"}
 keep_dest_files = {".github/workflows/ci.yml"}
+
+def skip_rel(rel):
+    s = "." if rel == Path(".") else str(rel)
+    return s in exclude_rel_dirs or any(s == p or s.startswith(p + os.sep) for p in exclude_rel_dirs)
+
 src_files = set()
 for dirpath, dirnames, filenames in os.walk(src):
-    dirnames[:] = [d for d in dirnames if d not in exclude_dirs]
     rel = Path(dirpath).relative_to(src)
+    if skip_rel(rel):
+        dirnames[:] = []
+        continue
+    dirnames[:] = [d for d in dirnames if d not in exclude_dirs and not skip_rel(Path(d) if rel == Path(".") else rel / d)]
     for f in filenames:
         relf = str(rel / f) if rel != Path(".") else f
         if relf in exclude_files or f.endswith(".pem") or f == ".DS_Store":
@@ -64,8 +74,11 @@ for dirpath, dirnames, filenames in os.walk(src):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src / relf, target)
 for dirpath, dirnames, filenames in os.walk(dst):
-    dirnames[:] = [d for d in dirnames if d not in exclude_dirs]
     rel = Path(dirpath).relative_to(dst)
+    if skip_rel(rel):
+        dirnames[:] = []
+        continue
+    dirnames[:] = [d for d in dirnames if d not in exclude_dirs and not skip_rel(Path(d) if rel == Path(".") else rel / d)]
     for f in filenames:
         relf = str(rel / f) if rel != Path(".") else f
         if relf.startswith(".git"):
