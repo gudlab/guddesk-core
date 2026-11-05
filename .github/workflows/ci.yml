@@ -1,3 +1,9 @@
+# Required GitHub branch protection checks (Kim / repo admin; Eng cannot set these):
+#   - fast-gate
+#   - Migrations (empty Postgres)
+# Do not require full-build. It still runs on pull_request and main so failures show.
+# Soft-launch HOLD. GudBot stays default OFF. No live AI eval in CI.
+
 name: CI
 
 on:
@@ -14,9 +20,10 @@ env:
   RESEND_API_KEY: re_ci_placeholder
 
 jobs:
-  test:
-    name: Test
+  fast-gate:
+    name: fast-gate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -30,6 +37,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Validate GudBot AI eval set
         run: node qa/ai-eval/score.mjs validate
+      - name: Fast checks
+        run: node scripts/ci-fast-checks.mjs
       - name: Prisma generate
         run: pnpm exec prisma generate
       - name: Test
@@ -42,14 +51,11 @@ jobs:
             exit 1
           fi
           echo "Ran $count tests"
+      # tsc imports contentlayer/generated. This is not the Next build.
       - name: Build content
         run: pnpm build:content
       - name: Typecheck
         run: pnpm exec tsc --noEmit
-      - name: Lint
-        run: pnpm lint
-      - name: Build
-        run: pnpm build
 
   migrations:
     name: Migrations (empty Postgres)
@@ -86,3 +92,26 @@ jobs:
         run: pnpm exec prisma generate
       - name: prisma migrate deploy on an empty database (no drift, smoke), then upgrade one with data
         run: bash scripts/ci-migrate-check.sh
+
+  full-build:
+    name: full-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Prisma generate
+        run: pnpm exec prisma generate
+      - name: Build content
+        run: pnpm build:content
+      - name: Lint
+        run: pnpm lint
+      - name: Build
+        run: pnpm build

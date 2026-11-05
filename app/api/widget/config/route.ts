@@ -2,21 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { env } from "@/env.mjs";
+import { parseWidgetAppId } from "@/lib/widget-app-id";
 
 // GET /api/widget/config?appId=xxx
 // Public endpoint — returns widget settings for a workspace
 export async function GET(req: NextRequest) {
-  const rawAppId = req.nextUrl.searchParams.get("appId");
-
-  if (!rawAppId) {
+  const parsed = parseWidgetAppId(req.nextUrl.searchParams.get("appId"));
+  if (!parsed.ok) {
     return NextResponse.json(
-      { error: "App ID is required" },
-      { status: 400 },
+      { error: parsed.error },
+      { status: parsed.status },
     );
   }
-
-  // Strip cosmetic gd_pub_ prefix before DB lookup
-  const appId = rawAppId.replace(/^gd_pub_/, "");
+  const { appId } = parsed;
 
   const workspace = await prisma.workspace.findUnique({
     where: { appId },

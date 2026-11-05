@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { createVisitorToken, verifyVisitorToken } from "@/lib/visitor-auth";
+import { parseWidgetAppId } from "@/lib/widget-app-id";
 import { resolveWidgetAuthVisitor } from "@/lib/widget-visitor";
 
 // POST /api/widget/auth
@@ -12,17 +13,14 @@ import { resolveWidgetAuthVisitor } from "@/lib/widget-visitor";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { appId: rawAppId } = body;
-
-    if (!rawAppId) {
+    const parsed = parseWidgetAppId(body.appId);
+    if (!parsed.ok) {
       return NextResponse.json(
-        { error: "App ID is required" },
-        { status: 400 },
+        { error: parsed.error },
+        { status: parsed.status },
       );
     }
-
-    // Strip cosmetic gd_pub_ prefix before DB lookup
-    const appId = rawAppId.replace(/^gd_pub_/, "");
+    const { appId } = parsed;
 
     const workspace = await prisma.workspace.findUnique({
       where: { appId },

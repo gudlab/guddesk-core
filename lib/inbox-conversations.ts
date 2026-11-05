@@ -40,6 +40,29 @@ export function inboxConversationListWhere(
   return where;
 }
 
+export type InboxListAuthz =
+  | { ok: true; workspaceId: string; userId: string }
+  | { ok: false; status: 401 | 400 | 403; error: string };
+
+/**
+ * Gate for GET /api/inbox/conversations. A signed-in user who is not a
+ * member of `workspaceId` is denied (cross-workspace list is not allowed).
+ */
+export function inboxListAuthz(
+  userId: string | null | undefined,
+  workspaceId: string | null | undefined,
+  isMember: boolean,
+): InboxListAuthz {
+  if (!userId) return { ok: false, status: 401, error: "Unauthorized" };
+  if (!workspaceId) {
+    return { ok: false, status: 400, error: "workspaceId required" };
+  }
+  if (!isMember) {
+    return { ok: false, status: 403, error: "Not a member of this workspace" };
+  }
+  return { ok: true, workspaceId, userId };
+}
+
 export function inboxConversationListLimit(raw: string | null): number {
   let limit = parseInt(raw ?? String(INBOX_LIST_DEFAULT_LIMIT), 10);
   if (Number.isNaN(limit) || limit < 1) limit = INBOX_LIST_DEFAULT_LIMIT;

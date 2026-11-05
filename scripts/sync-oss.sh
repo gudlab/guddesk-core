@@ -44,13 +44,19 @@ exclude_files = {
     "DESIGN.md",
     ".github/workflows/cron.yml",
     ".github/workflows/ci.yml",
+    "scripts/ci-fast-checks.mjs",
+    "lib/ci-fast-checks.test.ts",
     "lib/scheduled/cron-workflow.test.ts",
 }
-# Core owns CI and prisma/migrations. Do not copy hosted versions over them
+# Core owns CI (workflow + fast-checks) and prisma/migrations. Do not copy hosted versions over them
 # and do not delete dest files hosted omitted. Hosted numbering can skip
 # catch-up migrations; #74 wiped 0005_schema_catch_up that way.
 exclude_rel_dirs = {"prisma/migrations"}
-keep_dest_files = {".github/workflows/ci.yml"}
+keep_dest_files = {
+    ".github/workflows/ci.yml",
+    "scripts/ci-fast-checks.mjs",
+    "lib/ci-fast-checks.test.ts",
+}
 
 def skip_rel(rel):
     s = "." if rel == Path(".") else str(rel)
