@@ -166,7 +166,7 @@ describe("no Resend test sender", () => {
   it("runs first in pnpm build, so a deploy with it fails", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
     assert.match(pkg.scripts.build, /^node scripts\/check-no-test-sender\.mjs && /);
-    // CI's Test step runs pnpm test, which collects this file.
+    // CI's fast-gate job runs pnpm test, which collects this file.
     const ci = readFileSync(join(ROOT, ".github", "workflows", "ci.yml"), "utf8");
     assert.match(ci, /pull_request:/);
     assert.match(ci, /pnpm test/);
