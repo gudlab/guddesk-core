@@ -2,6 +2,8 @@
 //   npx tsx --test lib/widget-identity.test.ts
 import assert from "node:assert/strict";
 import { createHmac } from "crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import {
@@ -94,5 +96,18 @@ describe("resolveIdentifyExternalId", () => {
       ok: false,
       error: "Invalid identity hash",
     });
+  });
+
+  it("POST /api/widget/visitors uses this helper and returns 403 on failure", () => {
+    const src = readFileSync(
+      join(process.cwd(), "app/api/widget/visitors/route.ts"),
+      "utf8",
+    );
+    assert.match(src, /resolveIdentifyExternalId/);
+    assert.match(src, /status: 403/);
+    assert.ok(
+      src.indexOf("resolveIdentifyExternalId") <
+        src.indexOf("prisma.visitor.create"),
+    );
   });
 });
