@@ -50,6 +50,8 @@ Assign conversations and leave internal notes so teammates know who is handling 
 
 The inbox does not have conversation search yet.
 
+The conversation list route (`GET /api/inbox/conversations`) has an engineering budget of p95 under 300 ms on a local or Compose install. Measure it with `pnpm measure:inbox`. See [docs/performance.md](https://github.com/gudlab/guddesk-core/blob/main/docs/performance.md).
+
 ## Next Steps
 
 - [Learn about assignments and workflows](/docs/inbox/assignments)

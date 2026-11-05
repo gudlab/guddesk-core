@@ -3,7 +3,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 
-import { findBareImports } from "../scripts/check-widget-bundle.mjs";
+import {
+  findBareImports,
+  gzipSizeOf,
+  WIDGET_GZIP_BUDGET_BYTES,
+} from "../scripts/check-widget-bundle.mjs";
 
 const root = join(__dirname, "..");
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -35,6 +39,14 @@ describe("built widget bundle", () => {
     const bundle = read("public/widget.js");
     assert.match(bundle, /stopPropagation/);
     assert.match(bundle, /addEventListener\("keydown"/);
+  });
+
+  it("public/widget.js stays at or under the 50KB gzip budget", () => {
+    const gzipBytes = gzipSizeOf(readFileSync(join(root, "public/widget.js")));
+    assert.ok(
+      gzipBytes <= WIDGET_GZIP_BUDGET_BYTES,
+      `gzip ${gzipBytes} bytes exceeds budget ${WIDGET_GZIP_BUDGET_BYTES}`,
+    );
   });
 });
 

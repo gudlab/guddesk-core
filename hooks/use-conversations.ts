@@ -24,11 +24,6 @@ export interface ConversationListItem {
     email: string | null;
     avatarUrl: string | null;
   };
-  assignee: {
-    id: string;
-    user: { name: string | null; image: string | null };
-  } | null;
-  _count: { messages: number };
 }
 
 interface UseConversationsOptions {

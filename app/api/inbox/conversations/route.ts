@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import {
+  inboxConversationListLimit,
+  inboxConversationListSelect,
+  inboxConversationListWhere,
+  type InboxListStatus,
+} from "@/lib/inbox-conversations";
 import { cursorPageArgs, splitCursorPage } from "@/lib/pagination";
 import { requireWorkspaceMember } from "@/lib/workspace";
 import { scheduleOpportunisticJobs } from "@/lib/scheduled";
@@ -16,12 +22,10 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const workspaceId = searchParams.get("workspaceId");
-    const status = searchParams.get("status") as "OPEN" | "SNOOZED" | "CLOSED" | null;
+    const status = searchParams.get("status") as InboxListStatus | null;
     const assigneeId = searchParams.get("assigneeId");
     const cursor = searchParams.get("cursor");
-    let limit = parseInt(searchParams.get("limit") ?? "25", 10);
-    if (isNaN(limit) || limit < 1) limit = 25;
-    if (limit > 100) limit = 100;
+    const limit = inboxConversationListLimit(searchParams.get("limit"));
 
     if (!workspaceId) {
       return NextResponse.json({ error: "workspaceId required" }, { status: 400 });
@@ -32,9 +36,7 @@ export async function GET(req: NextRequest) {
     // workspace at most every 5 minutes, after the response.
     scheduleOpportunisticJobs(workspaceId);
 
-    const where: Record<string, unknown> = { workspaceId };
-    if (status) where.status = status;
-    if (assigneeId) where.assigneeId = assigneeId;
+    const where = inboxConversationListWhere(workspaceId, status, assigneeId);
 
     // Cursor-based pagination: one extra row tells us if there's a next page.
     const paginationClause = cursorPageArgs(cursor, limit, { lookahead: true });
@@ -42,17 +44,7 @@ export async function GET(req: NextRequest) {
     const [conversations, total] = await Promise.all([
       prisma.conversation.findMany({
         where,
-        include: {
-          visitor: {
-            select: { id: true, name: true, email: true, avatarUrl: true },
-          },
-          assignee: {
-            include: {
-              user: { select: { name: true, image: true } },
-            },
-          },
-          _count: { select: { messages: true } },
-        },
+        select: inboxConversationListSelect,
         // id breaks ties (equal or null lastMessageAt) so cursor pages are stable.
         orderBy: [{ lastMessageAt: { sort: "desc", nulls: "last" } }, { id: "desc" }],
         ...paginationClause,
