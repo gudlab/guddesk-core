@@ -43,6 +43,8 @@ Compose will:
 2. Run `prisma migrate deploy` (creates tables on first boot)
 3. Start the app on [http://localhost:3000](http://localhost:3000)
 
+Point liveness probes at `GET /api/health` (no auth). A 200 JSON body `{ "ok": true, "status": "ok" }` means the process is up.
+
 The chat widget is built during the image build and served at `/widget.js`.
 
 Stop with `Ctrl+C` or `docker compose down`. The volume keeps the database. `docker compose down -v` deletes it.

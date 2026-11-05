@@ -395,7 +395,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can I self-host either one?",
         answer:
-          "Yes. Chatwoot's Community Edition is free to self-host, and its paid self-hosted plans are $19 or $99 per agent a month. GudDesk self-hosting has no plan caps. The usual path is Docker Compose in this repo (`docker compose up --build`). You can also run from source on Node.js 20.19 or later, pointed at your own PostgreSQL.",
+          "Yes. Chatwoot's Community Edition is free to self-host, and its paid self-hosted plans are $19 or $99 per agent a month. GudDesk self-hosting has no plan caps. The quickest path is Docker Compose in this repo (`docker compose up --build`). You can also run from source on Node.js 20.19 or later, pointed at your own PostgreSQL.",
       },
       {
         question: "What does Chatwoot have that GudDesk doesn't?",
