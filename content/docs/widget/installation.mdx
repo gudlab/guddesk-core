@@ -34,6 +34,8 @@ If you're self-hosting GudDesk, point the widget to your own instance:
 <script src="https://your-guddesk-domain.com/widget.js" async></script>
 ```
 
+`public/widget.js` must stay at or under 50 KB gzipped. `pnpm run build:widget` fails the build if it goes over.
+
 ## React / Next.js
 
 For React-based apps, you can load the widget in a layout or root component:

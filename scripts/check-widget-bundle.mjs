@@ -5,11 +5,27 @@
  * so the built files must not import or require any package by name. Every
  * dependency has to be bundled in.
  *
+ * The shipped file (public/widget.js) also has a gzip size budget so the
+ * embed stays small. Measurement is zlib.gzipSync at Node's default level.
+ *
  * Usage: node scripts/check-widget-bundle.mjs [file ...]
  * With no arguments it checks public/widget.js and packages/widget/dist/*.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
+
+/** 50 KiB gzipped. Applies to public/widget.js (the file sites load). */
+export const WIDGET_GZIP_BUDGET_BYTES = 50 * 1024;
+
+const SHIPPED_WIDGET = fileURLToPath(
+  new URL("../public/widget.js", import.meta.url),
+);
+
+/** Gzip size in bytes (Node zlib default compression). */
+export function gzipSizeOf(buf) {
+  return gzipSync(buf).length;
+}
 
 const DEFAULT_FILES = [
   "../public/widget.js",
@@ -60,6 +76,24 @@ function main(files) {
       );
     }
   }
+
+  const shipped = files.includes(SHIPPED_WIDGET)
+    ? SHIPPED_WIDGET
+    : files.find((file) => file.endsWith("widget.js") || file.endsWith("guddesk.umd.cjs"));
+  if (shipped) {
+    const gzipBytes = gzipSizeOf(readFileSync(shipped));
+    const rawBytes = readFileSync(shipped).length;
+    console.log(
+      `${shipped} gzip ${gzipBytes} bytes (raw ${rawBytes}, budget ${WIDGET_GZIP_BUDGET_BYTES}).`,
+    );
+    if (gzipBytes > WIDGET_GZIP_BUDGET_BYTES) {
+      failed = true;
+      console.error(
+        `${shipped} is ${gzipBytes} bytes gzipped; budget is ${WIDGET_GZIP_BUDGET_BYTES}.`,
+      );
+    }
+  }
+
   if (failed) process.exit(1);
   console.log(`Widget bundle check passed (${files.length} files).`);
 }

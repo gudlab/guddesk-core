@@ -60,6 +60,18 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000). You should see the GudDesk dashboard.
 
+## Option C: Docker Compose
+
+```bash
+git clone https://github.com/gudlab/guddesk-core.git
+cd guddesk-core
+cp .env.example .env
+# Set AUTH_SECRET (openssl rand -base64 32)
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). Details and pitfalls: [Self-Hosting](/docs/self-hosting).
+
 ## Next Steps
 
 - [Install the chat widget](/docs/widget/installation) on your website

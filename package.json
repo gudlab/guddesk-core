@@ -13,6 +13,8 @@
     "build:widget": "cd packages/widget && pnpm install && pnpm run build && cp dist/guddesk.umd.cjs ../../public/widget.js && node ../../scripts/check-widget-bundle.mjs",
     "build": "node scripts/check-no-test-sender.mjs && pnpm run build:widget && pnpm run build:content && next build",
     "check:senders": "node scripts/check-no-test-sender.mjs",
+    "check:widget": "node scripts/check-widget-bundle.mjs",
+    "measure:inbox": "tsx scripts/measure-inbox.mjs",
     "turbo": "next dev --turbo",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",

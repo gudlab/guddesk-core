@@ -241,7 +241,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can I self-host GudDesk instead of using Freshdesk's cloud?",
         answer:
-          "Yes. GudDesk is open source under AGPL-3.0. Clone the gudlab/guddesk-core repo, install it with pnpm, point it at your own PostgreSQL database and run it on Node.js 20.19 or later. The README lists each step. Freshdesk offers no self-hosting option.",
+          "Yes. GudDesk is open source under AGPL-3.0. Clone gudlab/guddesk-core and run `docker compose up --build`, or install with pnpm and point it at your own PostgreSQL on Node.js 20.19 or later. The README lists each step. Freshdesk offers no self-hosting option.",
       },
     ],
   },
@@ -395,7 +395,7 @@ export const alternatives: Alternative[] = [
       {
         question: "Can I self-host either one?",
         answer:
-          "Yes. Chatwoot's Community Edition is free to self-host, and its paid self-hosted plans are $19 or $99 per agent a month. GudDesk self-hosting has no plan caps. You run it from source on Node.js 20.19 or later, pointed at your own PostgreSQL. There is no GudDesk Docker image yet.",
+          "Yes. Chatwoot's Community Edition is free to self-host, and its paid self-hosted plans are $19 or $99 per agent a month. GudDesk self-hosting has no plan caps. The usual path is Docker Compose in this repo (`docker compose up --build`). You can also run from source on Node.js 20.19 or later, pointed at your own PostgreSQL.",
       },
       {
         question: "What does Chatwoot have that GudDesk doesn't?",

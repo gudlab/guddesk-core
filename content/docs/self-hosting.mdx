@@ -1,13 +1,32 @@
 ---
 title: Self-Hosting
-description: Deploy GudDesk on your own infrastructure from source, with Node.js and PostgreSQL.
+description: Deploy GudDesk on your own infrastructure with Docker Compose or from source.
 ---
 
 GudDesk is fully open source (AGPL-3.0) and designed to run on your own infrastructure. This guide covers deployment options for production environments.
 
+The operator checklist (Compose, env, first-run migrate, widget, pitfalls) lives in the repo at [docs/self-host.md](https://github.com/gudlab/guddesk-core/blob/main/docs/self-host.md).
+
+## Docker Compose
+
+You need Docker Engine and Docker Compose v2.
+
+```bash
+git clone https://github.com/gudlab/guddesk-core.git
+cd guddesk-core
+cp .env.example .env
+# Set AUTH_SECRET (openssl rand -base64 32).
+# GOOGLE_* and RESEND_API_KEY can be placeholders so the server starts.
+docker compose up --build
+```
+
+Compose starts Postgres 16 (data in a named volume), runs `prisma migrate deploy`, and serves the app at [http://localhost:3000](http://localhost:3000). The widget is built into the image.
+
+Put a real `RESEND_API_KEY` and `RESEND_FROM` when you want outbound email. GudBot stays off until you enable it.
+
 ## Install from Source
 
-GudDesk runs from source on Node.js. There is no Docker image or Compose file. You need:
+You need:
 
 - Node.js 20.19 or later, and pnpm
 - A PostgreSQL 15+ database that you run yourself or rent (for example Neon, Supabase or AWS RDS)
@@ -183,10 +202,19 @@ Set up automated daily backups via cron or your cloud provider's managed backup 
 
 ## Updating
 
+Docker Compose:
+
+```bash
+git pull origin main
+docker compose up --build
+```
+
+From source:
+
 ```bash
 git pull origin main
 pnpm install
-pnpm prisma db push
+pnpm prisma migrate deploy
 pnpm build
 pm2 restart guddesk
 ```
@@ -201,4 +229,5 @@ Always review the [changelog](https://github.com/gudlab/guddesk-core/releases) b
 | RAM | 1 GB | 2+ GB |
 | Storage | 10 GB | 20+ GB |
 | PostgreSQL | 15+ | 16+ |
-| Node.js | 20+ | 22 LTS |
+| Node.js | 20.19+ (from source) | 22 LTS |
+| Docker | Compose v2 (recommended) | Engine 24+ |

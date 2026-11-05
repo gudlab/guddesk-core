@@ -1,0 +1,75 @@
+# Local / self-host stack: Postgres + migrate + app.
+#
+#   cp .env.example .env
+#   # set AUTH_SECRET (openssl rand -base64 32)
+#   # set GOOGLE_* and RESEND_API_KEY (placeholders start the server)
+#   docker compose up --build
+#
+# Compose sets DATABASE_URL to the Postgres service. A named volume keeps
+# the database across restarts. See docs/self-host.md.
+
+name: guddesk
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: guddesk
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-guddesk}
+      POSTGRES_DB: guddesk
+    volumes:
+      - guddesk-postgres:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guddesk -d guddesk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://guddesk:${POSTGRES_PASSWORD:-guddesk}@db:5432/guddesk
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://guddesk:${POSTGRES_PASSWORD:-guddesk}@db:5432/guddesk
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  guddesk-postgres:

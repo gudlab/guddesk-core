@@ -22,6 +22,12 @@ pnpm run build:widget
 pnpm dev
 ```
 
+Or, after `cp .env.example .env` and setting `AUTH_SECRET`:
+
+```bash
+docker compose up --build
+```
+
 Never commit `.env`, `.env.local`, or API keys.
 
 ## Checks
@@ -32,6 +38,8 @@ pnpm test
 pnpm exec tsc --noEmit
 pnpm run build:widget
 ```
+
+`pnpm run build:widget` fails if `public/widget.js` is over 50 KB gzipped. Inbox list timing: `pnpm measure:inbox` (see [docs/performance.md](docs/performance.md)).
 
 ## Publishing private → `gudlab/guddesk-core`
 

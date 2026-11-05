@@ -37,6 +37,8 @@ const nextConfig = {
   },
   serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
   turbopack: {},
+  // Standalone output is for the Docker image. Hosted / `pnpm start` stays default.
+  ...(process.env.DOCKER_BUILD === "1" ? { output: "standalone" } : {}),
 };
 
 module.exports = withContentlayer(nextConfig);
