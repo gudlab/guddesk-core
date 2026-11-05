@@ -41,7 +41,7 @@ Self-hosting has no plan limits.
 
 | Feature | Status |
 |---|---|
-| Docker image | Planned. Today you run from source |
+| Docker image | Yes. `docker compose up --build` after you copy `.env.example` to `.env`. See [docs/self-host.md](docs/self-host.md) |
 | WhatsApp and SSO | Not in this release |
 
 See [ROADMAP.md](ROADMAP.md) for the full list.
@@ -113,6 +113,26 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Docker Compose
+
+```bash
+cp .env.example .env
+# Set AUTH_SECRET (openssl rand -base64 32). Placeholders work for
+# GOOGLE_* and RESEND_API_KEY if you only want the server to start.
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). Full steps, env notes, and pitfalls: [docs/self-host.md](docs/self-host.md).
+
+## Performance budgets
+
+| Surface | Budget | Check |
+|---|---|---|
+| Chat widget (`public/widget.js`) | ≤ 50 KB gzipped | `pnpm run build:widget` |
+| Agent inbox list (`GET /api/inbox/conversations`) | p95 < 300 ms | `pnpm measure:inbox` (see [docs/performance.md](docs/performance.md)) |
+
+`build:widget` fails if the gzipped widget is over 50 KB. Inbox numbers are whatever the measure script prints on your machine.
 
 ## License
 
