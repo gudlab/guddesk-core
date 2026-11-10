@@ -32,7 +32,7 @@ node score.mjs offline    # validate + dry-run summary (counts per category/area
 `validate` also enforces these rules:
 - Every `must_include` string appears in the cited article text.
 - Seed ids 1–30 are present.
-- There's no priced Business tier.
+- Plan facts match `lib/plans.ts` (Free, Starter, Team, Business; legacy $29 Pro). Stale Free/Pro-only pricing is rejected.
 - Nothing claims GudBot is on by default.
 - Nothing looks like secret material.
 
@@ -87,7 +87,7 @@ Handoff reason codes: `low_confidence`, `max_turns`, `explicit`, `no_evidence` (
 
 | Bucket | Count | Notes |
 |---|---|---|
-| Answerable from seeded KB | 76 | widget install/customization, identify + HMAC, inbox, KB/help center, billing (Free $0 / Pro $29 only), open source / self-host, API, MCP, GudBot settings and behaviour |
+| Answerable from seeded KB | 76 | widget install/customization, identify + HMAC, inbox, KB/help center, billing (Free, Starter, Team, Business, plus legacy Pro), open source / self-host, API, MCP, GudBot settings and behaviour |
 | Should hand off | 22 | out-of-KB (SLA, shortcuts, webhooks, proration, SOC 2, Salesforce, phone), account-specific (orders, double charge, password reset, data deletion, discounts, outage), competitor-only, nonsense, off-topic, explicit human request |
 | Edge variants | 12 | typos, shouting, terse and German paraphrases of answerable cases (expected_action=answer) |
 

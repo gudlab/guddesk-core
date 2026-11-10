@@ -120,7 +120,7 @@ function validate({ kb, questions }) {
 
   // Product-fact guards.
   const blob = lc(JSON.stringify(kb) + JSON.stringify(questions));
-  if (/business (tier|plan) is|\$\d+.*business plan|business plan.*\$\d+/.test(blob)) err('mentions a priced Business tier (only Free $0 / Pro $29 exist)');
+  if (/only two cloud plans|only free and pro|up to 2 team members and 500 conversations/.test(blob)) err('stale Free/Pro-only pricing (current Cloud plans are Free, Starter, Team and Business; legacy Pro is $29)');
   if (/gudbot (is )?(on|enabled) by default/.test(blob)) err('claims GudBot is on by default');
   if (/(sk-ant-|gd_live_|gd_sk_|-----begin)/.test(blob)) err('possible secret material in files');
 

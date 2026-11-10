@@ -80,29 +80,29 @@
     "slug": "plans-and-pricing",
     "title": "Plans and pricing (GudDesk Cloud)",
     "collectionSlug": "billing",
-    "excerpt": "GudDesk Cloud has two plans: Free ($0) and Pro ($29/month).",
-    "body": "GudDesk Cloud (hosted at guddesk.com) has two plans:\n\n- Free — $0. Includes up to 2 team members and 500 conversations per month.\n- Pro — $29 per month. Removes the Free plan limits on members and conversations.\n\nThere are only two Cloud plans: Free and Pro. GudBot, the AI assistant, is optional and is off by default on every workspace.\n\nSelf-hosting the open-source edition does not require a Cloud plan."
+    "excerpt": "GudDesk Cloud plans: Free ($0), Starter ($39/mo or $384/yr), Team ($79 or $780), and Business ($119 or $1,188). Existing Pro customers keep $29/month.",
+    "body": "GudDesk Cloud (hosted at guddesk.com) has four plans, priced per team and never per seat:\n\n- Free — $0. Includes up to 3 members, unlimited conversations, and 50 GudBot AI answers a month. The widget shows GudDesk branding.\n- Starter — $39 per month, or $384 per year. Includes up to 5 members, unlimited conversations, and 500 GudBot AI answers a month. Paid plans remove GudDesk branding from the widget.\n- Team — $79 per month, or $780 per year. Includes up to 10 members, unlimited conversations, and 1,000 GudBot AI answers a month, with no branding.\n- Business — $119 per month, or $1,188 per year. Includes up to 25 members, unlimited conversations, and 2,500 GudBot AI answers a month, with no branding.\n\nAnnual billing is a little over 2 months free.\n\nThere is no Enterprise plan. Teams with more than 25 members should email support@guddesk.com.\n\nExisting customers on the legacy Pro plan keep $29 per month, with unlimited conversations, unlimited seats and no branding. Pro is not offered to new workspaces.\n\nNeed more AI answers? A $10 top-up adds 500 GudBot answers that never expire and are used after the monthly allowance.\n\nGudBot, the AI assistant, is optional and is off by default on every workspace.\n\nSelf-hosting the open-source edition does not require a Cloud plan and has no plan caps."
   },
   {
     "slug": "manage-billing",
     "title": "Upgrade, manage or cancel your subscription",
     "collectionSlug": "billing",
     "excerpt": "Only the workspace owner can manage billing. Upgrades use Stripe Checkout; changes and cancellation use the Stripe customer portal.",
-    "body": "Billing can only be managed by the workspace owner. Admins and agents cannot see or change billing.\n\nUpgrade from Free to Pro: as the owner, go to Settings → Billing and click Upgrade to Pro. You are taken to Stripe Checkout to enter payment details. When checkout completes, your workspace is on Pro.\n\nManage or cancel: in Settings → Billing click Manage billing to open the Stripe customer portal. There you can update your card, download invoices or cancel Pro. After cancellation the workspace returns to the Free plan.\n\nIf you are not the owner, ask your workspace owner to make billing changes."
+    "body": "Billing can only be managed by the workspace owner. Admins and agents cannot see or change billing.\n\nUpgrade from Free: as the owner, go to Settings → Billing and choose Starter, Team or Business (monthly or annual). You are taken to Stripe Checkout to enter payment details. When checkout completes, your workspace is on that plan. Pro is a legacy plan for existing customers and is not available as an upgrade.\n\nManage or cancel: in Settings → Billing click Open billing portal to open the Stripe customer portal. There you can update your card, download invoices or cancel a paid plan, including the legacy Pro plan. After cancellation the workspace returns to the Free plan.\n\nIf you are not the owner, ask your workspace owner to make billing changes."
   },
   {
     "slug": "open-source-and-self-hosting",
     "title": "Open source and self-hosting",
     "collectionSlug": "self-hosting",
     "excerpt": "GudDesk is an open-source (AGPL) Intercom alternative. Use the hosted Cloud at guddesk.com or self-host it.",
-    "body": "GudDesk is an open-source Intercom alternative licensed under the AGPL (AGPL-3.0).\n\nYou can use it two ways:\n- GudDesk Cloud: hosted for you at guddesk.com, with Free and Pro plans.\n- Self-hosted: GudDesk is self-hostable — run it on your own infrastructure. Follow the self-hosting guide in the docs for requirements, environment variables and deployment steps.\n\nBecause the license is AGPL, if you modify GudDesk and offer it to users over a network, you must make your modified source available under the same license."
+    "body": "GudDesk is an open-source Intercom alternative licensed under the AGPL (AGPL-3.0).\n\nYou can use it two ways:\n- GudDesk Cloud: hosted for you at guddesk.com, with Free, Starter, Team and Business plans (legacy Pro is kept for existing customers).\n- Self-hosted: GudDesk is self-hostable — run it on your own infrastructure. Follow the self-hosting guide in the docs for requirements, environment variables and deployment steps.\n\nBecause the license is AGPL, if you modify GudDesk and offer it to users over a network, you must make your modified source available under the same license."
   },
   {
     "slug": "quickstart",
     "title": "Quickstart: set up GudDesk in minutes",
     "collectionSlug": "getting-started",
     "excerpt": "Create a workspace, install the widget, publish your first articles and invite your team.",
-    "body": "1. Sign up at guddesk.com and create a workspace (the Free plan is $0).\n2. Install the widget: set window.GudDeskSettings = { appId: \"gd_pub_…\" } and then load https://cdn.guddesk.com/widget.js with async.\n3. Publish a few help articles in a knowledge base collection so visitors can search them.\n4. Invite a teammate (Free includes 2 members).\n5. Answer conversations from the inbox.\nOptional: enable GudBot in AI settings once your knowledge base has articles. GudBot is off by default."
+    "body": "1. Sign up at guddesk.com and create a workspace (the Free plan is $0).\n2. Install the widget: set window.GudDeskSettings = { appId: \"gd_pub_…\" } and then load https://cdn.guddesk.com/widget.js with async.\n3. Publish a few help articles in a knowledge base collection so visitors can search them.\n4. Invite a teammate (Free includes 3 members).\n5. Answer conversations from the inbox.\nOptional: enable GudBot in AI settings once your knowledge base has articles. GudBot is off by default."
   },
   {
     "slug": "api-authentication",
