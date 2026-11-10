@@ -24,7 +24,7 @@ Most support platforms charge per-agent, and lock AI behind expensive add-ons. G
 - **MCP server**: Model Context Protocol support for AI assistants (Claude Desktop, etc.) with 26 tools covering conversations, messages, customers, companies, segments, articles, workspace, and agents; HTTP + stdio transports
 - **Webhooks**: event subscriptions (message created, conversation created/closed/assigned), HMAC-SHA256 signed payloads
 - **Analytics**: daily snapshots, response time tracking, conversation volume
-- **Billing**: Stripe integration, Free + Pro plans
+- **Billing**: Stripe integration, Free, Starter, Team and Business plans (existing $29 Pro customers keep their price)
 - **Admin panel**: user management, workspace oversight, audit logs
 - **gud-agent**: open-source AI agent that auto-crawls your site and answers customer questions
 
@@ -217,16 +217,20 @@ _Win the deals that require compliance, scale, and white-glove support._
 
 ## Pricing Philosophy
 
-| | Free | Pro | Enterprise |
-|---|---|---|---|
-| Price | $0 | $29/workspace/mo | Custom |
-| Members | 2 | Unlimited | Unlimited |
-| Conversations | 500/mo | Unlimited | Unlimited |
-| GudBot | Optional, default off | Optional, default off | Optional, default off |
-| Channels | Chat; email outbound | Chat; email outbound | Custom |
-| Support | Community | Email | Dedicated |
+| | Free | Starter | Team | Business |
+|---|---|---|---|---|
+| Price | $0 | $39/mo | $79/mo | $119/mo |
+| Members | 3 | 5 | 10 | 25 |
+| Conversations | Unlimited | Unlimited | Unlimited | Unlimited |
+| GudBot | 50 answers/mo, default off | 500 | 1,000 | 2,500 |
+| Channels | Chat; email outbound | Chat; email outbound | Chat; email outbound | Chat; email outbound |
+| Support | Community | Email | Email | Email |
 
-**Key principle:** One flat price per workspace, with no per-agent fees. GudBot is optional and off by default. No surprise bills.
+**Key principle:** One flat price per workspace, with no per-agent fees. GudBot is optional and off by default. No surprise bills. Annual billing is $384 / $780 / $1,188.
+
+Existing $29 Pro customers keep that price.
+A one-off $10 top-up adds 500 GudBot answers, which never expire and are used after the monthly allowance.
+Teams over 25 members can email support@guddesk.com.
 
 ---
 
