@@ -60,10 +60,10 @@ _Fill the gaps that every competitor already covers._
 - [x] **Customer segments**: filter and group customers by attributes
 
 ### CSAT & Feedback
-- [x] **CSAT surveys**: survey settings and the Feedback dashboard. Visitors can't rate in the widget yet
+- [ ] **CSAT surveys**: survey settings and the Feedback dashboard. Visitors can't rate in the widget yet
 - [ ] **Widget CSAT rating**: let visitors rate a closed conversation in the widget
-- [x] **NPS surveys**: survey settings and score reporting. Sending NPS surveys to visitors is not built yet
-- [x] **Survey triggers**: a CSAT survey message is created on close or after a delay. The widget can't show the rating yet
+- [ ] **NPS surveys**: survey settings and score reporting. Sending NPS surveys to visitors is not built yet
+- [ ] **Survey triggers**: a CSAT survey message is created on close or after a delay. The widget can't show the rating yet
 - [x] **Feedback dashboard**: aggregate scores, trends, per-agent breakdown
 
 ---

@@ -351,7 +351,7 @@ export const features: Feature[] = [
       {
         title: "SLA enforcement",
         description:
-          "Define SLA policies with first-response and resolution deadlines. GudDesk checks for breaches about every 5 minutes in each workspace while your team uses the inbox or API, plus an hourly scheduled run. A breached conversation gets a note and the assignee gets an email.",
+          "Define SLA policies with first-response and resolution deadlines. GudDesk checks for breaches about every 5 minutes in each workspace while your team uses the inbox or API. A daily Vercel cron at 01:05 UTC covers quiet workspaces. Self-hosters should call /api/cron/sla-check every 5 minutes. A breached conversation gets a note and the assignee gets an email.",
         icon: "clock",
       },
     ],

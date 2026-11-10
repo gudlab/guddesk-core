@@ -92,7 +92,7 @@ export default async function DashboardPage() {
                 {
                   icon: Icons.automations,
                   title: "Automations",
-                  description: "Set up rules and workflows",
+                  description: "Save automation rules. They do not run yet.",
                   href: workspaces[0]
                     ? `/workspace/${workspaces[0].slug}/automations`
                     : "/dashboard",
@@ -138,7 +138,7 @@ export default async function DashboardPage() {
           </div>
         </div>
       ) : (
-        /* No workspaces — onboarding state */
+        /* No workspaces: onboarding state */
         <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed p-12">
           <div className="flex max-w-md flex-col items-center text-center">
             <div className="flex size-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">

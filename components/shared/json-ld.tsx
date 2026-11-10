@@ -48,16 +48,15 @@ export function OrganizationJsonLd() {
           "@type": "Offer",
           price: "0",
           priceCurrency: "USD",
-          description: "Free for 2 seats and 500 conversations a month",
+          description:
+            "Free for 3 members, unlimited conversations, 50 GudBot answers a month",
         },
         featureList: [
           "Live Chat Widget",
           "AI Agents",
           "Shared Inbox",
           "Knowledge Base",
-          "Automation Rules",
           "SLA Policies",
-          "CSAT Surveys",
           "Analytics & Reporting",
           "Webhooks",
           "REST API",

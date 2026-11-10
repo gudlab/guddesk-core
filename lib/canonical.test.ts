@@ -133,4 +133,15 @@ describe("SEO files use the canonical origin", () => {
     const utils = read("lib/utils.ts");
     assert.doesNotMatch(utils, /url: siteConfig\.url,/);
   });
+
+  it("JSON-LD Free offer matches the lock and has no Automation Rules or CSAT", () => {
+    const src = read("components/shared/json-ld.tsx");
+    assert.doesNotMatch(src, /Automation Rules/);
+    assert.doesNotMatch(src, /csat/i);
+    assert.doesNotMatch(src, /2 seats and 500 conversations/i);
+    assert.match(
+      src,
+      /Free for 3 members, unlimited conversations, 50 GudBot answers a month/,
+    );
+  });
 });

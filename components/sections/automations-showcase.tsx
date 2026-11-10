@@ -56,7 +56,7 @@ export default function AutomationsShowcase() {
         <div className="mt-12 grid gap-8 sm:grid-cols-2">
           <div>
             <h3 className="mb-3 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-              Supported triggers
+              Planned triggers
             </h3>
             <ul className="flex flex-wrap gap-2">
               {triggers.map((t) => (
@@ -71,7 +71,7 @@ export default function AutomationsShowcase() {
           </div>
           <div>
             <h3 className="mb-3 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-              Available actions
+              Planned actions
             </h3>
             <ul className="flex flex-wrap gap-2">
               {actions.map((a) => (

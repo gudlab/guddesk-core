@@ -38,7 +38,7 @@ export default async function AutomationsPage({
     <>
       <DashboardHeader
         heading="Automations"
-        text="Create rules to automatically handle conversations."
+        text="Save rules with a trigger and an action. Saved rules do not run yet."
       />
       <div className="space-y-6">
         <CreateAutomationForm workspaceId={workspace.id} workspaceMembers={workspaceMembers} />
