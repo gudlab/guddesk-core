@@ -16,10 +16,12 @@ GudDesk is an Intercom and Zendesk alternative with flat pricing. Use GudDesk Cl
 
 | Plan | Price | What you get |
 |---|---|---|
-| Free | $0 | 2 members, 500 conversations a month |
-| Pro | $29 a month flat | Unlimited seats and conversations, no GudDesk branding |
+| Free | $0 | 3 members, unlimited conversations, 50 GudBot answers a month |
+| Starter | $39 a month ($384 a year) | 5 members, unlimited conversations, 500 GudBot answers a month |
+| Team | $79 a month ($780 a year) | 10 members, unlimited conversations, 1,000 GudBot answers a month |
+| Business | $119 a month ($1,188 a year) | 25 members, unlimited conversations, 2,500 GudBot answers a month |
 
-Self-hosting has no plan limits.
+Existing $29 Pro customers keep that price. Self-hosting has no plan limits.
 
 ## What works today
 

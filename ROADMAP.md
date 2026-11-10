@@ -217,16 +217,16 @@ _Win the deals that require compliance, scale, and white-glove support._
 
 ## Pricing Philosophy
 
-| | Free | Pro | Enterprise |
-|---|---|---|---|
-| Price | $0 | $29/workspace/mo | Custom |
-| Members | 2 | Unlimited | Unlimited |
-| Conversations | 500/mo | Unlimited | Unlimited |
-| GudBot | Optional, default off | Optional, default off | Optional, default off |
-| Channels | Chat; email outbound | Chat; email outbound | Custom |
-| Support | Community | Email | Dedicated |
+| | Free | Starter | Team | Business |
+|---|---|---|---|---|
+| Price | $0 | $39/mo | $79/mo | $119/mo |
+| Members | 3 | 5 | 10 | 25 |
+| Conversations | Unlimited | Unlimited | Unlimited | Unlimited |
+| GudBot | 50 answers/mo, default off | 500 | 1,000 | 2,500 |
+| Channels | Chat; email outbound | Chat; email outbound | Chat; email outbound | Chat; email outbound |
+| Support | Community | Email | Email | Email |
 
-**Key principle:** One flat price per workspace, with no per-agent fees. GudBot is optional and off by default. No surprise bills.
+**Key principle:** One flat price per workspace, with no per-agent fees. GudBot is optional and off by default. No surprise bills. Annual billing is $384 / $780 / $1,188.
 
 ---
 
