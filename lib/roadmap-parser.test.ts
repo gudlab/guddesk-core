@@ -62,3 +62,45 @@ describe("README copy", () => {
     assert.match(row, /Not yet|Planned|don't run yet|do not run yet/i);
   });
 });
+
+describe("in-app automations copy", () => {
+  it("dashboard and Automations header say saved rules do not run", () => {
+    const dashboard = readFileSync(join(process.cwd(), "app/(protected)/dashboard/page.tsx"), "utf8");
+    const page = readFileSync(
+      join(process.cwd(), "app/(protected)/workspace/[workspaceSlug]/automations/page.tsx"),
+      "utf8",
+    );
+    const showcase = readFileSync(
+      join(process.cwd(), "components/sections/automations-showcase.tsx"),
+      "utf8",
+    );
+    assert.match(dashboard, /Save automation rules\. They do not run yet\./);
+    assert.doesNotMatch(dashboard, /Set up rules and workflows/);
+    assert.match(page, /Save rules with a trigger and an action\. Saved rules do not run yet\./);
+    assert.doesNotMatch(page, /automatically handle conversations/);
+    assert.match(showcase, /Planned triggers/);
+    assert.match(showcase, /Planned actions/);
+    assert.doesNotMatch(showcase, /Supported triggers|Available actions/);
+  });
+});
+
+describe("terms copy", () => {
+  it("Free plan matches the lock", () => {
+    const terms = readFileSync(join(process.cwd(), "content/pages/terms.mdx"), "utf8");
+    assert.match(
+      terms,
+      /up to 3 members, unlimited conversations, 50 GudBot answers a month/,
+    );
+    assert.doesNotMatch(terms, /2 members, 500 conversations/);
+  });
+});
+
+describe("ROADMAP copy", () => {
+  it("lists CSAT and NPS surveys as planned", () => {
+    const md = readFileSync(join(process.cwd(), "ROADMAP.md"), "utf8");
+    assert.match(md, /^- \[ \] \*\*CSAT surveys\*\*:/m);
+    assert.match(md, /^- \[ \] \*\*NPS surveys\*\*:/m);
+    assert.doesNotMatch(md, /^- \[x\] \*\*CSAT surveys\*\*:/m);
+    assert.doesNotMatch(md, /^- \[x\] \*\*NPS surveys\*\*:/m);
+  });
+});

@@ -194,4 +194,10 @@ describe("wiring", () => {
     assert.match(index, /name: "sla-check", run: \(workspaceId\) => processSlaBreaches\(workspaceId\)/);
   });
 
+  it("does not claim an hourly GitHub cron.yml job", () => {
+    assert.doesNotMatch(read("app/api/cron/sla-check/route.ts"), /cron\.yml/);
+    assert.doesNotMatch(read("lib/scheduled/index.ts"), /cron\.yml/);
+    assert.doesNotMatch(read("lib/features.ts"), /hourly scheduled run/);
+  });
+
 });
