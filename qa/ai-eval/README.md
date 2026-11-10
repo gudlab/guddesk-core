@@ -1,4 +1,4 @@
-# GudDesk AI eval — Month 2 (GudBot v1)
+# GudDesk AI eval: Month 2 (GudBot v1)
 
 Per-release eval of GudBot against a fixed, seeded knowledge base. It scores three things for each case:
 

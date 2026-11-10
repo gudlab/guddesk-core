@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// GudDesk Month 2 AI eval — validator + scorer. Node >=18, no dependencies.
+// GudDesk Month 2 AI eval: validator + scorer. Node >=18, no dependencies.
 // Usage:
 //   node score.mjs validate
 //   node score.mjs offline
@@ -25,6 +25,79 @@ const REASON_PHRASES = {
 };
 
 const lc = (s) => String(s ?? '').toLowerCase();
+
+function splitSentences(text) {
+  return String(text ?? '')
+    .split(/(?<=[.!?])(?:\s+|$)|[\n\r]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function proseFromFixtures(kb, questions) {
+  const parts = [];
+  for (const a of kb || []) {
+    for (const k of ['title', 'excerpt', 'body']) parts.push(a?.[k]);
+  }
+  for (const q of questions || []) {
+    parts.push(q?.question, q?.expected_gist, ...(q?.must_include || []));
+  }
+  return parts.filter((s) => typeof s === 'string').join('\n');
+}
+
+/** Stale Cloud-plan copy. Checked per sentence so a legacy $29 Pro note can stand. */
+function stalePricingHits(text) {
+  const hits = [];
+  for (const raw of splitSentences(text)) {
+    const s = lc(raw);
+    const flag = (why) => hits.push({ sentence: raw, why });
+    if (s.includes('only two cloud plans')) flag('only two cloud plans');
+    if (s.includes('only free and pro')) flag('only free and pro');
+    // Conversation caps. "500 GudBot answers" / "500 answers" stay legal.
+    if (/500\s+conversations/.test(s)) flag('500 conversations');
+    if (
+      /\b2\s+members\b/.test(s)
+      || /\b2\s+team\s+members\b/.test(s)
+      || /\btwo\s+team\s+members\b/.test(s)
+    ) {
+      flag('2 members');
+    }
+    if (/10x/.test(s)) flag('10x');
+    if (/\$390\b/.test(s)) flag('$390');
+    if (/\$790\b/.test(s)) flag('$790');
+    if (/\$1,190\b|\$1190\b/.test(s)) flag('$1,190');
+    if (
+      /\$29/.test(s)
+      && /\bpro\b/.test(s)
+      && !/\blegacy\b/.test(s)
+      && !/existing customers?/.test(s)
+    ) {
+      flag('$29 Pro as current');
+    }
+  }
+  return hits;
+}
+
+function stalePricingSelfTest() {
+  const errors = [];
+  const shouldPass = [
+    'Existing customers on the legacy Pro plan keep $29 per month',
+    '500 GudBot answers',
+    'A $10 top-up adds 500 answers that never expire',
+  ];
+  const shouldFail = [
+    'Pro is $29 per month',
+    'up to 2 team members',
+    '500 conversations per month',
+    '$390 a year',
+  ];
+  for (const t of shouldPass) {
+    if (stalePricingHits(t).length) errors.push(`stale-pricing self-test expected pass: ${t}`);
+  }
+  for (const t of shouldFail) {
+    if (!stalePricingHits(t).length) errors.push(`stale-pricing self-test expected fail: ${t}`);
+  }
+  return errors;
+}
 
 function readJsonl(file) {
   const out = [];
@@ -118,9 +191,12 @@ function validate({ kb, questions }) {
   // Seed coverage: ids 1..30 are the rewritten original seed questions.
   for (let i = 1; i <= 30; i++) if (!ids.has(i)) err(`seed id ${i} missing`);
 
-  // Product-fact guards.
+  // Product-fact guards. Pricing is per sentence so legacy $29 Pro can stand.
+  for (const e of stalePricingSelfTest()) err(e);
+  for (const hit of stalePricingHits(proseFromFixtures(kb, questions))) {
+    err(`stale pricing (${hit.why}): ${hit.sentence}`);
+  }
   const blob = lc(JSON.stringify(kb) + JSON.stringify(questions));
-  if (/only two cloud plans|only free and pro|up to 2 team members and 500 conversations/.test(blob)) err('stale Free/Pro-only pricing (current Cloud plans are Free, Starter, Team and Business; legacy Pro is $29)');
   if (/gudbot (is )?(on|enabled) by default/.test(blob)) err('claims GudBot is on by default');
   if (/(sk-ant-|gd_live_|gd_sk_|-----begin)/.test(blob)) err('possible secret material in files');
 
