@@ -45,7 +45,7 @@ _Fill the gaps that every competitor already covers._
 
 ### Ticketing & SLAs
 - [x] **SLA policies**: define response/resolution time targets per priority
-- [x] **SLA breach alerts**: email the assignee and add a note when an SLA is breached. The check runs once a day for now
+- [x] **SLA breach alerts**: email the assignee and add a note when an SLA is breached. While the inbox or API is in use, GudDesk checks that workspace at most every 5 minutes. The `/api/cron/sla-check` route also runs daily at 01:05 UTC on Vercel. Self-hosters should call it every 5 minutes.
 - [x] **Business hours**: configure working hours, exclude holidays from SLA calculations
 - [x] **Ticket fields**: custom fields (dropdowns, text, date) per workspace
 - [x] **Ticket forms**: different intake forms for different request types
