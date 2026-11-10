@@ -52,3 +52,13 @@ describe("parseRoadmap", () => {
     ]);
   });
 });
+
+describe("README copy", () => {
+  it("does not claim automation rules run", () => {
+    const readme = readFileSync(join(process.cwd(), "README.md"), "utf8");
+    const row = readme.split("\n").find((line) => /^\|\s*Automation rules\s*\|/.test(line));
+    assert.ok(row, "expected an Automation rules table row");
+    assert.doesNotMatch(row, /\|\s*Yes\s*\|?\s*$/i);
+    assert.match(row, /Not yet|Planned|don't run yet|do not run yet/i);
+  });
+});

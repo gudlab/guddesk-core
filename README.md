@@ -35,7 +35,7 @@ Existing $29 Pro customers keep that price. Self-hosting has no plan limits.
 | Public help center | Yes | Yes |
 | GudBot (KB-grounded AI replies; default OFF) | Yes | Yes |
 | Intercom file importer | Yes | Yes |
-| Automation rules | Rules save, but don't run yet | Yes |
+| Automation rules | Rules save, but don't run yet | Not yet |
 | Agent API: your own bot replies as BOT | Yes | Yes |
 | REST API and webhooks | Yes | Yes |
 
