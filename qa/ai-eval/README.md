@@ -31,7 +31,7 @@ node score.mjs offline    # validate + dry-run summary (counts per category/area
 ```
 `validate` also enforces these rules:
 - Every `must_include` string appears in the cited article text.
-- Seed ids 1–30 are present.
+- Seed ids 1-30 are present.
 - Plan facts match `lib/plans.ts` (Free, Starter, Team, Business; legacy $29 Pro). Stale Free/Pro-only pricing is rejected.
 - Nothing claims GudBot is on by default.
 - Nothing looks like secret material.
@@ -57,7 +57,7 @@ No other secrets. The Anthropic key is app-side only.
 
 ```bash
 node live-runner.mjs --limit 5          # smoke test first
-node live-runner.mjs                    # full run -> results.jsonl (~2–4 min; 1.5 s polite delay between cases)
+node live-runner.mjs                    # full run -> results.jsonl (~2 to 4 min; 1.5 s polite delay between cases)
 node score.mjs score --results results.jsonl --out summary.json
 ```
 Runner options: `--limit N`, `--ids 1,5,87`, `--out path`, `--delay-ms 1500`, `--timeout-ms 45000`.
@@ -91,7 +91,7 @@ Handoff reason codes: `low_confidence`, `max_turns`, `explicit`, `no_evidence` (
 | Should hand off | 22 | out-of-KB (SLA, shortcuts, webhooks, proration, SOC 2, Salesforce, phone), account-specific (orders, double charge, password reset, data deletion, discounts, outage), competitor-only, nonsense, off-topic, explicit human request |
 | Edge variants | 12 | typos, shouting, terse and German paraphrases of answerable cases (expected_action=answer) |
 
-Ids 1–30 are the original `qa/ai-eval.jsonl` seed questions rewritten to this schema. Seeds whose facts aren't in the product KB were turned into **handoff** cases rather than invented answers: 13 (keyboard shortcuts), 14–16 (SLA / business hours), 21 (mid-cycle proration) and 28 (webhook events). If those docs get added to the seeded KB later, flip those cases to `answer`.
+Ids 1-30 are the original `qa/ai-eval.jsonl` seed questions rewritten to this schema. Seeds whose facts aren't in the product KB were turned into **handoff** cases rather than invented answers: 13 (keyboard shortcuts), 14-16 (SLA / business hours), 21 (mid-cycle proration) and 28 (webhook events). If those docs get added to the seeded KB later, flip those cases to `answer`.
 
 ## Scoring rules (`node score.mjs score --results <file>`)
 The results file can be JSONL, a JSON array, or `{results:[…]}`. A question with no result row fails.

@@ -28,7 +28,7 @@ const lc = (s) => String(s ?? '').toLowerCase();
 
 function splitSentences(text) {
   return String(text ?? '')
-    .split(/(?<=[.!?])(?:\s+|$)|[\n\r]+/)
+    .split(/(?<=[.!?;])(?:\s+|$)|[\n\r]+/)
     .map((s) => s.trim())
     .filter(Boolean);
 }
@@ -57,6 +57,7 @@ function stalePricingHits(text) {
     if (
       /\b2\s+members\b/.test(s)
       || /\b2\s+team\s+members\b/.test(s)
+      || /\btwo\s+members\b/.test(s)
       || /\btwo\s+team\s+members\b/.test(s)
     ) {
       flag('2 members');
@@ -65,13 +66,13 @@ function stalePricingHits(text) {
     if (/\$390\b/.test(s)) flag('$390');
     if (/\$790\b/.test(s)) flag('$790');
     if (/\$1,190\b|\$1190\b/.test(s)) flag('$1,190');
+    // $29 as a current price, even without the word Pro.
     if (
       /\$29/.test(s)
-      && /\bpro\b/.test(s)
       && !/\blegacy\b/.test(s)
-      && !/existing customers?/.test(s)
+      && !/\bexisting\b[\s\S]{0,40}\bcustomers?\b/.test(s)
     ) {
-      flag('$29 Pro as current');
+      flag('$29 as current');
     }
   }
   return hits;
@@ -81,14 +82,22 @@ function stalePricingSelfTest() {
   const errors = [];
   const shouldPass = [
     'Existing customers on the legacy Pro plan keep $29 per month',
+    'Existing Pro customers keep $29/month',
+    'Existing customers on the legacy Pro plan keep $29 per month; new workspaces pick Starter',
     '500 GudBot answers',
     'A $10 top-up adds 500 answers that never expire',
   ];
   const shouldFail = [
     'Pro is $29 per month',
+    '$29 a month flat',
     'up to 2 team members',
+    'two members',
     '500 conversations per month',
     '$390 a year',
+    '10x monthly',
+    '$790 a year',
+    '$1,190 a year',
+    'Free is great; Pro is $29 per month',
   ];
   for (const t of shouldPass) {
     if (stalePricingHits(t).length) errors.push(`stale-pricing self-test expected pass: ${t}`);
